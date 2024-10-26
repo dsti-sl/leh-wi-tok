@@ -20,6 +20,14 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  /*
+    TODO: Initialization of app state:
+    - Load user settings from AsyncStorage.
+    - Load user data from AsyncStorage.
+    - App state
+      - skip or redirect to onboarding or login screen.
+  */
+
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
