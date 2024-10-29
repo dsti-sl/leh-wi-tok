@@ -1,0 +1,20 @@
+[ 
+  { 
+    "id": "1",
+    "title": "The Le Wi Tok is built with Interactive courses that are beginners friendly.",
+    "description": "Learning with the Le Wi Tok application is the first step to master the sign language.", 
+    "image": "../assets/images/SlideImg1.png"
+  }, 
+  {
+    "id": "2", 
+    "title": "The Le Wi Tok is built with Interactive courses that are beginners friendly.", 
+    "description": "The courses are designed by experts who are experienced sign language specialists.", 
+    "image": "../assets/images/SlideImg2.png"
+  }, 
+  {
+    "id": "3",
+    "title": "The Le Wi Tok dictionary is easy to use.", 
+    "description": "The dictionary have an easy to search functionality with gif and image descriptions.", 
+    "image": "../assets/images/SlideImg3.png"
+  }
+]
