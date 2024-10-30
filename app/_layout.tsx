@@ -37,9 +37,10 @@ export default function RootLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       {/* TODO: Add root level screens here */}
       <Stack.Screen name="signin" options={{ headerShown: false }} />
-
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
+      <Stack.Screen name="otpscreen" options={{ headerShown: false }} />
+      <Stack.Screen name="signup" options={{ headerShown: false }} />
     </Stack>
   );
 }
