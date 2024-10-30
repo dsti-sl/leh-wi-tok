@@ -1,0 +1,265 @@
+import { router, useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
+} from 'react-native';
+
+import C_Button from '@/components/common/Button';
+import { Colors } from '@/constants/Colors';
+
+const VERIFY_OTP_API_ENDPOINT = 'https://example.com/api/verify-otp';
+const RESEND_OTP_API_ENDPOINT = 'https://example.com/api/resend-otp';
+
+const OtpScreen = () => {
+  const { isSignIn = true, phoneNumber = '' } = useLocalSearchParams();
+
+  const [otp, setOtp] = useState<string[]>(new Array(6).fill(''));
+  const [error, setError] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
+  // Refs for each input field
+  const inputRefs = useRef<(TextInput | null)[]>(
+    Array.from({ length: 6 }, () => null),
+  );
+
+  const validateOtp = () => {
+    const otpValue = otp.join('');
+    if (otpValue.length !== 6) return 'Please enter a 6-digit OTP';
+    if (!/^\d+$/.test(otpValue)) return 'OTP can only contain digits';
+    return '';
+  };
+
+  const handleVerifyOtp = async () => {
+    const validationError = validateOtp();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setError('');
+    setIsVerifying(true);
+
+    try {
+      const response = await fetch(VERIFY_OTP_API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber, otp: otp.join('') }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert(
+          'Success',
+          `OTP verified successfully for ${isSignIn ? 'Sign In' : 'Sign Up'}!`,
+        );
+        isSignIn ? router.replace('/home') : router.replace('/');
+      } else {
+        setError(data.message || 'Invalid OTP. Please try again.');
+      }
+    } catch {
+      setError(
+        'Network error: Unable to verify OTP. Please check your connection.',
+      );
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setIsResending(true);
+    setError('');
+
+    try {
+      const response = await fetch(RESEND_OTP_API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Success', 'A new OTP has been sent to your phone.');
+      } else {
+        setError(data.message || 'Failed to resend OTP. Please try again.');
+      }
+    } catch {
+      setError(
+        'Network error: Unable to resend OTP. Please check your connection.',
+      );
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleOtpChange = (text: string, index: number) => {
+    const updatedOtp = [...otp];
+    if (text.length === 6) {
+      const otpArray = text.split('');
+      setOtp(otpArray);
+      setTimeout(() => inputRefs.current[5]?.focus(), 100);
+    } else {
+      updatedOtp[index] = text;
+      setOtp(updatedOtp);
+      if (text && index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      } else if (!text && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
+
+      <Image
+        source={require('../assets/images/Auth_logo.png')}
+        style={styles.logo}
+      />
+
+      <Text style={styles.headerText}>Enter OTP</Text>
+      <Text style={styles.subText}>
+        Enter the OTP code we just sent{'\n'}to your registered Email/Phone
+        number
+      </Text>
+
+      <View style={styles.otpContainer}>
+        {otp.map((value, index) => (
+          <TextInput
+            key={index}
+            ref={(ref) => (inputRefs.current[index] = ref)}
+            style={styles.otpInput}
+            keyboardType="numeric"
+            maxLength={1}
+            value={value}
+            onChangeText={(text) => handleOtpChange(text, index)}
+            onKeyPress={({ nativeEvent }) => {
+              if (nativeEvent.key === 'Backspace' && !value && index > 0) {
+                inputRefs.current[index - 1]?.focus();
+              }
+            }}
+          />
+        ))}
+      </View>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <View>
+        {isVerifying ? (
+          <ActivityIndicator size="small" color={Colors.primary} />
+        ) : (
+          <C_Button
+            title="Confirm OTP"
+            onPress={handleVerifyOtp}
+            buttonStyle={styles.verifyOtpButton}
+          />
+        )}
+      </View>
+
+      <TouchableOpacity
+        onPress={handleResendOtp}
+        style={[styles.resendButton, isResending && { opacity: 0.5 }]}
+        disabled={isResending}
+      >
+        {isResending ? (
+          <ActivityIndicator size="small" color={Colors.primary} />
+        ) : (
+          <Text style={styles.resendText}>Didn’t get OTP? Resend OTP</Text>
+        )}
+      </TouchableOpacity>
+    </KeyboardAvoidingView>
+  );
+};
+
+export default OtpScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  logo: {
+    width: 160,
+    height: 160,
+    resizeMode: 'cover',
+    alignSelf: 'center',
+    marginBottom: 1,
+    marginTop: -50,
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: Colors.primary,
+    textAlign: 'center',
+    marginBottom: 10,
+    marginTop: 20,
+  },
+  subText: {
+    fontSize: 14,
+    color: '#727374',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  otpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    marginBottom: 20,
+  },
+  otpInput: {
+    width: 50,
+    height: 70,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#eaeff5',
+    textAlign: 'center',
+    fontSize: 14,
+    color: Colors.primary,
+    backgroundColor: '#f5f9fe',
+  },
+  error: {
+    color: 'red',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  verifyOtpButton: {
+    backgroundColor: '#004D40',
+    borderRadius: 4,
+    alignItems: 'center',
+    color: Colors.secondary,
+    fontWeight: 'bold',
+    marginBottom: 30,
+  },
+  resendButton: {
+    alignItems: 'flex-start',
+    color: Colors.primary,
+    fontWeight: 'bold',
+  },
+  resendText: {
+    fontSize: 14,
+    color: Colors.primary,
+    marginBottom: 0,
+  },
+});
