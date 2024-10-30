@@ -16,7 +16,6 @@ import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
 
 interface BannerProps {
-  title: string;
   user: Record;
 }
 export const HomeBanner = ({ user }: BannerProps) => {

@@ -8,6 +8,12 @@ import { Colors } from '@/constants/Colors';
 const _layout = () => {
   // TODO: Add home level route screens here
 
+  // TODO: dummy user object
+  const user = {
+    firstName: 'John',
+    lastName: 'Doe',
+  };
+
   return (
     <>
       <StatusBar style="inverted" />
@@ -20,7 +26,7 @@ const _layout = () => {
             headerStyle: { backgroundColor: Colors.primary },
             headerTintColor: '#fff',
             headerTitle(props) {
-              return <HomeBanner title={'Home'} {...props} />;
+              return <HomeBanner user={user} {...props} />;
             },
           }}
         />
