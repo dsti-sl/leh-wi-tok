@@ -62,12 +62,13 @@ export const HomeBanner = ({ user }: BannerProps) => {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    paddingTop: 50,
+    paddingVertical: 50,
     height: 180,
     width: '100%',
     backgroundColor: Colors.primary,
   },
   contentContainer: {
+    paddingTop: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
