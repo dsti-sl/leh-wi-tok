@@ -35,19 +35,19 @@ const index = () => {
           bgColor="#0d3a46"
         />
         <HomeItem
-          title="Quiz"
+          title="Beginners Lessons"
           description="Get Started with our beginners lessons today."
           image={lessonFillSeconday as ImageSourcePropType}
           bgColor="#0f4c5c"
         />
         <HomeItem
-          title="Quiz"
+          title="Common Words"
           description="Find frequently used words for instant communications "
           image={usersOutlineFillSeconday as ImageSourcePropType}
           bgColor="#1e1e1e"
         />
         <HomeItem
-          title="Quiz"
+          title="Become a Volunteer"
           description="Join the community of sign language voluteers and be..."
           image={volunteerOutlineFillSecondary as ImageSourcePropType}
           bgColor="#1f1f39"
