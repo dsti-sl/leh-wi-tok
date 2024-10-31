@@ -29,7 +29,7 @@ const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
             console.log('Playing preview video');
           }}
         >
-          <Ionicons name="play-outline" size={30} color={Colors.primary} />
+          <Ionicons name="play-outline" size={20} color={Colors.primary} />
           <Text style={styles.playTxt}>Play Video</Text>
         </TouchableOpacity>
       </View>
@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
   videoDetails: {
     flex: 1,
     justifyContent: 'space-between',
+    gap: 5,
   },
   txtDescription: {
     opacity: 0.5,
@@ -70,7 +71,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   playTxt: {
-    fontSize: 20,
+    fontSize: 15,
     color: Colors.primary,
   },
 });
