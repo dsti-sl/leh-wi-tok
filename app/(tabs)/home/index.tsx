@@ -1,7 +1,13 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ImageSourcePropType, StyleSheet, View } from 'react-native';
+
+import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
+import questionMarkCircular from '../../../assets/images/question-mark-circular.png';
+import usersOutlineFillSeconday from '../../../assets/images/users-outline-fill-secondary.png';
+import volunteerOutlineFillSecondary from '../../../assets/images/volunteer-outline-fill-secondary.png';
 
 import { HomeBanner } from '@/components/home/HomeBanner';
+import HomeItem from '@/components/home/HomeItem';
 import InitialVideoCard from '@/components/home/InitialVideoCard';
 import useTutorials from '@/hooks/useTutorials';
 import { Record } from '@/lib/types';
@@ -20,7 +26,33 @@ const index = () => {
         <InitialVideoCard defaultTutorial={defaultTutorial as Record} />
       )}
 
-      <Text>Home</Text>
+      {/* Items */}
+      <View style={{ width: '100%', gap: 10, padding: 20 }}>
+        <HomeItem
+          title="Tutorial"
+          description="Find help from volunteers who are blah, blah and blah"
+          image={questionMarkCircular as ImageSourcePropType}
+          bgColor="#0d3a46"
+        />
+        <HomeItem
+          title="Quiz"
+          description="Get Started with our beginners lessons today."
+          image={lessonFillSeconday as ImageSourcePropType}
+          bgColor="#0f4c5c"
+        />
+        <HomeItem
+          title="Quiz"
+          description="Find frequently used words for instant communications "
+          image={usersOutlineFillSeconday as ImageSourcePropType}
+          bgColor="#1e1e1e"
+        />
+        <HomeItem
+          title="Quiz"
+          description="Join the community of sign language voluteers and be..."
+          image={volunteerOutlineFillSecondary as ImageSourcePropType}
+          bgColor="#1f1f39"
+        />
+      </View>
     </View>
   );
 };
