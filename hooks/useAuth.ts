@@ -11,8 +11,8 @@ const useAuth = () => {
         firstName: 'John',
         lastName: 'Doe',
       });
-    }, 2000);
-  });
+    }, 1);
+  }, []);
   return {
     user,
   };
