@@ -27,7 +27,7 @@ const index = () => {
       )}
 
       {/* Items */}
-      <View style={{ width: '100%', gap: 10, padding: 20 }}>
+      <View style={styles.itemsContainer}>
         <HomeItem
           title="Tutorial"
           description="Find help from volunteers who are blah, blah and blah"
@@ -64,5 +64,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
+  },
+  itemsContainer: {
+    width: '100%',
+    gap: 10,
+    paddingHorizontal: 20,
   },
 });

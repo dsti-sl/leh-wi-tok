@@ -61,9 +61,9 @@ export const HomeBanner = ({ user }: BannerProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    paddingHorizontal: 20,
     paddingVertical: 50,
-    height: 180,
+    paddingBottom: 70,
     width: '100%',
     backgroundColor: Colors.primary,
   },
@@ -79,7 +79,6 @@ const styles = StyleSheet.create({
   },
   userTxt: {
     fontSize: 30,
-    fontFamily: 'poppins',
     fontWeight: '700',
     color: '#fff',
   },
@@ -92,7 +91,6 @@ const styles = StyleSheet.create({
     height: 40,
   },
   footerTxt: {
-    fontFamily: 'poppins',
     color: '#fff',
     fontWeight: '400',
   },
