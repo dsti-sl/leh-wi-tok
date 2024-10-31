@@ -29,7 +29,7 @@ const index = () => {
       {/* Items */}
       <View style={styles.itemsContainer}>
         <HomeItem
-          title="Tutorial"
+          title="Find Help"
           description="Find help from volunteers who are blah, blah and blah"
           image={questionMarkCircular as ImageSourcePropType}
           bgColor="#0d3a46"
