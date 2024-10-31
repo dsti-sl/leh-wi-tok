@@ -2,32 +2,20 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 
-import { HomeBanner } from '@/components/Headers/HomeBanner';
 import { Colors } from '@/constants/Colors';
 
 const _layout = () => {
   // TODO: Add home level route screens here
 
-  // TODO: dummy user object
-  const user = {
-    firstName: 'John',
-    lastName: 'Doe',
-  };
-
   return (
     <>
-      <StatusBar style="inverted" />
+      <StatusBar style="light" backgroundColor={Colors.primary} />
       <Stack>
         <Stack.Screen
           name="index"
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'Home',
-            headerStyle: { backgroundColor: Colors.primary },
-            headerTintColor: '#fff',
-            headerTitle(props) {
-              return <HomeBanner user={user} {...props} />;
-            },
           }}
         />
       </Stack>

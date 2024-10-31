@@ -61,11 +61,10 @@ export const HomeBanner = ({ user }: BannerProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    left: -16,
-    paddingHorizontal: 20,
-    paddingTop: 5,
-    paddingBottom: 60,
+    padding: 20,
+    paddingTop: 50,
+    height: 180,
+    width: '100%',
     backgroundColor: Colors.primary,
   },
   contentContainer: {

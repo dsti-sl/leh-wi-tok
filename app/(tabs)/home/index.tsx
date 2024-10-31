@@ -1,9 +1,12 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, Image, TouchableOpacity, View } from 'react-native';
+
+import { HomeBanner } from '@/components/Headers/HomeBanner';
 
 const index = () => {
   return (
     <View style={styles.container}>
+      <HomeBanner user={user as Record} />
       <Text>Home</Text>
     </View>
   );
