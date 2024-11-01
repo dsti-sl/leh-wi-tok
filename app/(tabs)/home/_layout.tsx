@@ -1,31 +1,37 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+import { View } from 'react-native';
 
-import { HomeBanner } from '@/components/Headers/HomeBanner';
 import { Colors } from '@/constants/Colors';
 
 const _layout = () => {
   // TODO: Add home level route screens here
 
   return (
-    <>
-      <StatusBar style="inverted" />
+    <View
+      style={{
+        flex: 1,
+      }}
+    >
+      <StatusBar style="light" backgroundColor={Colors.primary} />
       <Stack>
         <Stack.Screen
           name="index"
           options={{
-            headerShown: true,
+            headerShown: false,
             title: 'Home',
-            headerStyle: { backgroundColor: Colors.primary },
-            headerTintColor: '#fff',
-            headerTitle(props) {
-              return <HomeBanner title={'Home'} {...props} />;
-            },
+          }}
+        />
+        <Stack.Screen
+          name="help"
+          options={{
+            headerShown: false,
+            title: 'Help',
           }}
         />
       </Stack>
-    </>
+    </View>
   );
 };
 
