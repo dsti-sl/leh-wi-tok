@@ -164,7 +164,7 @@ const SignUpScreen = () => {
 
       <C_Button
         title="Sign up"
-        onPress={handleSignUp}
+        onPress={() => router.push('/otpscreen')}
         buttonStyle={styles.signupButton}
       />
       <TouchableOpacity
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   signupButton: {
-    backgroundColor: '#004D40',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: 'center',
