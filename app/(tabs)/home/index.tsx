@@ -33,24 +33,28 @@ const index = () => {
           description="Find help from volunteers who are blah, blah and blah"
           image={questionMarkCircular as ImageSourcePropType}
           bgColor="#0d3a46"
+          routeName="/(tabs)/home/help"
         />
         <HomeItem
           title="Beginners Lessons"
           description="Get Started with our beginners lessons today."
           image={lessonFillSeconday as ImageSourcePropType}
           bgColor="#0f4c5c"
+          routeName="/(tabs)/home/help"
         />
         <HomeItem
           title="Common Words"
           description="Find frequently used words for instant communications "
           image={usersOutlineFillSeconday as ImageSourcePropType}
           bgColor="#1e1e1e"
+          routeName="/(tabs)/home/help"
         />
         <HomeItem
           title="Become a Volunteer"
           description="Join the community of sign language voluteers and be..."
           image={volunteerOutlineFillSecondary as ImageSourcePropType}
           bgColor="#1f1f39"
+          routeName="/(tabs)/home/help"
         />
       </View>
     </View>

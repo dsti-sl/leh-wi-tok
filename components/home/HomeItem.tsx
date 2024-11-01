@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { Href, router } from 'expo-router';
 import React from 'react';
 import {
   ColorValue,
@@ -17,15 +18,22 @@ interface HomeItemProps {
   description: string;
   image: ImageSourcePropType;
   bgColor: ColorValue;
+  routeName: Href<string | object>;
 }
 const HomeItem: React.FC<HomeItemProps> = ({
   title,
   description,
   image,
   bgColor,
+  routeName,
 }) => {
   return (
-    <TouchableOpacity style={[styles.container, { backgroundColor: bgColor }]}>
+    <TouchableOpacity
+      onPress={() => {
+        router.push(routeName);
+      }}
+      style={[styles.container, { backgroundColor: bgColor }]}
+    >
       <Image source={image} />
       <View style={styles.contentContainer}>
         <View style={styles.textContainer}>
