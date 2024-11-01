@@ -104,18 +104,16 @@ export default function Layout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    borderRadius: 20,
-    backgroundColor: '#f9f9f9',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    borderColor: '#f9f9f9',
-    paddingTop: 10,
+    borderRadius: 10,
+    height: 80,
   },
-  tabBarItemStyle: { bottom: 5, top: 0 },
+  tabBarItemStyle: {
+    bottom: 5,
+    top: 0,
+  },
   tabLabel: {
     fontSize: 12,
     display: 'flex',
-    top: 10,
   },
   circularIconContainer: {
     top: -10,
@@ -128,12 +126,7 @@ const styles = StyleSheet.create({
     borderWidth: 5,
     borderColor: '#f9f9f9',
   },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  iconContainer: {},
   activeTab: {
     borderWidth: 3,
     borderColor: '#f9f9f9',
