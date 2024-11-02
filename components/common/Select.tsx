@@ -25,6 +25,7 @@ interface SelectProps {
   setSelectedItem: (_item: Record) => void;
   selectedItemStyle?: ViewStyle;
   selectItemsContainerStyle?: ViewStyle;
+  selectContainer?: ViewStyle;
   showDivider?: boolean;
   divider?: React.ReactNode;
 }
@@ -38,12 +39,13 @@ const Select: React.FC<SelectProps> = ({
   setSelectedItem,
   selectedItemStyle = styles.selectItemStyle,
   selectItemsContainerStyle,
+  selectContainer = {},
   showDivider = true,
   divider = <Divider />,
 }) => {
   const [openModal, setOpenModal] = useState(false);
   return (
-    <View>
+    <View style={[styles.container, selectContainer]}>
       {/* Select label */}
       <Text>{inputLabel}</Text>
 
@@ -101,6 +103,9 @@ const Select: React.FC<SelectProps> = ({
 export default Select;
 
 const styles = StyleSheet.create({
+  container: {
+    gap: 5,
+  },
   selectItemStyle: {
     backgroundColor: '#F5F5F5',
   },
