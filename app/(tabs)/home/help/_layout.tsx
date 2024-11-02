@@ -15,7 +15,7 @@ import { Colors } from '@/constants/Colors';
 
 const _layout = () => {
   return (
-    <View style={{ flex: 1, backgroundColor: '#eaf' }}>
+    <>
       {Platform.OS === 'ios' ? (
         <View
           style={{
@@ -36,6 +36,7 @@ const _layout = () => {
             headerStyle: {
               backgroundColor: '#ffffff',
             },
+            contentStyle: { backgroundColor: '#ffffff' },
             header: () => (
               <View
                 style={{
@@ -73,7 +74,7 @@ const _layout = () => {
           }}
         />
       </Stack>
-    </View>
+    </>
   );
 };
 
