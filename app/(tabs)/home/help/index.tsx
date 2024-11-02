@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
@@ -92,7 +93,10 @@ const index = () => {
       </View>
       <CAlert
         open={isSubmitted}
-        setOpen={setIsSubmitted}
+        setOpen={() => {
+          setIsSubmitted(false);
+          router.back();
+        }}
         title="Request Sent"
         message="Thank you for requesting help. We will connect you to a volunteer as soon as possible."
         btnText="Close"
