@@ -18,7 +18,7 @@ import C_Button from '@/components/common/Button';
 import CModal from '@/components/common/CModal';
 import useLocationGrades from '@/hooks/useLocationGrades';
 import { Colors } from '@/constants/Colors';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 const SAVE_PROFILE_API_ENDPOINT = 'https://example.com/api/save-profile';
 
@@ -79,8 +79,6 @@ const ProfileDetailsScreen = () => {
         const data = await response.json();
         throw new Error(data.message || 'Failed to save profile details');
       }
-
-      // Show the success modal after saving the profile
       setShowSuccessModal(true);
     } catch (error) {
       Alert.alert(
@@ -103,7 +101,7 @@ const ProfileDetailsScreen = () => {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Text>{error}</Text>
+        <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }
@@ -121,16 +119,19 @@ const ProfileDetailsScreen = () => {
             setProfileImage={setProfileImage}
           />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Username"
-            value={username}
-            onChangeText={(text) => setUsername(handleUsernameChange(text))}
-            autoCapitalize="none"
-          />
+          <View style={styles.inputContainer}>
+            <Ionicons name="at-outline" size={24} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              value={username}
+              onChangeText={(text) => setUsername(handleUsernameChange(text))}
+              autoCapitalize="none"
+            />
+          </View>
 
           <Select
-            inputLabel="Select Class / Grade"
+            inputLabel="Class / Form"
             selectItems={grades.map((grade) => ({
               label: grade,
               value: grade,
@@ -138,20 +139,25 @@ const ProfileDetailsScreen = () => {
             selectedItem={{ value: selectedGrade }}
             labelField="label"
             valueField="value"
-            placeholder="Select Class / Grade"
+            placeholder="Select Class / Form"
             setSelectedItem={(item) => setSelectedGrade(item.value as string)}
+            selectedItemStyle={styles.inputContainer}
+            selectItemsContainerStyle={styles.inputContainer}
           />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Age"
-            keyboardType="numeric"
-            value={age}
-            onChangeText={validateAgeInput}
-          />
+          <View style={styles.inputContainer}>
+            <MaterialIcons name="cake" size={24} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Age"
+              keyboardType="numeric"
+              value={age}
+              onChangeText={validateAgeInput}
+            />
+          </View>
 
           <Select
-            inputLabel="Select Location"
+            inputLabel="Location"
             selectItems={locations.map((location) => ({
               label: location,
               value: location,
@@ -163,6 +169,8 @@ const ProfileDetailsScreen = () => {
             setSelectedItem={(item) =>
               setSelectedLocation(item.value as string)
             }
+            selectItemsContainerStyle={styles.selectItemContainer}
+            selectedItemStyle={styles.input}
           />
 
           {isSaving ? (
@@ -214,6 +222,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     padding: 20,
+    paddingBottom: 30,
   },
   loadingContainer: {
     flex: 1,
@@ -224,20 +233,49 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+  },
+  profileImageContainer: {
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: Colors.primary,
+    borderWidth: 0.5,
+    borderRadius: 12,
+    padding: 5,
+    marginBottom: 15,
+    marginTop: 15,
+  },
+  selectItemContainer: {
+    borderColor: Colors.primary,
+    borderWidth: 0.5,
+    borderRadius: 12,
+    padding: 5,
+    marginBottom: 5,
+    marginTop: 5,
   },
   input: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-    fontSize: 16,
+    flex: 1,
+    height: 40,
+    fontSize: 14,
+    color: '#333',
+  },
+  inputIcon: {
+    marginRight: 10,
+    color: Colors.secondary,
   },
   saveButton: {
-    marginTop: 20,
+    marginTop: 30,
     backgroundColor: Colors.primary,
-    borderRadius: 4,
+    borderRadius: 8,
+    alignItems: 'center',
     fontWeight: 'bold',
     color: Colors.secondary,
   },
@@ -246,25 +284,26 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalIcon: {
+    marginBottom: 20,
     alignSelf: 'center',
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.primary,
-    marginVertical: 10,
+    marginBottom: 5,
     textAlign: 'center',
   },
   modalMessage: {
-    fontSize: 12,
+    fontSize: 14,
     textAlign: 'center',
     color: '#727374',
     marginBottom: 20,
   },
   doneButton: {
     backgroundColor: Colors.primary,
+    borderRadius: 4,
     color: Colors.secondary,
     fontWeight: 'bold',
-    borderRadius: 4,
   },
 });

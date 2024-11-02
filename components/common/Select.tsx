@@ -11,6 +11,7 @@ import {
 
 import CModal from './CModal';
 import Divider from './Divider';
+import { Colors } from '@/constants/Colors'; 
 
 import { Record } from '@/lib/types';
 
@@ -108,9 +109,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 12,
     paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: '#B0C4DE',
-    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: Colors.primary,
+    borderRadius: 12,
     color: '#9EA0A4',
     justifyContent: 'space-between',
     alignItems: 'center',
