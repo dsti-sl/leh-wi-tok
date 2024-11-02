@@ -10,6 +10,8 @@ const useSeekHelp = () => {
   const [helpTypes, setHelpTypes] = useState<Record[] | null>(null);
   const [selectedHelpType, setSelectedHelpType] = useState<Record>({});
   const [helpDescription, setHelpDescription] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
   useEffect(() => {
     if (helpReasons) return;
@@ -23,6 +25,38 @@ const useSeekHelp = () => {
     setHelpTypes(types);
   }, []);
 
+  const isHelpRequestFormValid = () => {
+    return selectedReason && selectedHelpType && helpDescription.length > 0;
+  };
+
+  const submitHelpRequest = async () => {
+    if (!isHelpRequestFormValid()) return;
+
+    setLoading(true);
+    const data = {
+      reason: selectedReason.value,
+      type: selectedHelpType.value,
+      description: helpDescription,
+    };
+    try {
+      // call some request hook
+      // await some request
+      console.log('DATA...    ', data);
+      // Call some alert hook
+    } catch (error) {
+      // handle errors
+      // Call some alert hook
+    } finally {
+      // clean up
+      // Mocked response
+      setTimeout(() => {
+        setLoading(false);
+        console.log('Help request submitted successfully');
+        setIsSubmitted(true);
+      }, 5000);
+    }
+  };
+
   return {
     helpReasons,
     selectedReason,
@@ -32,6 +66,10 @@ const useSeekHelp = () => {
     setSelectedHelpType,
     helpDescription,
     setHelpDescription,
+    loading,
+    submitHelpRequest,
+    isSubmitted,
+    setIsSubmitted,
   };
 };
 
