@@ -41,6 +41,7 @@ export default function RootLayout() {
       <Stack.Screen name="+not-found" />
       <Stack.Screen name="otpscreen" options={{ headerShown: false }} />
       <Stack.Screen name="signup" options={{ headerShown: false }} />
+      <Stack.Screen name="preferences" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -66,7 +66,7 @@ const OtpScreen = () => {
           'Success',
           `OTP verified successfully for ${isSignIn ? 'Sign In' : 'Sign Up'}!`,
         );
-        isSignIn ? router.replace('/home') : router.replace('/');
+        isSignIn ? router.replace('/home') : router.replace('/preferences');
       } else {
         setError(data.message || 'Invalid OTP. Please try again.');
       }
@@ -170,7 +170,7 @@ const OtpScreen = () => {
         ) : (
           <C_Button
             title="Confirm OTP"
-            onPress={handleVerifyOtp}
+            onPress={() => router.push('/preferences')}
             buttonStyle={styles.verifyOtpButton}
           />
         )}
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   verifyOtpButton: {
-    backgroundColor: '#004D40',
+    backgroundColor: Colors.primary,
     borderRadius: 4,
     alignItems: 'center',
     color: Colors.secondary,

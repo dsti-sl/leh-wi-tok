@@ -161,7 +161,14 @@ const SignInScreen = () => {
       ) : (
         <C_Button
           title="Request OTP"
-          onPress={handleRequestOTP}
+          onPress={() => {
+            const validationError = validatePhoneNumber();
+            if (!validationError) {
+              router.push(
+                `/otpscreen?phoneNumber=${phoneNumber}&isSignIn=true`,
+              );
+            }
+          }}
           buttonStyle={styles.requestOtpButton}
         />
       )}
@@ -273,7 +280,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   requestOtpButton: {
-    backgroundColor: '#004D40',
+    backgroundColor: Colors.primary,
     borderRadius: 4,
     alignItems: 'center',
     color: Colors.secondary,

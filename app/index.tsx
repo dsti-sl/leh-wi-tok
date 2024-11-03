@@ -13,7 +13,7 @@ import {
   StatusBar,
 } from 'react-native';
 
-import slidesData from '../utils/OnboardingData.json';
+import slidesData from '../constants/OnboardingData.json';
 
 import { Colors } from '@/constants/Colors';
 
@@ -58,7 +58,9 @@ const Onboarding = () => {
     handleCompleteOnboarding();
   };
 
-  const onMomentumScrollEnd = (event) => {
+  const onMomentumScrollEnd = (event: {
+    nativeEvent: { contentOffset: { x: number } };
+  }) => {
     const newIndex = Math.round(event.nativeEvent.contentOffset.x / width);
     setCurrentIndex(newIndex);
 
@@ -67,7 +69,7 @@ const Onboarding = () => {
     }
   };
 
-  const getImageSource = (imagePath) => {
+  const getImageSource = (imagePath: any) => {
     switch (imagePath) {
       case '../assets/images/SlideImg1.png':
         return require('../assets/images/SlideImg1.png');
@@ -94,7 +96,7 @@ const Onboarding = () => {
     </View>
   );
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }): React.JSX.Element => (
     <View style={styles.slide}>
       <Image source={getImageSource(item.image)} style={styles.image} />
       <Text style={styles.title}>{item.title}</Text>
