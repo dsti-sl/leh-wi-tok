@@ -1,3 +1,5 @@
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   View,
@@ -11,14 +13,13 @@ import {
   StyleSheet,
   Text,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+
 import ProfileImagePicker from '@/components/account/ImageUpload';
-import Select from '@/components/common/Select';
 import C_Button from '@/components/common/Button';
 import CModal from '@/components/common/CModal';
-import useLocationGrades from '@/hooks/useLocationGrades';
+import Select from '@/components/common/Select';
 import { Colors } from '@/constants/Colors';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import useLocationGrades from '@/hooks/useLocationGrades';
 
 const SAVE_PROFILE_API_ENDPOINT = 'https://example.com/api/save-profile';
 
@@ -114,10 +115,12 @@ const ProfileDetailsScreen = () => {
         style={styles.keyboardContainer}
       >
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <ProfileImagePicker
-            profileImage={profileImage}
-            setProfileImage={setProfileImage}
-          />
+          <View style={styles.profileImageContainer}>
+            <ProfileImagePicker
+              profileImage={profileImage}
+              setProfileImage={setProfileImage}
+            />
+          </View>
 
           <View style={styles.inputContainer}>
             <Ionicons name="at-outline" size={24} style={styles.inputIcon} />
@@ -242,6 +245,7 @@ const styles = StyleSheet.create({
   profileImageContainer: {
     alignSelf: 'center',
     marginBottom: 20,
+    marginTop: 20,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -250,8 +254,8 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderRadius: 12,
     padding: 5,
-    marginBottom: 15,
-    marginTop: 15,
+    marginBottom: 20,
+    marginTop: 20,
   },
   selectItemContainer: {
     borderColor: Colors.primary,

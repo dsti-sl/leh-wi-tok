@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+
 import gradesLocationsData from '../constants/LocationClass.json';
 
 interface UseLoadDataResult {

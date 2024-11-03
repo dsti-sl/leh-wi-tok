@@ -1,14 +1,8 @@
-import React from 'react';
-import {
-  TouchableOpacity,
-  Image,
-  Text,
-  StyleSheet,
-  View,
-  Alert,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import React from 'react';
+import { TouchableOpacity, Image, StyleSheet, View, Alert } from 'react-native';
+
 import { Colors } from '@/constants/Colors';
 
 interface ProfileImagePickerProps {

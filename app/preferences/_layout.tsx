@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
+
 import { Colors } from '@/constants/Colors';
 
 const _layout = () => {
@@ -34,14 +35,12 @@ export default _layout;
 const styles = StyleSheet.create({
   headerTitleContainer: {
     flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1, // Ensure it stretches to center the content
   },
   headerTitleText: {
-    color: '#fff', // Adjusted for better visibility
+    color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
-    textAlign: 'center',
   },
 });

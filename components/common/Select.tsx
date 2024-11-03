@@ -11,8 +11,8 @@ import {
 
 import CModal from './CModal';
 import Divider from './Divider';
-import { Colors } from '@/constants/Colors'; 
 
+import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
 
 interface SelectProps {
