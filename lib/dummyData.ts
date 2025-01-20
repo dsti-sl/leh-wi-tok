@@ -92,3 +92,30 @@ export const getDummyLessons = async (size: number = 60) => {
 
   return await Promise.all(tutorialsData);
 };
+
+export const getLevelLessons = async (level: string) => {
+  const videoUrls = [
+    'https://www.w3schools.com/html/mov_bbb.mp4',
+    'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4',
+    'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+  ];
+
+  const lessonTitles = {
+    Beginner: ['Introduction', 'Alphabets', 'Numbers', 'Colors', 'Greetings'],
+    'Basic Elementary': ['Family', 'Food', 'Animals', 'Weather', 'Time'],
+    Intermediate: ['Emotions', 'Travel', 'Health', 'Work', 'Hobbies'],
+    Advanced: ['Politics', 'Science', 'Technology', 'Literature', 'Philosophy'],
+  };
+
+  const titles = lessonTitles[level as keyof typeof lessonTitles] || [];
+
+  return titles.map((title, index) => ({
+    id: index + 1,
+    title,
+    duration: `${Math.floor(Math.random() * 10) + 2} Min ${Math.floor(Math.random() * 50) + 10} Sec`,
+    video: videoUrls[Math.floor(Math.random() * videoUrls.length)],
+    locked: index !== 0,
+    completed: index === 0,
+    progress: index === 0 ? 100 : 0,
+  }));
+};
