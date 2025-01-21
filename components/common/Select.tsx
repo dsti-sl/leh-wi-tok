@@ -7,6 +7,7 @@ import {
   View,
   Text,
   ViewStyle,
+  TextStyle,
 } from 'react-native';
 
 import CModal from './CModal';
@@ -25,6 +26,8 @@ interface SelectProps {
   setSelectedItem: (_item: Record) => void;
   selectedItemStyle?: ViewStyle;
   selectItemsContainerStyle?: ViewStyle;
+  selectContainer?: ViewStyle;
+  placeholderStyle?: TextStyle;
   showDivider?: boolean;
   divider?: React.ReactNode;
 }
@@ -38,12 +41,14 @@ const Select: React.FC<SelectProps> = ({
   setSelectedItem,
   selectedItemStyle = styles.selectItemStyle,
   selectItemsContainerStyle,
+  selectContainer = {},
+  placeholderStyle = {},
   showDivider = true,
   divider = <Divider />,
 }) => {
   const [openModal, setOpenModal] = useState(false);
   return (
-    <View>
+    <View style={[styles.container, selectContainer]}>
       {/* Select label */}
       <Text>{inputLabel}</Text>
 
@@ -52,11 +57,13 @@ const Select: React.FC<SelectProps> = ({
         onPress={() => setOpenModal(true)}
         style={styles.selectField}
       >
-        <Text>
-          {!selectedItem[valueField]
-            ? placeholder
-            : (selectedItem[valueField] as string)}
-        </Text>
+        {!selectedItem[valueField] ? (
+          <Text style={[styles.placeholderStyle, placeholderStyle]}>
+            {placeholder}
+          </Text>
+        ) : (
+          <Text>{selectedItem[valueField] as string}</Text>
+        )}
         <Ionicons name="chevron-down" size={24} style={{ paddingLeft: 10 }} />
       </TouchableOpacity>
 
@@ -101,6 +108,9 @@ const Select: React.FC<SelectProps> = ({
 export default Select;
 
 const styles = StyleSheet.create({
+  container: {
+    gap: 5,
+  },
   selectItemStyle: {
     backgroundColor: '#F5F5F5',
   },
@@ -123,5 +133,8 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 16,
     color: '#333',
+  },
+  placeholderStyle: {
+    opacity: 0.3,
   },
 });

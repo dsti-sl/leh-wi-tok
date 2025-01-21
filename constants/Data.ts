@@ -12,3 +12,16 @@ export const HELP_SEEKING_REASONS = [
   'Participating in deaf community events',
   'Supporting deaf and hard-of-hearing individuals',
 ];
+
+export const HELP_SEEKING_TYPES = [
+  'Sign Language Dictionary',
+  'Learning Modules',
+  'Real-Time Translation',
+  'Practice and Review Tools',
+  'Community and Social Features',
+  'Games and Interactive Content',
+  'Speech-to-Text Support',
+  'Accessibility and Customization',
+  'Cultural and Regional Variants',
+  'Voice Narration and Closed Captioning',
+];

@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "cover",
@@ -14,22 +15,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "infoPlist": { 
+      "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Le Wi Tok access "
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#0F4C5C", 
-        "permissions": [
-          "CAMERA", 
-          "READ_ExTERNAL_STORAGE"
-        ],
-        "PermissionDescription": {
-          "READ_ExTERNAL_STORAGE": "Le Wi Tok accesses the camera and photo liberary of you image."
-        }
-      }
+        "backgroundColor": "#0F4C5C"
+      },
+      "permissions": ["CAMERA", "READ_ExTERNAL_STORAGE"]
     },
     "web": {
       "bundler": "metro",
@@ -38,7 +33,15 @@
     },
     "plugins": [
       "expo-router",
-      "expo-image-picker"
+      "expo-image-picker",
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
