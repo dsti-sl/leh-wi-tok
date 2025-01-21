@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -23,6 +24,9 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
           totalLesson={(progressSummary['Beginner'] as Record).total as number}
           onPress={() => {
             console.log('Beginners');
+            router.push(
+              `/(tabs)/lessons/level/${(progressSummary['Beginner'] as Record).title}`,
+            );
           }}
           backgroundColor="#3e585e"
         />
