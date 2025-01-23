@@ -10,7 +10,6 @@ const index = () => {
   const { helpReasons, selectedReason, setSelectedReason } = useSeekHelp();
   return (
     <View style={styles.container}>
-      {/* Header text */}
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Find volunteers</Text>
         <Text style={styles.headerTxt}>
@@ -18,8 +17,6 @@ const index = () => {
           blah
         </Text>
       </View>
-
-      {/* Forms fields */}
       <View style={styles.formContainer}>
         <Select
           inputLabel="Reason"
