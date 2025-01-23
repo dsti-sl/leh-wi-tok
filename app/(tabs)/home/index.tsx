@@ -2,9 +2,9 @@ import React from 'react';
 import { ImageSourcePropType, StyleSheet, View } from 'react-native';
 
 import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
+import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
 import questionMarkCircular from '../../../assets/images/question-mark-circular.png';
 import usersOutlineFillSeconday from '../../../assets/images/users-outline-fill-secondary.png';
-import volunteerOutlineFillSecondary from '../../../assets/images/volunteer-outline-fill-secondary.png';
 
 import { HomeBanner } from '@/components/home/HomeBanner';
 import HomeItem from '@/components/home/HomeItem';

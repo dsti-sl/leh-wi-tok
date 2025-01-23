@@ -21,4 +21,5 @@ expo-env.d.ts
 
 # Others
 tmp/
+temp/
 .env
