@@ -17,9 +17,6 @@ import {
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 
-const VERIFY_OTP_API_ENDPOINT = 'https://example.com/api/verify-otp';
-const RESEND_OTP_API_ENDPOINT = 'https://example.com/api/resend-otp';
-
 const OtpScreen = () => {
   const { isSignIn = true, phoneNumber = '' } = useLocalSearchParams();
 
@@ -27,6 +24,7 @@ const OtpScreen = () => {
   const [error, setError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   // Refs for each input field
   const inputRefs = useRef<(TextInput | null)[]>(
@@ -39,7 +37,7 @@ const OtpScreen = () => {
     if (!/^\d+$/.test(otpValue)) return 'OTP can only contain digits';
     return '';
   };
-
+  console.log('phoneNumber', phoneNumber);
   const handleVerifyOtp = async () => {
     const validationError = validateOtp();
     if (validationError) {
@@ -50,13 +48,18 @@ const OtpScreen = () => {
     setError('');
     setIsVerifying(true);
 
+    const verifiedData = {
+      user: phoneNumber,
+      verificationCode: otp.join(''),
+    };
+
     try {
-      const response = await fetch(VERIFY_OTP_API_ENDPOINT, {
+      const response = await fetch(`${BASE_URL}/user/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phoneNumber, otp: otp.join('') }),
+        body: JSON.stringify(verifiedData),
       });
 
       const data = await response.json();
@@ -70,9 +73,10 @@ const OtpScreen = () => {
       } else {
         setError(data.message || 'Invalid OTP. Please try again.');
       }
-    } catch {
+    } catch (error: any) {
       setError(
-        'Network error: Unable to verify OTP. Please check your connection.',
+        error.errors[0].detail ||
+          'Network error: Unable to verify OTP. Please check your connection.',
       );
     } finally {
       setIsVerifying(false);
@@ -84,24 +88,26 @@ const OtpScreen = () => {
     setError('');
 
     try {
-      const response = await fetch(RESEND_OTP_API_ENDPOINT, {
+      const response = await fetch(`${BASE_URL}/user/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify({ user: phoneNumber }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         Alert.alert('Success', 'A new OTP has been sent to your phone.');
+        //localStorage.setItem('token', data[0].token);
       } else {
         setError(data.message || 'Failed to resend OTP. Please try again.');
       }
     } catch {
-      setError(
-        'Network error: Unable to resend OTP. Please check your connection.',
+      Alert.alert(
+        'Registration Error',
+        error.errors[0].detail || 'Please try again.',
       );
     } finally {
       setIsResending(false);
@@ -170,7 +176,8 @@ const OtpScreen = () => {
         ) : (
           <C_Button
             title="Confirm OTP"
-            onPress={() => router.push('/preferences')}
+            // onPress={() => router.push('/preferences')}
+            onPress={handleVerifyOtp}
             buttonStyle={styles.verifyOtpButton}
           />
         )}
