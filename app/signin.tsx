@@ -19,13 +19,14 @@ import {
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 
-const SIGN_IN_API_ENDPOINT = 'https://example.com/api/request-otp';
+const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
 const OAUTH_ENDPOINTS = {
   google: 'https://example.com/oauth/google',
   facebook: 'https://example.com/oauth/facebook',
   twitter: 'https://example.com/oauth/twitter',
 };
-
+console.log('BASE_URL', BASE_URL);
 const SignInScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
@@ -51,12 +52,12 @@ const SignInScreen = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(SIGN_IN_API_ENDPOINT, {
+      const response = await fetch(`${BASE_URL}/user/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify({ user: phoneNumber }),
       });
 
       const data = await response.json();
