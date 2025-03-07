@@ -14,6 +14,7 @@ import HandShake from '../../assets/images/Handshake.png';
 
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
+import { getFirstWord } from '@/utils';
 
 interface BannerProps {
   user: Record;
@@ -23,7 +24,9 @@ export const HomeBanner = ({ user }: BannerProps) => {
     <View style={styles.container}>
       <View style={styles.contentContainer}>
         <View style={styles.userWelcomeContainer}>
-          <Text style={styles.userTxt}>Hello, {user.firstName as string}</Text>
+          <Text
+            style={styles.userTxt}
+          >{`Hello ${getFirstWord(user.name)}`}</Text>
           <Image
             source={HandShake as ImageSourcePropType}
             style={styles.imageStyles}

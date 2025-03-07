@@ -47,7 +47,6 @@ const SignInScreen = () => {
       setError(validationError);
       return;
     }
-
     setError('');
     setIsLoading(true);
 
@@ -162,14 +161,15 @@ const SignInScreen = () => {
       ) : (
         <C_Button
           title="Request OTP"
-          onPress={() => {
-            const validationError = validatePhoneNumber();
-            if (!validationError) {
-              router.push(
-                `/otpscreen?phoneNumber=${phoneNumber}&isSignIn=true`,
-              );
-            }
-          }}
+          // onPress={() => {
+          //   const validationError = validatePhoneNumber();
+          //   if (!validationError) {
+          //     router.push(
+          //       `/otpscreen?phoneNumber=${phoneNumber}&isSignIn=true`,
+          //     );
+          //   }
+          // }}
+          onPress={handleRequestOTP}
           buttonStyle={styles.requestOtpButton}
         />
       )}

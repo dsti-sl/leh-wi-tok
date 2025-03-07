@@ -1,5 +1,11 @@
-import React from 'react';
-import { ImageSourcePropType, StyleSheet, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  ImageSourcePropType,
+  ActivityIndicator,
+  StyleSheet,
+  View,
+  Text,
+} from 'react-native';
 
 import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
 import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
@@ -13,13 +19,48 @@ import useTutorials from '@/hooks/useTutorials';
 import { Record } from '@/lib/types';
 
 const index = () => {
-  const { defaultTutorial, user } = useTutorials();
+  const { defaultTutorial } = useTutorials();
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
-  if (!user) return;
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`${BASE_URL}/user/me`);
+        const data = await response.json();
+        console.log('data', data);
+        if (response.ok) {
+          setUser(data.data[0]);
+          console.log('user', data.data[0]);
+        } else {
+          console.error('Failed to fetch user details:', data.meta.message);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserDetails();
+  }, [BASE_URL]);
+
+  console.log('user', user);
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       {/* Banner */}
-      <HomeBanner user={user as Record} />
+      {/* <HomeBanner user={user} /> */}
+      {user && <HomeBanner user={user} />}
 
       {/* Video container */}
       {defaultTutorial && (
@@ -67,6 +108,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   itemsContainer: {
