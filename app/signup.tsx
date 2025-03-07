@@ -29,6 +29,7 @@ const SignUpScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   // Validation form function
   const validateForm = () => {
@@ -42,15 +43,63 @@ const SignUpScreen = () => {
     return '';
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    setError('');
-    router.push(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=false`);
+    const userData = {
+      name: fullName,
+      phone: phoneNumber,
+      user: phoneNumber,
+    };
+
+    try {
+      const registerResponse = await fetch(`${BASE_URL}/user/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const registerData = await registerResponse.json();
+
+      if (registerResponse.ok) {
+        const loginResponse = await fetch(`${BASE_URL}/user/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ user: phoneNumber }),
+        });
+
+        const loginData = await loginResponse.json();
+
+        if (loginResponse.ok) {
+          Alert.alert('Success', loginData.meta.message);
+          router.push(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=false`);
+        } else {
+          setError(
+            loginData.meta.message ||
+              'Failed to request OTP. Please try again.',
+          );
+        }
+      } else {
+        Alert.alert(
+          'Registration Error',
+          error.errors[0].detail || 'Failed to register. Please try again.',
+        );
+      }
+    } catch (error: any) {
+      console.log('Error', error);
+      setError(
+        error.errors[0].detail ||
+          'Network error: Unable to verify OTP. Please check your connection.',
+      );
+    }
   };
 
   const handleOAuthSignUp = async (provider: keyof typeof OAUTH_ENDPOINTS) => {
@@ -164,7 +213,8 @@ const SignUpScreen = () => {
 
       <C_Button
         title="Sign up"
-        onPress={() => router.push('/otpscreen')}
+        // onPress={() => router.push('/otpscreen')}
+        onPress={() => handleSignUp()}
         buttonStyle={styles.signupButton}
       />
       <TouchableOpacity
