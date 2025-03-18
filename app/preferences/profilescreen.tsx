@@ -1,5 +1,4 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -34,7 +33,7 @@ const ProfileDetailsScreen = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [locationId, setLocationID] = useState('');
   const router = useRouter();
-  const BASE_URL = Constants.expoConfig?.extra?.API_URL;
+  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   useEffect(() => {
     const fetchUserDetails = async () => {

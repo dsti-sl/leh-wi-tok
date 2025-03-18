@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
@@ -24,7 +23,7 @@ const HomeScreen = () => {
   const { defaultTutorial } = useTutorials();
   const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const BASE_URL = Constants.expoConfig?.extra?.API_URL;
+  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   useEffect(() => {
     const fetchUserDetails = async () => {

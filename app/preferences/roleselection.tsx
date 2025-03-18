@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -20,7 +19,7 @@ const roles = [
   { id: 'parent', label: 'Parent' },
   { id: 'generalUser', label: 'General User' },
 ];
-const BASE_URL = Constants.expoConfig?.extra?.API_URL;
+const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 const RoleSelection = () => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
