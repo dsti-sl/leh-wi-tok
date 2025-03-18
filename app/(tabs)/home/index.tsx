@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
   ImageSourcePropType,
@@ -18,11 +20,11 @@ import InitialVideoCard from '@/components/home/InitialVideoCard';
 import useTutorials from '@/hooks/useTutorials';
 import { Record } from '@/lib/types';
 
-const index = () => {
+const HomeScreen = () => {
   const { defaultTutorial } = useTutorials();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+  const BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -30,10 +32,8 @@ const index = () => {
         setIsLoading(true);
         const response = await fetch(`${BASE_URL}/user/me`);
         const data = await response.json();
-        console.log('data', data);
         if (response.ok) {
           setUser(data.data[0]);
-          console.log('user', data.data[0]);
         } else {
           console.error('Failed to fetch user details:', data.meta.message);
         }
@@ -48,7 +48,15 @@ const index = () => {
   }, [BASE_URL]);
 
   console.log('user', user);
-  if (isLoading) {
+  console.log('BASE_URL', BASE_URL);
+
+  useEffect(() => {
+    if (user && !user.student) {
+      router.replace('/preferences');
+    }
+  }, [user]);
+
+  if (isLoading && !user) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -56,53 +64,57 @@ const index = () => {
       </View>
     );
   }
-  return (
-    <View style={styles.container}>
-      {/* Banner */}
-      {/* <HomeBanner user={user} /> */}
-      {user && <HomeBanner user={user} />}
 
-      {/* Video container */}
-      {defaultTutorial && (
-        <InitialVideoCard defaultTutorial={defaultTutorial as Record} />
-      )}
+  if (user && user.student) {
+    return (
+      <View style={styles.container}>
+        {/* Banner */}
+        {user && <HomeBanner user={user} />}
 
-      {/* Items */}
-      <View style={styles.itemsContainer}>
-        <HomeItem
-          title="Find Help"
-          description="Find help from volunteers who are blah, blah and blah"
-          image={questionMarkCircular as ImageSourcePropType}
-          bgColor="#0d3a46"
-          routeName="/(tabs)/home/help"
-        />
-        <HomeItem
-          title="Beginners Lessons"
-          description="Get Started with our beginners lessons today."
-          image={lessonFillSeconday as ImageSourcePropType}
-          bgColor="#0f4c5c"
-          routeName="/(tabs)/home/help"
-        />
-        <HomeItem
-          title="Common Words"
-          description="Find frequently used words for instant communications "
-          image={usersOutlineFillSeconday as ImageSourcePropType}
-          bgColor="#1e1e1e"
-          routeName="/(tabs)/home/help"
-        />
-        <HomeItem
-          title="Become a Volunteer"
-          description="Join the community of sign language voluteers and be..."
-          image={volunteerOutlineFillSecondary as ImageSourcePropType}
-          bgColor="#1f1f39"
-          routeName="/(tabs)/home/help"
-        />
+        {/* Video container */}
+        {defaultTutorial && (
+          <InitialVideoCard defaultTutorial={defaultTutorial as Record} />
+        )}
+
+        {/* Items */}
+        <View style={styles.itemsContainer}>
+          <HomeItem
+            title="Find Help"
+            description="Find help from volunteers who are blah, blah and blah"
+            image={questionMarkCircular as ImageSourcePropType}
+            bgColor="#0d3a46"
+            routeName="/(tabs)/home/help"
+          />
+          <HomeItem
+            title="Beginners Lessons"
+            description="Get Started with our beginners lessons today."
+            image={lessonFillSeconday as ImageSourcePropType}
+            bgColor="#0f4c5c"
+            routeName="/(tabs)/home/help"
+          />
+          <HomeItem
+            title="Common Words"
+            description="Find frequently used words for instant communications "
+            image={usersOutlineFillSeconday as ImageSourcePropType}
+            bgColor="#1e1e1e"
+            routeName="/(tabs)/home/help"
+          />
+          <HomeItem
+            title="Become a Volunteer"
+            description="Join the community of sign language voluteers and be..."
+            image={volunteerOutlineFillSecondary as ImageSourcePropType}
+            bgColor="#1f1f39"
+            routeName="/(tabs)/home/help"
+          />
+        </View>
       </View>
-    </View>
-  );
+    );
+  }
+
+  return null;
 };
 
-export default index;
+export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {

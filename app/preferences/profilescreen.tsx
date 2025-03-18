@@ -1,6 +1,7 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   TextInput,
@@ -21,8 +22,6 @@ import Select from '@/components/common/Select';
 import { Colors } from '@/constants/Colors';
 import useLocationGrades from '@/hooks/useLocationGrades';
 
-const SAVE_PROFILE_API_ENDPOINT = 'https://example.com/api/save-profile';
-
 const ProfileDetailsScreen = () => {
   const { grades, locations, isLoading, error } = useLocationGrades();
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -31,8 +30,37 @@ const ProfileDetailsScreen = () => {
   const [age, setAge] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading2, setIsLoading2] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [locationId, setLocationID] = useState('');
   const router = useRouter();
+  const BASE_URL = Constants.expoConfig?.extra?.API_URL;
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        setIsLoading2(true);
+        const response = await fetch(
+          `${BASE_URL}/location?name=eq.${selectedLocation}`,
+        );
+        const data = await response.json();
+        if (response.ok) {
+          setLocationID(data.data[0].id);
+        } else {
+          Alert.alert('Failed to fetch user details:');
+        }
+        setIsLoading2(false);
+      } catch (error) {
+        Alert.alert('Error fetching user details:');
+        setIsLoading2(false);
+      }
+    };
+
+    fetchUserDetails();
+  }, [selectedLocation]);
+
+  console.log('locationId =>', locationId);
+  console.log('selectedLocation =>', selectedLocation);
 
   const validateAgeInput = (input: string) => {
     const numericValue = input.replace(/[^0-9]/g, '');
@@ -60,35 +88,35 @@ const ProfileDetailsScreen = () => {
 
     setIsSaving(true);
     const profileDetails = {
-      username,
+      name: username,
       profileImage,
       grade: selectedGrade,
       age,
-      location: selectedLocation,
+      location: locationId,
     };
+    console.log('profileDetails =>', profileDetails);
+    // try {
+    //   const response = await fetch(BASE_URL, {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify(profileDetails),
+    //   });
 
-    try {
-      const response = await fetch(SAVE_PROFILE_API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileDetails),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to save profile details');
-      }
-      setShowSuccessModal(true);
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error.message || 'An error occurred while saving your profile.',
-      );
-    } finally {
-      setIsSaving(false);
-    }
+    //   if (!response.ok) {
+    //     const data = await response.json();
+    //     throw new Error(data.message || 'Failed to save profile details');
+    //   }
+    //   setShowSuccessModal(true);
+    // } catch (error) {
+    //   Alert.alert(
+    //     'Error',
+    //     error.message || 'An error occurred while saving your profile.',
+    //   );
+    // } finally {
+    //   setIsSaving(false);
+    // }
   };
 
   if (isLoading) {
@@ -181,7 +209,8 @@ const ProfileDetailsScreen = () => {
           ) : (
             <C_Button
               title="Save and Continue"
-              onPress={() => setShowSuccessModal(true)}
+              onPress={handleSaveAndContinue}
+              // onPress={() => setShowSuccessModal(true)}
               buttonStyle={styles.saveButton}
             />
           )}
@@ -203,7 +232,8 @@ const ProfileDetailsScreen = () => {
             title="Done"
             onPress={() => {
               setShowSuccessModal(false);
-              router.push('/home');
+
+              // router.push('/home');
             }}
             buttonStyle={styles.doneButton}
           />

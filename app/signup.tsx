@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 
 import C_Button from '@/components/common/Button';
+import { EXPO_PUBLIC_BASE_URL } from '@/config/env';
 import { Colors } from '@/constants/Colors';
 
 const OAUTH_ENDPOINTS = {
@@ -29,7 +30,6 @@ const SignUpScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   // Validation form function
   const validateForm = () => {
@@ -57,24 +57,30 @@ const SignUpScreen = () => {
     };
 
     try {
-      const registerResponse = await fetch(`${BASE_URL}/user/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      const registerData = await registerResponse.json();
-
-      if (registerResponse.ok) {
-        const loginResponse = await fetch(`${BASE_URL}/user/login`, {
+      const registerResponse = await fetch(
+        `${EXPO_PUBLIC_BASE_URL}/user/register`,
+        {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ user: phoneNumber }),
-        });
+          body: JSON.stringify(userData),
+        },
+      );
+
+      await registerResponse.json();
+
+      if (registerResponse.ok) {
+        const loginResponse = await fetch(
+          `${EXPO_PUBLIC_BASE_URL}/user/login`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ user: phoneNumber }),
+          },
+        );
 
         const loginData = await loginResponse.json();
 

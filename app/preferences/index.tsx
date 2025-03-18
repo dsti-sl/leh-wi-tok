@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
@@ -7,38 +8,38 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   Platform,
 } from 'react-native';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
-
-const USER_API_ENDPOINT = 'https://example.com/api/user';
+import { Record } from '@/lib/types';
 
 const welcomeScreen = () => {
   const router = useRouter();
-  const [userFullName, setUserFullName] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<Record | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchUserDetails = async () => {
       try {
-        const response = await fetch(USER_API_ENDPOINT);
+        setIsLoading(true);
+        const response = await fetch(`${BASE_URL}/user/me`);
         const data = await response.json();
         if (response.ok) {
-          setUserFullName(data.fullName || 'User');
+          setUser(data.data[0]);
         } else {
-          Alert.alert('Error', 'Failed to fetch user data.');
+          console.error('Failed to fetch user details:', data?.meta?.message);
         }
+        setIsLoading(false);
       } catch (error) {
-        Alert.alert('Error', 'An error occurred while fetching user data.');
-      } finally {
+        console.error('Error fetching user details:', error);
         setIsLoading(false);
       }
     };
 
-    fetchUserData();
+    fetchUserDetails();
   }, []);
 
   const handleGetStarted = () => {
@@ -61,12 +62,14 @@ const welcomeScreen = () => {
         style={styles.logo}
       />
       <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>Hi! {userFullName} User Fullname</Text>
+        <Text style={styles.welcomeText}>Hi! {user?.name}</Text>
         <Text style={styles.welcomeText}>Welcome to Le Wi Tok</Text>
       </View>
       <C_Button
         title="Let's Get Started"
-        onPress={() => router.push('/preferences/roleselection')}
+        onPress={() =>
+          router.push(`/preferences/roleselection?userId=${user?.id}`)
+        }
         buttonStyle={styles.getStartedButton}
       />
     </View>

@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useRef } from 'react';
@@ -24,7 +25,7 @@ const OtpScreen = () => {
   const [error, setError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+  const BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
   // Refs for each input field
   const inputRefs = useRef<(TextInput | null)[]>(
@@ -69,6 +70,7 @@ const OtpScreen = () => {
           'Success',
           `OTP verified successfully for ${isSignIn ? 'Sign In' : 'Sign Up'}!`,
         );
+        console.log('isSignIn', isSignIn);
         isSignIn ? router.replace('/home') : router.replace('/preferences');
       } else {
         setError(data.message || 'Invalid OTP. Please try again.');
