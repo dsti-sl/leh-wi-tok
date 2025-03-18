@@ -33,8 +33,6 @@ const HomeScreen = () => {
         const data = await response.json();
         if (response.ok) {
           setUser(data.data[0]);
-        } else {
-          console.error('Failed to fetch user details:', data.meta.message);
         }
         setIsLoading(false);
       } catch (error) {

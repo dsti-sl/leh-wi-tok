@@ -45,8 +45,6 @@ const ProfileDetailsScreen = () => {
         const data = await response.json();
         if (response.ok) {
           setLocationID(data.data[0].id);
-        } else {
-          Alert.alert('Failed to fetch user details:');
         }
         setIsLoading2(false);
       } catch (error) {
