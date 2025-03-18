@@ -1,0 +1,53 @@
+export default {
+  expo: {
+    name: 'leh-wi-tok',
+    slug: 'leh-wi-tok',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/images/icon.png',
+    scheme: 'myapp',
+    userInterfaceStyle: 'automatic',
+    newArchEnabled: true,
+    splash: {
+      image: './assets/images/splash.png',
+      resizeMode: 'cover',
+      backgroundColor: '#0F4C5C',
+    },
+    ios: {
+      supportsTablet: true,
+      infoPlist: {
+        NSPhotoLibraryUsageDescription: 'Le Wi Tok access ',
+      },
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: './assets/images/adaptive-icon.png',
+        backgroundColor: '#0F4C5C',
+      },
+      permissions: ['CAMERA', 'READ_ExTERNAL_STORAGE'],
+    },
+    web: {
+      bundler: 'metro',
+      output: 'static',
+      favicon: './assets/images/favicon.png',
+    },
+    plugins: [
+      'expo-router',
+      'expo-image-picker',
+      [
+        'expo-video',
+        {
+          supportsBackgroundPlayback: true,
+          supportsPictureInPicture: true,
+        },
+      ],
+      'expo-font',
+    ],
+    experiments: {
+      typedRoutes: true,
+    },
+    extra: {
+      API_URL: process.env.API_URL || 'http://localhost:5173/api',
+    },
+  },
+};

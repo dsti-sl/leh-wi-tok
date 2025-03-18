@@ -19,14 +19,11 @@ import {
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 
-const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
-
 const OAUTH_ENDPOINTS = {
   google: 'https://example.com/oauth/google',
   facebook: 'https://example.com/oauth/facebook',
   twitter: 'https://example.com/oauth/twitter',
 };
-console.log('BASE_URL', BASE_URL);
 const SignInScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
@@ -40,8 +37,9 @@ const SignInScreen = () => {
       return 'Phone number must be between 9 and 12 digits';
     return '';
   };
-
+  const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
   const handleRequestOTP = async () => {
+    console.log('data =>', EXPO_PUBLIC_BASE_URL);
     const validationError = validatePhoneNumber();
     if (validationError) {
       setError(validationError);
@@ -49,9 +47,8 @@ const SignInScreen = () => {
     }
     setError('');
     setIsLoading(true);
-
     try {
-      const response = await fetch(`${BASE_URL}/user/login`, {
+      const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

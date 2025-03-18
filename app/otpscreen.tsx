@@ -69,6 +69,7 @@ const OtpScreen = () => {
           'Success',
           `OTP verified successfully for ${isSignIn ? 'Sign In' : 'Sign Up'}!`,
         );
+        console.log('isSignIn', isSignIn);
         isSignIn ? router.replace('/home') : router.replace('/preferences');
       } else {
         setError(data.message || 'Invalid OTP. Please try again.');

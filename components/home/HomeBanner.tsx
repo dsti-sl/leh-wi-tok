@@ -26,7 +26,7 @@ export const HomeBanner = ({ user }: BannerProps) => {
         <View style={styles.userWelcomeContainer}>
           <Text
             style={styles.userTxt}
-          >{`Hello ${getFirstWord(user.name)}`}</Text>
+          >{`Hello ${getFirstWord(user?.name)}`}</Text>
           <Image
             source={HandShake as ImageSourcePropType}
             style={styles.imageStyles}

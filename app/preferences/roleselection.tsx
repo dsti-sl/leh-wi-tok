@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
   View,
@@ -18,16 +19,42 @@ const roles = [
   { id: 'parent', label: 'Parent' },
   { id: 'generalUser', label: 'General User' },
 ];
-
-const ROLE_API_ENDPOINT = 'https://example.com/api/user/role';
+const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 const RoleSelection = () => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { userId } = useLocalSearchParams();
 
   const handleRoleSelect = (role: string) => {
     setSelectedRole(role);
+  };
+
+  const updateRole = async (role: string) => {
+    const roleUpdate =
+      role === 'student' ? { student: true } : { teacher: true };
+    try {
+      const response = await fetch(`${BASE_URL}/user?id=${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(roleUpdate),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Success', 'Role updated successfully!');
+        router.push(`/preferences/profilescreen?userId=${userId}`);
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error.message || 'An error occurred while updating your role.',
+      );
+    }
   };
 
   const handleNext = async () => {
@@ -35,31 +62,9 @@ const RoleSelection = () => {
       Alert.alert('Error', 'Please select a role before proceeding.');
       return;
     }
-
     setIsLoading(true);
-
     try {
-      const response = await fetch(ROLE_API_ENDPOINT, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ role: selectedRole }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Success', 'Role updated successfully!');
-        router.push('/preferences/profilescreen');
-      } else {
-        throw new Error(data.message || 'Failed to update role');
-      }
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error.message || 'An error occurred while updating your role.',
-      );
+      await updateRole(selectedRole);
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +107,8 @@ const RoleSelection = () => {
       </View>
       <C_Button
         title="Next"
-        onPress={() => router.push('/preferences/profilescreen')}
+        onPress={handleNext}
+        loadingIndicator={isLoading}
         buttonStyle={styles.nextButton}
       />
     </View>
