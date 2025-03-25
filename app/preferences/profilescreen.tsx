@@ -206,7 +206,10 @@ const ProfileDetailsScreen = () => {
           ) : (
             <C_Button
               title="Save and Continue"
-              onPress={handleSaveAndContinue}
+              onPress={() => {
+                router.push('/(tabs)/dictionary');
+              }}
+              //onPress={handleSaveAndContinue}
               // onPress={() => setShowSuccessModal(true)}
               buttonStyle={styles.saveButton}
             />
