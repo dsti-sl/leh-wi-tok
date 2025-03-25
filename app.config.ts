@@ -42,6 +42,14 @@ export default {
         },
       ],
       'expo-font',
+      'expo-font',
+      [
+        'expo-sqlite',
+        {
+          enableFTS: true,
+          useSQLCipher: false,
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,
