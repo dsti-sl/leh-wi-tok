@@ -30,7 +30,7 @@ export const initializeDatabase = async (): Promise<void> => {
   }
 };
 
-// This function here is to get the database instance.
+// Downn here is to get the database instance.
 // But this will only work after the database has been initialized.
 export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
   if (!db) {
