@@ -23,7 +23,7 @@ export default function RootLayout() {
   */
 
   useEffect(() => {
-    initializeDatabase();
+    initializeDatabase(); 
     StatusBar.setBarStyle('light-content');
     if (loaded) {
       SplashScreen.hideAsync();
