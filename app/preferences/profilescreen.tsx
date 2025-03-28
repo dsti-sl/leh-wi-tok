@@ -24,7 +24,6 @@ import useLocationGrades from '@/hooks/useLocationGrades';
 const ProfileDetailsScreen = () => {
   const { grades, locations, isLoading, error } = useLocationGrades();
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [username, setUsername] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [age, setAge] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -89,12 +88,6 @@ const ProfileDetailsScreen = () => {
       return;
     }
     setAge(numericValue);
-  };
-
-  const handleUsernameChange = (text: string) => {
-    let formattedText = text.replace(/[^a-z0-9_]/g, '');
-    formattedText = formattedText.toLowerCase();
-    return formattedText;
   };
 
   const handleSaveAndContinue = async () => {
@@ -169,7 +162,7 @@ const ProfileDetailsScreen = () => {
     return response.json();
   };
 
-  if (isLoading) {
+  if (isLoading || isLoading2) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -262,11 +255,7 @@ const ProfileDetailsScreen = () => {
           ) : (
             <C_Button
               title="Save and Continue"
-              onPress={() => {
-                router.push('/(tabs)/dictionary');
-              }}
-              //onPress={handleSaveAndContinue}
-              // onPress={() => setShowSuccessModal(true)}
+              onPress={handleSaveAndContinue}
               buttonStyle={styles.saveButton}
             />
           )}
