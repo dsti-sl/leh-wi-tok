@@ -128,7 +128,9 @@ const ProfileDetailsScreen = () => {
     } catch (error) {
       Alert.alert(
         'Error',
-        error.message || 'An error occurred while saving your profile.',
+        error instanceof Error
+          ? error.message
+          : 'An error occurred while saving your profile.',
       );
     } finally {
       setIsSaving(false);
@@ -198,7 +200,7 @@ const ProfileDetailsScreen = () => {
             <TextInput
               style={styles.input}
               placeholder="Username"
-              value={name}
+              value={typeof name === 'string' ? name : ''}
               disableFullscreenUI={true}
               autoCapitalize="none"
               showSoftInputOnFocus={false} // Prevents keyboard from showing
