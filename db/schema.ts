@@ -37,6 +37,7 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
     db = await SQLite.openDatabaseAsync('le-wi-tok.db');
   }
   return db;
+  console.log('Database', db);
 };
 
 export default getDatabase;

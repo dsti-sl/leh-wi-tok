@@ -5,6 +5,8 @@ import React, { useEffect } from 'react';
 import 'react-native-reanimated';
 import { StatusBar } from 'react-native';
 import { initializeDatabase } from '@/db/schema';
+import { getDatabase } from '@/db/schema';
+//import { deleteAllEntries } from '@/utils/deleteEntries';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -23,7 +25,8 @@ export default function RootLayout() {
   */
 
   useEffect(() => {
-    initializeDatabase(); 
+    initializeDatabase();
+    console.log('Database', getDatabase.toString());
     StatusBar.setBarStyle('light-content');
     if (loaded) {
       SplashScreen.hideAsync();
@@ -34,6 +37,18 @@ export default function RootLayout() {
     return null;
   }
 
+  /* Warning!! 
+    * This function should all be called if one needs to delete all entries
+    * So becareful.... 
+  
+  const runFreshTest = async () => {
+    console.log('Deleting all entries and reseting ids...');
+    await deleteAllEntries();
+
+    console.log('Running fresh entries...');
+  };
+  runFreshTest();
+*/
   return (
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
