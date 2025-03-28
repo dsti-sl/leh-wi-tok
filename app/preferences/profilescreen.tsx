@@ -1,5 +1,5 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -24,7 +24,6 @@ import useLocationGrades from '@/hooks/useLocationGrades';
 const ProfileDetailsScreen = () => {
   const { grades, locations, isLoading, error } = useLocationGrades();
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [username, setUsername] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [age, setAge] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -32,7 +31,9 @@ const ProfileDetailsScreen = () => {
   const [isLoading2, setIsLoading2] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [locationId, setLocationID] = useState('');
+  const [gradeID, setGradeID] = useState('');
   const router = useRouter();
+  const { userId, name } = useLocalSearchParams();
   const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   useEffect(() => {
@@ -56,8 +57,26 @@ const ProfileDetailsScreen = () => {
     fetchUserDetails();
   }, [selectedLocation]);
 
-  console.log('locationId =>', locationId);
-  console.log('selectedLocation =>', selectedLocation);
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        setIsLoading2(true);
+        const response = await fetch(
+          `${BASE_URL}/tag?title=eq.${selectedGrade}`,
+        );
+        const data = await response.json();
+        if (response.ok) {
+          setGradeID(data.data[0].id);
+        }
+        setIsLoading2(false);
+      } catch (error) {
+        Alert.alert('Error fetching user details:');
+        setIsLoading2(false);
+      }
+    };
+
+    fetchUserDetails();
+  }, [selectedGrade]);
 
   const validateAgeInput = (input: string) => {
     const numericValue = input.replace(/[^0-9]/g, '');
@@ -71,52 +90,79 @@ const ProfileDetailsScreen = () => {
     setAge(numericValue);
   };
 
-  const handleUsernameChange = (text: string) => {
-    let formattedText = text.replace(/[^a-z0-9_]/g, '');
-    formattedText = formattedText.toLowerCase();
-    return formattedText;
-  };
-
   const handleSaveAndContinue = async () => {
-    if (!username || !selectedGrade || !age || !selectedLocation) {
-      Alert.alert('Error', 'Please fill out all fields before continuing.');
-      return;
+    if (!name || !selectedGrade || !age || !selectedLocation) {
+      return Alert.alert(
+        'Error',
+        'Please fill out all fields before continuing.',
+      );
     }
 
     setIsSaving(true);
-    const profileDetails = {
-      name: username,
-      profileImage,
-      grade: selectedGrade,
-      age,
-      location: locationId,
-    };
-    console.log('profileDetails =>', profileDetails);
-    // try {
-    //   const response = await fetch(BASE_URL, {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify(profileDetails),
-    //   });
 
-    //   if (!response.ok) {
-    //     const data = await response.json();
-    //     throw new Error(data.message || 'Failed to save profile details');
-    //   }
-    //   setShowSuccessModal(true);
-    // } catch (error) {
-    //   Alert.alert(
-    //     'Error',
-    //     error.message || 'An error occurred while saving your profile.',
-    //   );
-    // } finally {
-    //   setIsSaving(false);
-    // }
+    try {
+      const profileImageData = {
+        contentType: 'image/jpeg',
+        userId,
+        path: profileImage,
+        name: `${name}_profile-pic.jpg`,
+        size: 1024000,
+      };
+
+      const uploadResponse = await uploadProfileImage(profileImageData);
+      if (!uploadResponse?.data?.[0]?.id) {
+        throw new Error('Profile image upload failed.');
+      }
+
+      const profileDetails = {
+        handle: name,
+        pictureId: uploadResponse.data[0].id,
+        tags: [gradeID],
+        age: parseInt(age),
+        locationId,
+      };
+
+      await updateUserProfile(profileDetails);
+      setShowSuccessModal(true);
+      router.push('/home');
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error.message || 'An error occurred while saving your profile.',
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  if (isLoading) {
+  // API Helper Functions
+  const uploadProfileImage = async (profileImageData: unknown) => {
+    const response = await fetch(`${BASE_URL}/file`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profileImageData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to upload profile image.');
+    }
+    return response.json();
+  };
+
+  const updateUserProfile = async (profileInfo: unknown) => {
+    const response = await fetch(`${BASE_URL}/user?id=${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profileInfo),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update profile details.');
+    }
+    return response.json();
+  };
+
+  if (isLoading || isLoading2) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -152,9 +198,12 @@ const ProfileDetailsScreen = () => {
             <TextInput
               style={styles.input}
               placeholder="Username"
-              value={username}
-              onChangeText={(text) => setUsername(handleUsernameChange(text))}
+              value={name}
+              disableFullscreenUI={true}
               autoCapitalize="none"
+              showSoftInputOnFocus={false} // Prevents keyboard from showing
+              editable={false} // Disables typing
+              selectTextOnFocus={false} // Prevents text selection
             />
           </View>
 
@@ -206,11 +255,7 @@ const ProfileDetailsScreen = () => {
           ) : (
             <C_Button
               title="Save and Continue"
-              onPress={() => {
-                router.push('/(tabs)/dictionary');
-              }}
-              //onPress={handleSaveAndContinue}
-              // onPress={() => setShowSuccessModal(true)}
+              onPress={handleSaveAndContinue}
               buttonStyle={styles.saveButton}
             />
           )}
@@ -233,7 +278,7 @@ const ProfileDetailsScreen = () => {
             onPress={() => {
               setShowSuccessModal(false);
 
-              // router.push('/home');
+              // ;
             }}
             buttonStyle={styles.doneButton}
           />
