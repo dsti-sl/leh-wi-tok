@@ -65,7 +65,9 @@ const welcomeScreen = () => {
       <C_Button
         title="Let's Get Started"
         onPress={() =>
-          router.push(`/preferences/roleselection?userId=${user?.id}`)
+          router.push(
+            `/preferences/roleselection?userId=${user?.id}&name=${user?.name}`,
+          )
         }
         buttonStyle={styles.getStartedButton}
       />

@@ -16,8 +16,8 @@ import { Colors } from '@/constants/Colors';
 const roles = [
   { id: 'student', label: 'Student' },
   { id: 'teacher', label: 'Teacher' },
-  { id: 'parent', label: 'Parent' },
-  { id: 'generalUser', label: 'General User' },
+  // { id: 'parent', label: 'Parent' },
+  // { id: 'generalUser', label: 'General User' },
 ];
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
@@ -25,7 +25,7 @@ const RoleSelection = () => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { userId } = useLocalSearchParams();
+  const { userId, name } = useLocalSearchParams();
 
   const handleRoleSelect = (role: string) => {
     setSelectedRole(role);
@@ -47,7 +47,7 @@ const RoleSelection = () => {
 
       if (response.ok) {
         Alert.alert('Success', 'Role updated successfully!');
-        router.push(`/preferences/profilescreen?userId=${userId}`);
+        router.push(`/preferences/profilescreen?userId=${userId}&name=${name}`);
       }
     } catch (error) {
       Alert.alert(

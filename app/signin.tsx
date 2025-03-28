@@ -61,7 +61,7 @@ const SignInScreen = () => {
       if (response.ok) {
         router.push(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=true`);
       } else {
-        setError(data.message || 'Failed to request OTP. Please try again.');
+        setError(data.message || 'Unregistered phone number, Please signup');
       }
     } catch (error) {
       setError(
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   error: {
     color: 'red',
     fontSize: 14,
-    marginTop: 5,
+    marginVertical: 5,
   },
   requestOtpButton: {
     backgroundColor: Colors.primary,

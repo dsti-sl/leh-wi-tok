@@ -15,7 +15,7 @@
   ],
   "locations": [
     "Bo",
-    "Bonth",
+    "Bonthe",
     "Bombali",
     "Falaba",
     "Kailahun",
@@ -25,8 +25,9 @@
     "Kono",
     "Moyamba",
     "Pujehun",
-    "Port-Loko",
+    "PortLoko",
     "Tonkolili",
-    "Western Area"
+    "WesternUrban",
+    "WesternRural"
   ]
 }
