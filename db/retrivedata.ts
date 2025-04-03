@@ -31,7 +31,7 @@ export const fetchDictionaryData = async (): Promise<DictionaryEntry[]> => {
           : [],
     }));
 
-    console.log('Dictionary data fetched successfully!');
+    console.log('Dictionary data fetched successfully!', parsedData);
     return parsedData;
   } catch (error) {
     console.error('Error fetching dictionary data:', error);

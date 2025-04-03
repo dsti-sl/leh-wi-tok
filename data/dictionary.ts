@@ -2,6 +2,8 @@ import { getDatabase } from '@/db/schema';
 import { fetchDictionaryData } from '@/db/retrivedata';
 import { fileDownloads } from '@/utils/filedownloads';
 
+const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
 /**
  * To check if a word already exists in the database.
  * @param word The word to check
@@ -161,51 +163,98 @@ export const insertDictionaryData = async (
 };
 
 /**
- * Test function to insert or update and fetch data from the database.
+ * Fetches translation data from the API and stores it in the database in batches.
  */
-const testInsertAndFetch = async () => {
+export const fetchAndInsertTranslations = async (): Promise<void> => {
+  if (!BASE_URL) {
+    console.error('BASE_URL is not defined....');
+    return;
+  }
+
+  const urlParams = `${BASE_URL}/translation?select=id,phrase,description,gesture(id,name,path,contentType),illustration(id,name,path,contentType),tags`;
+
   try {
-    // Step 1: Insert or Update Sample Data
-    const sampleData = [
-      {
-        word: 'A',
-        definition: 'The fucking first letter of the English alphabet.',
-        illustration: 'https://example.com/illustrations/A.gif',
-        image: 'https://example.com/images/A.png',
-        partOfSpeech: 'noun',
-        categories: ['Alphabets'],
-      },
-      {
-        word: 'B',
-        definition: 'The fucking second letter of the English alphabet.',
-        illustration: 'https://example.com/illustrations/B.gif',
-        image: 'https://example.com/images/B.png',
-        partOfSpeech: 'noun',
-        categories: ['Alphabets'],
-      },
-      {
-        word: 'C',
-        definition:
-          'Updated definition for the first letter of the English alphabet.',
-        illustration: 'https://example.com/illustrations/A_updated.gif',
-        image: 'https://example.com/images/A_updated.png',
-        partOfSpeech: 'noun',
-        categories: ['Alphabets', 'Updated'],
-      },
-    ];
+    console.log(`Fetching data from API: ${urlParams}`);
+    const response = await fetch(urlParams);
 
-    console.log('Inserting or updating sample data...');
-    await insertDictionaryData(sampleData);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data from API: ${response.statusText}`);
+    }
 
-    // Step 2: Fetch Data from the Database
-    console.log('Fetching data from the database...');
-    const fetchedData = await fetchDictionaryData();
+    const apiResponse = await response.json();
+    if (!apiResponse || !apiResponse.data || !Array.isArray(apiResponse.data)) {
+      throw new Error('Invalid API response structure');
+    }
 
-    // Step 3: Log the Results in JSON Format
-    console.log('Fetched Data (JSON):', JSON.stringify(fetchedData, null, 2));
+    const translations = apiResponse.data;
+
+    // This processess translations data in to a batch of 50s
+    const batchSize = 50;
+    for (let i = 0; i < translations.length; i += batchSize) {
+      const batch = translations.slice(i, i + batchSize);
+      const transformedBatch = await Promise.all(
+        batch.map(async (item: any) => {
+          if (!item.phrase) {
+            console.warn('Skipping entry with missing phrase:', item);
+            return null;
+          }
+
+          try {
+            const gesturePath = item.gesture?.path
+              ? await fileDownloads(
+                  item.gesture.path,
+                  `${item.phrase}_gesture.png`,
+                ).catch((err) => {
+                  console.error(
+                    `Failed to download gesture for "${item.phrase}":`,
+                    err,
+                  );
+                  return null;
+                })
+              : null;
+
+            const illustrationPath = item.illustration?.path
+              ? await fileDownloads(
+                  item.illustration.path,
+                  `${item.phrase}_illustration.png`,
+                ).catch((err) => {
+                  console.error(
+                    `Failed to download illustration for "${item.phrase}":`,
+                    err,
+                  );
+                  return null;
+                })
+              : null;
+
+            return {
+              // Mapping translation to local db schema format
+              word: item.phrase,
+              definition: item.description || 'No description available',
+              illustration: illustrationPath,
+              image: gesturePath,
+              partOfSpeech: null,
+              categories: item.tags || [],
+            };
+          } catch (error) {
+            console.error(`Error processing entry "${item.phrase}":`, error);
+            return null;
+          }
+        }),
+      );
+
+      // This fililter out null entries
+      const validData = transformedBatch.filter((item) => item !== null);
+
+      if (validData.length > 0) {
+        await insertDictionaryData(validData);
+        console.log(`Processed batch of ${validData.length} entries.`);
+      } else {
+        console.warn('No valid data in this batch.');
+      }
+    }
+
+    console.log('All translation data fetched and stored successfully!');
   } catch (error) {
-    console.error('Error during test insert or update and fetch:', error);
+    console.error('Error fetching and storing translation data:', error);
   }
 };
-
-export default testInsertAndFetch;
