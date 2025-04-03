@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 import { StatusBar } from 'react-native';
 import { initializeDatabase } from '@/db/schema';
 import { getDatabase } from '@/db/schema';
+import { fetchAndInsertTranslations } from '@/data/dictionary';
 //import { deleteAllEntries } from '@/utils/deleteEntries';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -36,6 +37,12 @@ export default function RootLayout() {
   if (!loaded) {
     return null;
   }
+
+  const syncTranlations = async () => {
+    console.log('Fetching and inserting translations...');
+    await fetchAndInsertTranslations();
+  };
+  syncTranlations();
 
   /* Warning!! 
     * This function should all be called if one needs to delete all entries
