@@ -165,13 +165,14 @@ export const insertDictionaryData = async (
 /**
  * Fetches translation data from the API and stores it in the database in batches.
  */
+
 export const fetchAndInsertTranslations = async (): Promise<void> => {
   if (!BASE_URL) {
     console.error('BASE_URL is not defined....');
     return;
   }
 
-  const urlParams = `${BASE_URL}/translation?select=id,phrase,description,gesture(id,name,path,contentType),illustration(id,name,path,contentType),tags`;
+  const urlParams = `${BASE_URL}/translation?select=id,phrase,description,gesture(id,name),illustration(id,name),tags`;
 
   try {
     console.log(`Fetching data from API: ${urlParams}`);
@@ -200,9 +201,9 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
           }
 
           try {
-            const gesturePath = item.gesture?.path
+            const gesturePath = item.gesture?.id
               ? await fileDownloads(
-                  item.gesture.path,
+                  item.gesture.id, // Pass the file ID to fileDownloads
                   `${item.phrase}_gesture.png`,
                 ).catch((err) => {
                   console.error(
@@ -213,9 +214,9 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
                 })
               : null;
 
-            const illustrationPath = item.illustration?.path
+            const illustrationPath = item.illustration?.id
               ? await fileDownloads(
-                  item.illustration.path,
+                  item.illustration.id, // Pass the file ID to fileDownloads
                   `${item.phrase}_illustration.png`,
                 ).catch((err) => {
                   console.error(

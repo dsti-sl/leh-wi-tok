@@ -4,15 +4,21 @@ import * as FileSystem from 'expo-file-system';
  * This utility function here downloads the translation remote files
  * and saves it locally, it then returns the local URI.
  * Ensures unique filenames and handles errors gracefully.
- * @param remoteUrl URL of the file to download
+ * @param fileId The ID of the file to download
  * @param filename Desired local file name (with extension)
  * @returns Full local file URI or a fallback URI if the download fails
  */
 export async function fileDownloads(
-  remoteUrl: string,
+  fileId: string,
   filename: string,
 ): Promise<string> {
   try {
+    const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+    if (!BASE_URL) {
+      throw new Error('BASE_URL is not defined.');
+    }
+
+    const downloadUrl = `${BASE_URL}/file/download?id=${fileId}`; // Construct the download URL
     const assetsDir = FileSystem.documentDirectory + 'assets/';
     const uniqueFilename = `${Date.now()}_${filename}`;
     const localUri = assetsDir + uniqueFilename;
@@ -31,11 +37,14 @@ export async function fileDownloads(
     }
 
     // Download and return path
-    const { uri } = await FileSystem.downloadAsync(remoteUrl, localUri);
+    const { uri } = await FileSystem.downloadAsync(downloadUrl, localUri);
     console.log(`File downloaded successfully: ${uri}`);
     return uri;
   } catch (error) {
-    console.error(`Error downloading ${filename} from ${remoteUrl}:`, error);
+    console.error(
+      `Error downloading ${filename} from file ID ${fileId}:`,
+      error,
+    );
 
     return '';
   }

@@ -41,11 +41,11 @@
           "supportsPictureInPicture": true
         }
       ],
-        "expo-font",
+      "expo-font",
       [
         "expo-sqlite",
         {
-          "enableFTS": true, 
+          "enableFTS": true,
           "useSQLCipher": false
         }
       ]
