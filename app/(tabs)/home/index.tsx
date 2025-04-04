@@ -44,9 +44,6 @@ const HomeScreen = () => {
     fetchUserDetails();
   }, [BASE_URL]);
 
-  console.log('user', user);
-  console.log('BASE_URL', BASE_URL);
-
   useEffect(() => {
     if (user && !user.student) {
       router.replace('/preferences');
