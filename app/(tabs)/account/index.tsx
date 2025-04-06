@@ -1,21 +1,166 @@
+import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
-const index = () => {
+import { Colors } from '@/constants/Colors';
+
+const Account = () => {
+  const fullname = 'Abubakarr Bangura';
+  const router = useRouter();
+
+  const handleLogout = () => {
+    Alert.alert('Logged out');
+    router.replace('/');
+  };
+
   return (
-    <View style={styles.container}>
-      <Text>Account</Text>
-    </View>
+    <>
+      <View style={styles.container}></View>
+      <View style={styles.section}>
+        <View style={styles.headerRow}>
+          <Text style={styles.greeting}>Hey, {fullname.split(' ')[0]}!</Text>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{fullname.charAt(0)}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Your account</Text>
+        <View style={styles.itemRow}>
+          <Feather name="user" size={24} />
+          <Text style={styles.itemText}>Personal Details</Text>
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>How are we doing?</Text>
+        <TouchableOpacity style={styles.feedbackButton}>
+          <Text style={styles.feedbackText}>Give us feedback</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Settings</Text>
+        <View style={styles.itemRow}>
+          <Feather name="bell" size={24} />
+          <Text style={styles.itemText}>Notifications</Text>
+        </View>
+        <TouchableOpacity style={styles.itemRow} onPress={handleLogout}>
+          <Feather name="log-out" size={24} />
+          <Text style={styles.itemText}>Log out</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.section}>
+        <TouchableOpacity style={styles.itemRow}>
+          <Feather name="trash-2" size={24} color="#dc2626" />
+          <Text style={[styles.itemText, { color: '#dc2626' }]}>
+            Delete your account
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </>
   );
 };
 
-export default index;
+export default Account;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 50,
+    paddingBottom: 70,
+    width: '100%',
+    backgroundColor: Colors.primary,
+  },
+  section: {
+    marginHorizontal: 20,
+    marginTop: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+  },
+  avatar: {
+    backgroundColor: Colors.primary,
+    borderRadius: 50,
+    padding: 16,
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 32,
+    textAlign: 'center',
+    fontFamily: 'monospace',
+  },
+  card: {
+    backgroundColor: '#e2e8f0',
+    padding: 16,
+    marginTop: 16,
+    borderRadius: 10,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+  },
+  cardSubtitle: {
+    fontSize: 12,
+    color: '#94a3b8',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 8,
+  },
+  itemText: {
+    fontSize: 14,
+    marginLeft: 10,
+  },
+  icon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  divider: {
+    height: 2,
+    backgroundColor: '#e2e8f0',
+    marginTop: 20,
+    width: '100%',
+  },
+  feedbackButton: {
+    backgroundColor: '#cbd5e1',
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  feedbackText: {
+    fontSize: 14,
   },
 });
