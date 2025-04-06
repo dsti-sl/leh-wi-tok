@@ -192,7 +192,6 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
             completed={(progressSummary[tag.title] as Record)?.completed || 0}
             totalLesson={(progressSummary[tag.title] as Record)?.total || 0}
             onPress={() => {
-              console.log(tag.title);
               router.push(
                 `/(tabs)/lessons/level/${tag.title}&lessonInfo=${lessonTags}`,
               );

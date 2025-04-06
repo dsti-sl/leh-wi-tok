@@ -25,7 +25,8 @@ const Level = () => {
     player,
     level,
   } = useLessonLevel();
-
+  console.log('player =>', player);
+  console.log('activeLesson =>', activeLesson);
   if (loading) {
     return (
       <View style={styles.container}>
