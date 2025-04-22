@@ -1,15 +1,29 @@
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 
 const Account = () => {
-  const fullname = 'Abubakarr Bangura';
+  const [userInfo, setUserInfo] = useState<unknown>(null);
+
   const router = useRouter();
 
-  const handleLogout = () => {
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const user = await AsyncStorage.getItem('user');
+      if (user) {
+        setUserInfo(JSON.parse(user));
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('user');
     Alert.alert('Logged out');
     router.replace('/');
   };
@@ -19,9 +33,11 @@ const Account = () => {
       <View style={styles.container}></View>
       <View style={styles.section}>
         <View style={styles.headerRow}>
-          <Text style={styles.greeting}>Hey, {fullname.split(' ')[0]}!</Text>
+          <Text style={styles.greeting}>
+            Hey, {userInfo?.name?.split(' ')[0]}!
+          </Text>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{fullname.charAt(0)}</Text>
+            <Text style={styles.avatarText}>{userInfo?.name?.charAt(0)}</Text>
           </View>
         </View>
       </View>
@@ -106,26 +122,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'monospace',
   },
-  card: {
-    backgroundColor: '#e2e8f0',
-    padding: 16,
-    marginTop: 16,
-    borderRadius: 10,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    fontFamily: 'monospace',
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    color: '#94a3b8',
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -140,11 +136,6 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 14,
     marginLeft: 10,
-  },
-  icon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
   },
   divider: {
     height: 2,
