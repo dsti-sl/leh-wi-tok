@@ -19,7 +19,7 @@ export const fetchDictionaryData = async (): Promise<DictionaryEntry[]> => {
     const db = await getDatabase();
 
     const rows = await db.getAllAsync<DictionaryEntry>(
-      'SELECT * FROM dictionary',
+      'SELECT * FROM dictionary ORDER BY word ASC',
     );
 
     // Parse categories JSON safely
@@ -31,7 +31,10 @@ export const fetchDictionaryData = async (): Promise<DictionaryEntry[]> => {
           : [],
     }));
 
-    console.log('Dictionary data fetched successfully!', parsedData);
+    console.log(
+      'Dictionary data fetched successfully!',
+      JSON.stringify(parsedData, null, 2),
+    );
     return parsedData;
   } catch (error) {
     console.error('Error fetching dictionary data:', error);

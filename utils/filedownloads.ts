@@ -18,7 +18,7 @@ export async function fileDownloads(
       throw new Error('BASE_URL is not defined.');
     }
 
-    const downloadUrl = `${BASE_URL}/file/download?id=${fileId}`; // Construct the download URL
+    const downloadUrl = `${BASE_URL}/file/download?id=${fileId}`;
     const assetsDir = FileSystem.documentDirectory + 'assets/';
     const uniqueFilename = `${Date.now()}_${filename}`;
     const localUri = assetsDir + uniqueFilename;

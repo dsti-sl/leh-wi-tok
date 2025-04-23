@@ -6,38 +6,42 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   Platform,
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import useSearch from '@/hooks/useSearch';
-import dictionaryData from '@/constants/DictionaryData.json';
 import { Colors } from '@/constants/Colors';
 
 const _layout = () => {
   const router = useRouter();
   const { categoryName } = useLocalSearchParams();
   const [isSearching, setIsSearching] = useState(false);
-  const inputRef = useRef(null);
-
-  // Search logic with hook
-  const { filteredData, setQuery, query } = useSearch({
-    data: dictionaryData,
-    searchKey: 'word',
-  });
+  const [query, setQuery] = useState('');
+  const inputRef = useRef<TextInput>(null);
 
   const handleSearchToggle = () => {
     setIsSearching((prev) => !prev);
     if (!isSearching) {
-      setTimeout(() => inputRef.current?.focus(), 100); // Focus input when opening
+      setTimeout(() => inputRef.current?.focus(), 100);
     } else {
-      setQuery(''); // Reset query and results
+      setQuery('');
+      router.push({
+        pathname: '/(tabs)/dictionary/category',
+        params: { categoryName, query: '' },
+      });
     }
   };
 
+  const handleQueryChange = (text: string) => {
+    setQuery(text);
+    router.push({
+      pathname: '/(tabs)/dictionary/category',
+      params: { categoryName, query: text },
+    });
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#eaf' }}>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {Platform.OS === 'ios' ? (
         <View style={{ height: 50, backgroundColor: Colors.primary }} />
       ) : (
@@ -66,7 +70,7 @@ const _layout = () => {
                       style={styles.searchInput}
                       placeholder="Search words..."
                       value={query}
-                      onChangeText={(text) => setQuery(text)}
+                      onChangeText={handleQueryChange}
                     />
                   ) : (
                     <Text style={styles.headerTitle}>
@@ -78,7 +82,7 @@ const _layout = () => {
                   <Ionicons
                     name={isSearching ? 'close' : 'search'}
                     size={24}
-                    color={Colors.primary}
+                    color={Colors.secondary}
                   />
                 </TouchableOpacity>
               </View>
@@ -86,29 +90,6 @@ const _layout = () => {
           }}
         />
       </Stack>
-
-      {isSearching && query.trim() ? (
-        <FlatList
-          data={filteredData}
-          keyExtractor={(item) => item.word}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: '/(tabs)/dictionary/definition',
-                  params: { word: item.word },
-                })
-              }
-              style={styles.searchResultItem}
-            >
-              <Text style={styles.searchResultText}>{item.word}</Text>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No matching words found.</Text>
-          }
-        />
-      ) : null}
     </View>
   );
 };
@@ -135,28 +116,13 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   searchInput: {
-    flex: 1,
     height: 40,
+    width: '90%',
     borderWidth: 1,
-    borderColor: Colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderColor: Colors.secondary,
+    borderRadius: 5,
+    paddingHorizontal: 5,
     fontSize: 16,
     color: Colors.primary,
-  },
-  searchResultItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  searchResultText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#888',
-    textAlign: 'center',
-    marginTop: 20,
   },
 });

@@ -165,14 +165,15 @@ export const insertDictionaryData = async (
 /**
  * Fetches translation data from the API and stores it in the database in batches.
  */
-
 export const fetchAndInsertTranslations = async (): Promise<void> => {
   if (!BASE_URL) {
     console.error('BASE_URL is not defined....');
     return;
   }
 
-  const urlParams = `${BASE_URL}/translation?select=id,phrase,description,gesture(id,name),illustration(id,name),tags`;
+  const urlParams = `${BASE_URL}/translation?select=id,phrase,description,
+  gesture(id,name,path,contentType),illustration(id,name,path,contentType),
+  tags(category,title)&page-size=50`;
 
   try {
     console.log(`Fetching data from API: ${urlParams}`);
@@ -187,9 +188,13 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
       throw new Error('Invalid API response structure');
     }
 
-    const translations = apiResponse.data;
+    let translations = apiResponse.data;
+    translations = translations.sort(
+      (a: { phrase: string }, b: { phrase: string }) =>
+        a.phrase.localeCompare(b.phrase, undefined, { numeric: true }),
+    );
 
-    // This processess translations data in to a batch of 50s
+    // This processes translations data in batches of 50
     const batchSize = 50;
     for (let i = 0; i < translations.length; i += batchSize) {
       const batch = translations.slice(i, i + batchSize);
@@ -201,6 +206,19 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
           }
 
           try {
+            // Extract partOfSpeech and categories from tags
+            const tags = item.tags || [];
+            const partOfSpeechTag = tags.find(
+              (tag: { category: string }) => tag.category === 'part-of-speech',
+            );
+            const categoriesTags = tags
+              .filter(
+                (tag: { category: string }) => tag.category === 'categories',
+              )
+              .map((tag: { title: string }) => tag.title);
+
+            const partOfSpeech = partOfSpeechTag?.title || null;
+
             const gesturePath = item.gesture?.id
               ? await fileDownloads(
                   item.gesture.id, // Pass the file ID to fileDownloads
@@ -233,8 +251,8 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
               definition: item.description || 'No description available',
               illustration: illustrationPath,
               image: gesturePath,
-              partOfSpeech: null,
-              categories: item.tags || [],
+              partOfSpeech, // Store the title of the "part-of-speech" category
+              categories: categoriesTags, // Store the titles of the "categories" category
             };
           } catch (error) {
             console.error(`Error processing entry "${item.phrase}":`, error);
@@ -243,7 +261,7 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
         }),
       );
 
-      // This fililter out null entries
+      // This filters out null entries
       const validData = transformedBatch.filter((item) => item !== null);
 
       if (validData.length > 0) {

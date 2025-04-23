@@ -17,7 +17,7 @@ const index = () => {
 
   // Find the index of the word in the dictionary
   const initialIndex = dictionaryData.findIndex(
-    (item) => item.word.toLowerCase() === word?.toLowerCase(),
+    (item) => item.word.toLowerCase() === (typeof word === 'string' ? word.toLowerCase() : ''),
   );
 
   if (initialIndex === -1) {

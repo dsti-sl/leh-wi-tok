@@ -1,76 +1,131 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
   View,
+  FlatList,
   SectionList,
-  SafeAreaView,
   TouchableOpacity,
+  SafeAreaView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import dictionaryData from '@/constants/DictionaryData.json';
+import { fetchDictionaryData } from '@/db/retrivedata';
+
+type DictionaryEntry = {
+  word: string;
+  categories: string[];
+};
 
 const index = () => {
   const router = useRouter();
-  const { categoryName } = useLocalSearchParams() as { categoryName: string };
-  const filteredWords = useMemo(() => {
-    return dictionaryData.filter((entry) =>
-      entry.categories.includes(categoryName),
-    );
-  }, [categoryName]);
+  const { categoryName, query = '' } = useLocalSearchParams() as {
+    categoryName: string;
+    query: string;
+  };
 
-  const groupedWords = useMemo(() => {
-    const groupedData = filteredWords.reduce<
-      Record<string, typeof filteredWords>
-    >((acc, item) => {
-      const firstLetter = item.word[0].toUpperCase();
-      if (!acc[firstLetter]) acc[firstLetter] = [];
-      acc[firstLetter].push(item);
-      return acc;
-    }, {});
+  const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
+  const [groupedWords, setGroupedWords] = useState<
+    { title: string; data: DictionaryEntry[] }[]
+  >([]);
+  const [filteredData, setFilteredData] = useState<DictionaryEntry[]>([]);
 
-    return Object.keys(groupedData)
-      .sort()
-      .map((key) => ({
-        title: key,
-        data: groupedData[key]
-          .sort((a, b) => a.word.localeCompare(b.word))
-          .map((item) => ({
-            ...item,
-            word:
-              item.word.charAt(0).toUpperCase() +
-              item.word.slice(1).toLowerCase(),
-          })),
-      }));
-  }, [filteredWords]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchDictionaryData();
+        setDictionaryData(data);
+
+        if (query) {
+          const filtered = data.filter((entry) =>
+            entry.word.toLowerCase().includes(query.toLowerCase()),
+          );
+          setFilteredData(filtered);
+        } else {
+          const filteredWords = data.filter((entry) =>
+            entry.categories.includes(categoryName),
+          );
+
+          const groupedData = filteredWords.reduce(
+            (acc: Record<string, DictionaryEntry[]>, item) => {
+              const firstLetter = item.word[0].toUpperCase();
+              if (!acc[firstLetter]) acc[firstLetter] = [];
+              acc[firstLetter].push(item);
+              return acc;
+            },
+            {} as Record<string, DictionaryEntry[]>,
+          );
+
+          const groupedWordsArray = Object.keys(groupedData)
+            .sort()
+            .map((key) => ({
+              title: key,
+              data: groupedData[key].sort((a, b) =>
+                a.word.localeCompare(b.word),
+              ),
+            }));
+
+          setGroupedWords(groupedWordsArray);
+        }
+      } catch (error) {
+        console.error('Error fetching dictionary data:', error);
+      }
+    };
+
+    fetchData();
+  }, [categoryName, query]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <SectionList
-        sections={groupedWords}
-        keyExtractor={(item) => item.word}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() =>
-              router.push({
-                pathname: '/(tabs)/dictionary/definition',
-                params: { word: item.word },
-              })
-            }
-            style={styles.itemContainer}
-          >
-            <Text style={styles.itemText}>{item.word}</Text>
-          </TouchableOpacity>
-        )}
-        renderSectionHeader={({ section: { title } }) => (
-          <View style={styles.sectionHeaderContainer}>
-            <Text style={styles.sectionHeader}>{title}</Text>
-          </View>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No words found in this category.</Text>
-        }
-      />
+      {query ? (
+        <FlatList
+          data={filteredData}
+          keyExtractor={(item) => item.word}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/dictionary/definition',
+                  params: { word: item.word },
+                })
+              }
+              style={styles.itemContainer}
+            >
+              <Text style={styles.itemText}>{item.word}</Text>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No words found.</Text>
+          }
+        />
+      ) : (
+        <SectionList
+          sections={groupedWords}
+          keyExtractor={(item) => item.word}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/dictionary/definition',
+                  params: { word: item.word },
+                })
+              }
+              style={styles.itemContainer}
+            >
+              <Text style={styles.itemText}>{item.word}</Text>
+            </TouchableOpacity>
+          )}
+          renderSectionHeader={({ section: { title } }) => (
+            <View style={styles.sectionHeaderContainer}>
+              <Text style={styles.sectionHeader}>{title}</Text>
+            </View>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>
+              No words found in this category.
+            </Text>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -83,13 +138,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 16,
     paddingTop: 40,
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 10,
   },
   sectionHeaderContainer: {
     backgroundColor: '#F0F0F0',
