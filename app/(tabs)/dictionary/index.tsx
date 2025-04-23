@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,16 +6,19 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
-  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import dictionaryData from '@/constants/DictionaryData.json';
+import { fetchDictionaryData } from '@/db/retrivedata';
 import useSearch from '@/hooks/useSearch';
 import CategoryCard from '@/components/dictionary/CategoryCard';
 
-const extractCategories = (data) => {
+interface DictionaryEntry {
+  word: string;
+  categories: string[];
+}
+
+const extractCategories = (data: DictionaryEntry[]) => {
   const categoryMap = new Map();
 
   data.forEach((entry) => {
@@ -37,13 +40,50 @@ const extractCategories = (data) => {
 
 const index = () => {
   const router = useRouter();
+  const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const categories = useMemo(() => extractCategories(dictionaryData), []);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchDictionaryData();
+        const sortedData = data.sort((a, b) => a.word.localeCompare(b.word));
+        setDictionaryData(sortedData);
+      } catch (error) {
+        console.error('Error fetching dictionary data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const categories = useMemo(
+    () => extractCategories(dictionaryData),
+    [dictionaryData],
+  );
 
   const { query, setQuery, filteredData } = useSearch({
     data: dictionaryData,
     searchKey: 'word',
   });
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  if (!dictionaryData.length) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.emptyText}>No data available.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -112,13 +152,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingBottom: 40,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
   searchBar: {
     height: 50,
     borderWidth: 1,
@@ -140,6 +173,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#888',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#333',
     textAlign: 'center',
     marginTop: 20,
   },
