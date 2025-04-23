@@ -22,12 +22,12 @@ const _layout = () => {
   const handleSearchToggle = () => {
     setIsSearching((prev) => !prev);
     if (!isSearching) {
-      setTimeout(() => inputRef.current?.focus(), 100); // Focus input when opening
+      setTimeout(() => inputRef.current?.focus(), 100);
     } else {
-      setQuery(''); // Reset query
+      setQuery('');
       router.push({
         pathname: '/(tabs)/dictionary/category',
-        params: { categoryName, query: '' }, // Clear query
+        params: { categoryName, query: '' },
       });
     }
   };
@@ -36,7 +36,7 @@ const _layout = () => {
     setQuery(text);
     router.push({
       pathname: '/(tabs)/dictionary/category',
-      params: { categoryName, query: text }, // Pass query to index.tsx
+      params: { categoryName, query: text },
     });
   };
 

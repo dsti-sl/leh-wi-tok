@@ -11,7 +11,6 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { fetchDictionaryData } from '@/db/retrivedata';
 
-// Define the DictionaryEntry type
 type DictionaryEntry = {
   word: string;
   categories: string[];
@@ -37,13 +36,11 @@ const index = () => {
         setDictionaryData(data);
 
         if (query) {
-          // Filter words based on the search query
           const filtered = data.filter((entry) =>
             entry.word.toLowerCase().includes(query.toLowerCase()),
           );
           setFilteredData(filtered);
         } else {
-          // Group words by their first letter for the category
           const filteredWords = data.filter((entry) =>
             entry.categories.includes(categoryName),
           );
