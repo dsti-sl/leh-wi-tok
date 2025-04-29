@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import LessonCard from './LessonCard';
@@ -13,33 +13,6 @@ interface LessonsCategoryProps {
 const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   progressSummary,
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [lessonTags, setLessonTags] = useState(false);
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
-
-  useEffect(() => {
-    const fetchLessonCategpry = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `${BASE_URL}/tag?category=eq.dificulty-level`,
-        );
-        const data = await response.json();
-        if (response.ok) {
-          setLessonTags(data.data);
-        }
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching user details:', error);
-        setIsLoading(false);
-      }
-    };
-
-    fetchLessonCategpry();
-  }, []);
-
-  console.log('lessonTags', lessonTags);
-
   return (
     <View style={styles.cardsContainer}>
       <View style={styles.cardRowContainer}>
@@ -52,7 +25,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
           onPress={() => {
             console.log('Beginners');
             router.push(
-              `/(tabs)/lessons/level/${(progressSummary['Beginner'] as Record).title}`,
+              `/(tabs)/lessons/level/${(progressSummary['Beginner'] as Record).title}?assessment=Beginner`,
             );
           }}
           backgroundColor="#3e585e"

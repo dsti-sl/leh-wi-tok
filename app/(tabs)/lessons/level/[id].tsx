@@ -1,8 +1,8 @@
-import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { VideoPlayer, VideoView } from 'expo-video';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,8 +25,40 @@ const Level = () => {
     player,
     level,
   } = useLessonLevel();
-  console.log('player =>', player);
-  console.log('activeLesson =>', activeLesson);
+  const { assessment } = useLocalSearchParams<{
+    assessment: string;
+  }>();
+
+  // console.log('player =>', player);
+  // console.log('activeLesson =>', activeLesson);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lessonTags, setLessonTags] = useState(false);
+  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+  useEffect(() => {
+    const fetchLessonCategpry = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `${BASE_URL}/nugget?and=(lesson.tags.title.eq.${assessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title`,
+        );
+        const data = await response.json();
+        if (response.ok) {
+          setLessonTags(data.data);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchLessonCategpry();
+  }, []);
+
+  console.log('assessment', assessment);
+  console.log('isLoading', isLoading);
+  console.log('lessonTags', lessonTags);
   if (loading) {
     return (
       <View style={styles.container}>
@@ -78,7 +110,7 @@ const Level = () => {
       <View style={styles.lessonInfo}>
         <View style={styles.lessonHeader}>
           <View>
-            <Text style={styles.title}>{level}</Text>
+            <Text style={styles.title}>{assessment}</Text>
             <Text style={styles.subtitle}>
               {lesson.completed} of {lesson.total} Lessons Completed
             </Text>
@@ -88,7 +120,7 @@ const Level = () => {
 
       {/* Lesson List */}
       <ScrollView>
-        {levelLessons.map((lesson) => (
+        {/* {levelLessons.map((lesson) => (
           <TouchableOpacity
             key={lesson.id}
             style={[
@@ -130,6 +162,29 @@ const Level = () => {
                 color="#999"
               />
             )}
+          </TouchableOpacity>
+        ))} */}
+        {lessonTags?.map((lesson: any) => (
+          <TouchableOpacity
+            key={lesson.id}
+            style={[
+              styles.lessonItem,
+              activeLesson?.id === lesson.id && styles.activeLesson,
+            ]}
+            onPress={() => handleLessonSelect(lesson)}
+            // disabled={lesson.locked}
+          >
+            <View style={styles.iconContainer}>
+              <FontAwesome5
+                name="play-circle"
+                size={24}
+                color={lesson.locked ? '#999' : '#4682B4'}
+              />
+            </View>
+            <View style={styles.lessonDetails}>
+              <Text style={styles.lessonTitle}>{lesson.title}</Text>
+              <Text style={styles.lessonDuration}>{lesson.lesson.title}</Text>
+            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
