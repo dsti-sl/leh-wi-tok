@@ -112,8 +112,8 @@ const Level = () => {
       ) : (
         <StatusBar style="light" backgroundColor={Colors.primary} />
       )}
-      {/* Top section with video or GIF */}
-      <View style={styles.videoContainer}>
+      {/* Top section with  GIF */}
+      <View className="px-10" style={styles.videoContainer}>
         <View
           style={{
             flexDirection: 'row',
@@ -124,10 +124,9 @@ const Level = () => {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
-
-          <TouchableOpacity>
+          {/* <TouchableOpacity>
             <Ionicons name="menu" size={24} color="#fff" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
         {/* Render image here */}
         {selectedGestureId && (
