@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
@@ -33,6 +34,7 @@ const HomeScreen = () => {
         const data = await response.json();
         if (response.ok) {
           setUser(data.data[0]);
+          await AsyncStorage.setItem('user', JSON.stringify(data.data[0]));
         }
         setIsLoading(false);
       } catch (error) {
@@ -43,9 +45,6 @@ const HomeScreen = () => {
 
     fetchUserDetails();
   }, [BASE_URL]);
-
-  console.log('user', user);
-  console.log('BASE_URL', BASE_URL);
 
   useEffect(() => {
     if (user && !user.student) {

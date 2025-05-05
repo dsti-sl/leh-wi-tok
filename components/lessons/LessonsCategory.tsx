@@ -25,7 +25,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
           onPress={() => {
             console.log('Beginners');
             router.push(
-              `/(tabs)/lessons/level/${(progressSummary['Beginner'] as Record).title}`,
+              `/(tabs)/lessons/level/${(progressSummary['Beginner'] as Record).title}?assessment=Beginner`,
             );
           }}
           backgroundColor="#3e585e"

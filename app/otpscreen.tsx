@@ -37,7 +37,6 @@ const OtpScreen = () => {
     if (!/^\d+$/.test(otpValue)) return 'OTP can only contain digits';
     return '';
   };
-  console.log('phoneNumber', phoneNumber);
   const handleVerifyOtp = async () => {
     const validationError = validateOtp();
     if (validationError) {
