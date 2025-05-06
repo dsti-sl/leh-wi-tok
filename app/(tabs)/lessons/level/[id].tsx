@@ -1,8 +1,7 @@
-import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { VideoPlayer, VideoView } from 'expo-video';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
+import ImageViewer from '@/components/common/ImageViewer';
 import { Colors } from '@/constants/Colors';
 import useLessonLevel from '@/hooks/useLessonLevel';
 
@@ -25,6 +25,72 @@ const Level = () => {
     player,
     level,
   } = useLessonLevel();
+  const { assessment } = useLocalSearchParams<{
+    assessment: string;
+  }>();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [lessonTags, setLessonTags] = useState<any[]>([]);
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(
+    new Set(),
+  );
+  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+  const [selectedGestureId, setSelectedGestureId] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const fetchLessonCategory = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `${BASE_URL}/nugget?and=(lesson.tags.title.eq.${assessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active`,
+        );
+        const data = await response.json();
+        if (response.ok) {
+          // Sort by priority
+          const sortedData = data.data.sort((a, b) => a.priority - b.priority);
+          setLessonTags(sortedData);
+
+          // Initialize completed lessons (you might want to fetch this from your backend)
+          // For demo purposes, we'll assume priority 1 is always unlocked
+          const initialCompleted = new Set<string>();
+          // Add your logic here to mark completed lessons from backend
+          setCompletedLessons(initialCompleted);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchLessonCategory();
+  }, []);
+
+  const handleLessonClick = (lesson: any) => {
+    handleLessonSelect(lesson);
+    setSelectedGestureId(lesson?.gesture?.id);
+
+    // Mark lesson as completed when clicked (you might want to do this after actual completion)
+    const newCompleted = new Set(completedLessons);
+    newCompleted.add(lesson.id);
+    setCompletedLessons(newCompleted);
+  };
+
+  // Determine if a lesson is locked based on priority and completed lessons
+  const isLessonLocked = (
+    currentLesson: any,
+    index: number,
+    lessons: any[],
+  ) => {
+    // First lesson is always unlocked
+    if (index === 0) return false;
+
+    // Check if previous lesson is completed
+    const previousLesson = lessons[index - 1];
+    return !completedLessons.has(previousLesson.id);
+  };
 
   if (loading) {
     return (
@@ -46,8 +112,8 @@ const Level = () => {
       ) : (
         <StatusBar style="light" backgroundColor={Colors.primary} />
       )}
-      {/* Top section with video or GIF */}
-      <View style={styles.videoContainer}>
+      {/* Top section with  GIF */}
+      <View className="px-10" style={styles.videoContainer}>
         <View
           style={{
             flexDirection: 'row',
@@ -58,28 +124,23 @@ const Level = () => {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
-
-          <TouchableOpacity>
+          {/* <TouchableOpacity>
             <Ionicons name="menu" size={24} color="#fff" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
-        <VideoView
-          style={styles.video}
-          player={player as VideoPlayer}
-          allowsFullscreen
-          allowsPictureInPicture
-          nativeControls
-          contentFit="fill"
-        />
+        {/* Render image here */}
+        {selectedGestureId && (
+          <ImageViewer gestureId={selectedGestureId as string} />
+        )}
       </View>
 
       {/* Lesson Details */}
       <View style={styles.lessonInfo}>
         <View style={styles.lessonHeader}>
           <View>
-            <Text style={styles.title}>{level}</Text>
+            <Text style={styles.title}>{assessment}</Text>
             <Text style={styles.subtitle}>
-              {lesson.completed} of {lesson.total} Lessons Completed
+              {completedLessons.size} of {lessonTags.length} Lessons Completed
             </Text>
           </View>
         </View>
@@ -87,50 +148,44 @@ const Level = () => {
 
       {/* Lesson List */}
       <ScrollView>
-        {levelLessons.map((lesson) => (
-          <TouchableOpacity
-            key={lesson.id}
-            style={[
-              styles.lessonItem,
-              activeLesson?.id === lesson.id && styles.activeLesson,
-            ]}
-            onPress={() => handleLessonSelect(lesson)}
-            disabled={lesson.locked}
-          >
-            <View style={styles.iconContainer}>
-              <FontAwesome5
-                name="play-circle"
-                size={24}
-                color={lesson.locked ? '#999' : '#4682B4'}
-              />
-            </View>
-            <View style={styles.lessonDetails}>
-              <Text style={styles.lessonTitle}>{lesson.title}</Text>
-              <Text style={styles.lessonDuration}>{lesson.duration}</Text>
-              {lesson.progress > 0 && lesson.progress < 100 && (
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${lesson.progress}%` },
-                    ]}
+        {lessonTags
+          ?.sort((a, b) => a.priority - b.priority)
+          .map((lesson, index, array) => {
+            const locked = isLessonLocked(lesson, index, array);
+            return (
+              <TouchableOpacity
+                key={lesson.id}
+                style={[
+                  styles.lessonItem,
+                  activeLesson?.id === lesson.id && styles.activeLesson,
+                  locked && styles.lockedLesson,
+                ]}
+                onPress={() => !locked && handleLessonClick(lesson)}
+                disabled={locked}
+              >
+                <View style={styles.iconContainer}>
+                  <FontAwesome5
+                    name={locked ? 'lock' : 'play-circle'}
+                    size={24}
+                    color={locked ? '#999' : '#4682B4'}
                   />
                 </View>
-              )}
-            </View>
-            {lesson.locked ? (
-              <MaterialIcons name="lock" size={24} color="#999" />
-            ) : lesson.completed ? (
-              <MaterialIcons name="check-circle" size={24} color="#FFD700" />
-            ) : (
-              <MaterialIcons
-                name="radio-button-unchecked"
-                size={24}
-                color="#999"
-              />
-            )}
-          </TouchableOpacity>
-        ))}
+                <View style={styles.lessonDetails}>
+                  <Text
+                    style={[styles.lessonTitle, locked && { color: '#999' }]}
+                  >
+                    {lesson.title}
+                    {locked && ' (Locked)'}
+                  </Text>
+                  <Text
+                    style={[styles.lessonDuration, locked && { color: '#999' }]}
+                  >
+                    {lesson.duration || lesson.lesson?.title || ''}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
       </ScrollView>
     </View>
   );
@@ -171,6 +226,9 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+  },
+  lockedLesson: {
+    backgroundColor: '#f9f9f9',
   },
   iconContainer: {
     marginRight: 12,

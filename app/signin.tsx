@@ -60,6 +60,7 @@ const SignInScreen = () => {
 
       if (response.ok) {
         router.push(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=true`);
+        console.log('data =>', data);
       } else {
         setError(data.message || 'Unregistered phone number, Please signup');
       }
