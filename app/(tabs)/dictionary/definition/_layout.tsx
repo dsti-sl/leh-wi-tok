@@ -13,15 +13,16 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 
-{/*
+{
+  /*
 
 Check this out: 
-
-- Ensure that the word displaces instead of defination 
-- Fix up the index page to work with the defination 
-- Load difination and its illustrator and gesture images. 
+- Ensure that the word replace the definition 
+- Fix up the index page to work with the definition 
+- Load difinition and its illustration and gesture images. 
 - Retouch and Restyle 
-*/}
+*/
+}
 
 const _layout = () => {
   const router = useRouter();
