@@ -23,7 +23,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
           }
           totalLesson={(progressSummary['Beginner'] as Record).total as number}
           onPress={() => {
-            console.log('Beginners');
+            console.log('Beginner', progressSummary['Beginner']);
             router.push(
               `/(tabs)/lessons/level/${(progressSummary['Beginner'] as Record).title}?assessment=Beginner`,
             );
@@ -41,7 +41,9 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
             (progressSummary['Basic Elementary'] as Record).total as number
           }
           onPress={() => {
-            console.log('Basic Elementary ');
+            router.push(
+              `/(tabs)/lessons/level/${(progressSummary['Basic Elementary'] as Record).title}?assessment=Basic Elementary`,
+            );
           }}
           backgroundColor="#1b6c82"
         />
@@ -62,7 +64,10 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
             (progressSummary['Intermediate'] as Record).total as number
           }
           onPress={() => {
-            console.log('Intermediate');
+            console.log('Intermediate', progressSummary['Intermediate']);
+            router.push(
+              `/(tabs)/lessons/level/${(progressSummary['Intermediate'] as Record).title}?assessment=Intermediate`,
+            );
           }}
           backgroundColor="#2e6270"
         />
@@ -73,7 +78,9 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
           }
           totalLesson={(progressSummary['Advanced'] as Record).total as number}
           onPress={() => {
-            console.log('Advance');
+            router.push(
+              `/(tabs)/lessons/level/${(progressSummary['Advanced'] as Record).title}?assessment=Advanced`,
+            );
           }}
           backgroundColor="#3088a0"
         />

@@ -1,4 +1,5 @@
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
@@ -48,16 +49,20 @@ const Level = () => {
         );
         const data = await response.json();
         if (response.ok) {
-          // Sort by priority
           const sortedData = data.data.sort((a, b) => a.priority - b.priority);
           setLessonTags(sortedData);
 
-          // Initialize completed lessons (you might want to fetch this from your backend)
-          // For demo purposes, we'll assume priority 1 is always unlocked
-          const initialCompleted = new Set<string>();
-          // Add your logic here to mark completed lessons from backend
-          setCompletedLessons(initialCompleted);
+          const storedCompleted = await AsyncStorage.getItem('completedLesson');
+          const initialCompleted = storedCompleted
+            ? JSON.parse(storedCompleted)
+            : { user: {}, lessons: [] };
+          const currentLevel = initialCompleted.lessons.find(
+            (l) => l.level === assessment,
+          );
+
+          setCompletedLessons(new Set(currentLevel?.lessonCompleted || []));
         }
+
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching user details:', error);
@@ -68,13 +73,34 @@ const Level = () => {
     fetchLessonCategory();
   }, []);
 
-  const handleLessonClick = (lesson: any) => {
+  const handleLessonClick = async (lesson: any) => {
     handleLessonSelect(lesson);
     setSelectedGestureId(lesson?.gesture?.id);
 
-    // Mark lesson as completed when clicked (you might want to do this after actual completion)
+    const storedCompleted = await AsyncStorage.getItem('completedLesson');
+    const completedData = storedCompleted
+      ? JSON.parse(storedCompleted)
+      : { user: {}, lessons: [] };
+
+    const user = await AsyncStorage.getItem('user');
     const newCompleted = new Set(completedLessons);
     newCompleted.add(lesson.id);
+
+    const updatedLessons = completedData.lessons.filter(
+      (l) => l.level !== assessment,
+    );
+    updatedLessons.push({
+      lessonCompleted: Array.from(newCompleted),
+      level: assessment,
+      totalCompleted: newCompleted.size,
+    });
+
+    const updatedData = {
+      user,
+      lessons: updatedLessons,
+    };
+
+    await AsyncStorage.setItem('completedLesson', JSON.stringify(updatedData));
     setCompletedLessons(newCompleted);
   };
 

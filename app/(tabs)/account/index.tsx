@@ -16,6 +16,7 @@ const Account = () => {
       const user = await AsyncStorage.getItem('user');
       if (user) {
         setUserInfo(JSON.parse(user));
+        console.log(user);
       }
     };
 
@@ -24,8 +25,9 @@ const Account = () => {
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem('user');
+
     Alert.alert('Logged out');
-    router.replace('/');
+    // router.replace('/');
   };
 
   return (

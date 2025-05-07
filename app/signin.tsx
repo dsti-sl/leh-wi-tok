@@ -39,7 +39,6 @@ const SignInScreen = () => {
   };
   const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
   const handleRequestOTP = async () => {
-    console.log('data =>', EXPO_PUBLIC_BASE_URL);
     const validationError = validatePhoneNumber();
     if (validationError) {
       setError(validationError);
@@ -47,6 +46,7 @@ const SignInScreen = () => {
     }
     setError('');
     setIsLoading(true);
+    console.log('Base', EXPO_PUBLIC_BASE_URL);
     try {
       const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
         method: 'POST',
@@ -60,7 +60,6 @@ const SignInScreen = () => {
 
       if (response.ok) {
         router.push(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=true`);
-        console.log('data =>', data);
       } else {
         setError(data.message || 'Unregistered phone number, Please signup');
       }
