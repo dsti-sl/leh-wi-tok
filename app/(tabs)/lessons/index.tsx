@@ -24,8 +24,6 @@ const index = () => {
       ? JSON.parse(storedCompleted)
       : { user: {}, lessons: [] };
 
-    console.log('completedStoredData', completedStoredData);
-
     // Calculate accumulated lessons and completed lessons
     const lessonsData = completedStoredData.lessons || [];
     const accumulatedLessons = lessonsData.reduce(
