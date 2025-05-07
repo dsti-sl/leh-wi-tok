@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router/build/useFocusEffect';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -12,7 +13,39 @@ const index = () => {
   const { progressSummary } = useLessons();
   const [isLoading, setIsLoading] = useState(false);
   const [lessonCount, setLessonCount] = useState({});
+  const [accumulatedData, setAccumulatedData] = useState<unknown>(null);
+  const [completedData, setCompletedData] = useState<unknown>(null);
   const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+  const getLesson = async () => {
+    const storedCompleted: unknown =
+      await AsyncStorage.getItem('completedLesson');
+    const completedStoredData = storedCompleted
+      ? JSON.parse(storedCompleted)
+      : { user: {}, lessons: [] };
+
+    console.log('completedStoredData', completedStoredData);
+
+    // Calculate accumulated lessons and completed lessons
+    const lessonsData = completedStoredData.lessons || [];
+    const accumulatedLessons = lessonsData.reduce(
+      (total, lesson) => total + (lesson.totallessons || 0),
+      0,
+    );
+    const accumulatedCompletedLessons = lessonsData.reduce(
+      (total, lesson) => total + (lesson.totalCompleted || 0),
+      0,
+    );
+
+    const overallData = {
+      accumulatedLessons,
+      accumulatedCompletedLessons,
+    };
+
+    setAccumulatedData(overallData);
+
+    setCompletedData({ ...completedStoredData, overallData });
+  };
 
   const fetchLessonCounts = useCallback(async () => {
     const levels: string[] = [
@@ -42,13 +75,18 @@ const index = () => {
 
   useEffect(() => {
     fetchLessonCounts();
+    getLesson();
   }, [fetchLessonCounts]);
 
   useFocusEffect(
     useCallback(() => {
       fetchLessonCounts();
+      getLesson();
     }, [fetchLessonCounts]),
   );
+
+  console.log('completedData', completedData);
+  console.log('lessonCount', lessonCount);
 
   if (isLoading) {
     return (
@@ -64,7 +102,7 @@ const index = () => {
       <LessonsBanner />
 
       {/* Current Level Progress */}
-      <CurrentLevelProgressCard />
+      <CurrentLevelProgressCard accumulatedData={accumulatedData} />
 
       {/* Lesssons Categories cards listing */}
       {progressSummary && (

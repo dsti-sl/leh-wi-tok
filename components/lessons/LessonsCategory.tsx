@@ -178,8 +178,6 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
     }
   }, []);
 
-  console.log('lessonCount', lessonCount);
-
   useEffect(() => {
     fetchUserInfo();
   }, [fetchUserInfo]);
