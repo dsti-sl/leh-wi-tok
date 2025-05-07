@@ -122,7 +122,7 @@ const Level = () => {
     return !completedLessons.has(previousLesson.id);
   };
 
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <View style={styles.container}>
         <Text>Loading...</Text>

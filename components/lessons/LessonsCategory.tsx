@@ -144,6 +144,7 @@ import { Record } from '@/lib/types';
 
 interface LessonsCategoryProps {
   progressSummary: Record;
+  lessonCount: any;
 }
 
 interface LessonCompletionData {
@@ -156,6 +157,7 @@ interface LessonCompletionData {
 
 const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   progressSummary,
+  lessonCount,
 }) => {
   const [userCompletionRate, setUserCompletionRate] =
     useState<LessonCompletionData | null>(null);
@@ -175,6 +177,8 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
       setUserCompletionRate({ lessons: [] });
     }
   }, []);
+
+  console.log('lessonCount', lessonCount);
 
   useEffect(() => {
     fetchUserInfo();
@@ -208,7 +212,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
         <LessonCard
           title={(progressSummary['Beginner'] as Record).title as string}
           completed={beginnerData.totalCompleted}
-          totalLesson={beginnerData.totallessons}
+          totalLesson={beginnerData.totallessons || lessonCount.Beginner}
           onPress={() => {
             router.push(
               `/(tabs)/lessons/level/${(progressSummary['Beginner'] as Record).title}?assessment=Beginner`,
@@ -221,7 +225,9 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
             (progressSummary['Basic Elementary'] as Record).title as string
           }
           completed={basicElementaryData.totalCompleted}
-          totalLesson={basicElementaryData.totallessons}
+          totalLesson={
+            basicElementaryData.totallessons || lessonCount['Basic Elementary']
+          }
           onPress={() => {
             router.push(
               `/(tabs)/lessons/level/${(progressSummary['Basic Elementary'] as Record).title}?assessment=Basic Elementary`,
@@ -234,7 +240,9 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
         <LessonCard
           title={(progressSummary['Intermediate'] as Record).title as string}
           completed={intermediateData.totalCompleted}
-          totalLesson={intermediateData.totallessons}
+          totalLesson={
+            intermediateData.totallessons || lessonCount.Intermediate
+          }
           onPress={() => {
             console.log('Intermediate', progressSummary['Intermediate']);
             router.push(
@@ -246,7 +254,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
         <LessonCard
           title={(progressSummary['Advanced'] as Record).title as string}
           completed={advancedData.totalCompleted}
-          totalLesson={advancedData.totallessons}
+          totalLesson={advancedData.totallessons || lessonCount.Advanced}
           onPress={() => {
             router.push(
               `/(tabs)/lessons/level/${(progressSummary['Advanced'] as Record).title}?assessment=Advanced`,

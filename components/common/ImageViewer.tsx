@@ -11,6 +11,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ gestureId }) => {
 
   const imageUrl = `${BASE_URL}/file/download?id=${gestureId}`;
 
+  console.log('Image URL:', imageUrl);
+
   return (
     <View style={styles.container}>
       <Image

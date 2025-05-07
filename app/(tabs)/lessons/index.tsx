@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useFocusEffect } from 'expo-router/build/useFocusEffect';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
 
 import CurrentLevelProgressCard from '@/components/lessons/CurrentLevelProgressCard';
 import { LessonsBanner } from '@/components/lessons/LessonsBanner';
@@ -12,37 +14,50 @@ const index = () => {
   const [lessonCount, setLessonCount] = useState({});
   const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
-  useEffect(() => {
-    const fetchLessonCounts = async () => {
-      const levels: string[] = [
-        'Beginner',
-        'Basic Elementary',
-        'Intermediate',
-        'Advanced',
-      ];
-      const counts = {};
-
-      try {
-        setIsLoading(true);
-        for (const level of levels) {
-          const response = await fetch(
-            `${BASE_URL}/nugget?and=(lesson.tags.title.eq.${level})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active`,
-          );
-          const data = await response.json();
-          if (response.ok) {
-            counts[level] = data.meta.count;
-          }
+  const fetchLessonCounts = useCallback(async () => {
+    const levels: string[] = [
+      'Beginner',
+      'Basic Elementary',
+      'Intermediate',
+      'Advanced',
+    ];
+    const counts: Record<string, number> = {};
+    try {
+      setIsLoading(true);
+      for (const level of levels) {
+        const response = await fetch(
+          `${BASE_URL}/nugget?and=(lesson.tags.title.eq.${level})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active`,
+        );
+        const data = await response.json();
+        if (response.ok) {
+          counts[level] = data.meta.count;
         }
-        setLessonCount(counts);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching lesson counts:', error);
       }
-    };
-    fetchLessonCounts();
+      setLessonCount(counts);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching lesson counts:', error);
+    }
   }, []);
 
-  console.log('setLessonCount', lessonCount);
+  useEffect(() => {
+    fetchLessonCounts();
+  }, [fetchLessonCounts]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchLessonCounts();
+    }, [fetchLessonCounts]),
+  );
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Banner */}
@@ -52,7 +67,12 @@ const index = () => {
       <CurrentLevelProgressCard />
 
       {/* Lesssons Categories cards listing */}
-      {progressSummary && <LessonsCategory progressSummary={progressSummary} />}
+      {progressSummary && (
+        <LessonsCategory
+          lessonCount={lessonCount}
+          progressSummary={progressSummary}
+        />
+      )}
     </View>
   );
 };
@@ -66,4 +86,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 20,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
+// Removed the incorrect local useCallback definition
