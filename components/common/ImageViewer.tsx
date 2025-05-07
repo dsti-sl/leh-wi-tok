@@ -10,7 +10,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ gestureId }) => {
   const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
   const imageUrl = `${BASE_URL}/file/download?id=${gestureId}`;
-  console.log('imageUrl =>', imageUrl);
 
   return (
     <View style={styles.container}>

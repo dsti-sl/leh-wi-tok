@@ -32,6 +32,7 @@ const Level = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [lessonTags, setLessonTags] = useState<any[]>([]);
+  const [lessonCount, setLessonCount] = useState<number>(0);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
     new Set(),
   );
@@ -51,7 +52,7 @@ const Level = () => {
         if (response.ok) {
           const sortedData = data.data.sort((a, b) => a.priority - b.priority);
           setLessonTags(sortedData);
-
+          setLessonCount(data.meta.count);
           const storedCompleted = await AsyncStorage.getItem('completedLesson');
           const initialCompleted = storedCompleted
             ? JSON.parse(storedCompleted)
@@ -82,7 +83,9 @@ const Level = () => {
       ? JSON.parse(storedCompleted)
       : { user: {}, lessons: [] };
 
-    const user = await AsyncStorage.getItem('user');
+    const loginUser = await AsyncStorage.getItem('user');
+    const user = completedData.user || loginUser;
+
     const newCompleted = new Set(completedLessons);
     newCompleted.add(lesson.id);
 
@@ -93,6 +96,7 @@ const Level = () => {
       lessonCompleted: Array.from(newCompleted),
       level: assessment,
       totalCompleted: newCompleted.size,
+      totallessons: lessonCount,
     });
 
     const updatedData = {
@@ -166,7 +170,7 @@ const Level = () => {
           <View>
             <Text style={styles.title}>{assessment}</Text>
             <Text style={styles.subtitle}>
-              {completedLessons.size} of {lessonTags.length} Lessons Completed
+              {completedLessons.size} of {lessonCount} Lessons Completed
             </Text>
           </View>
         </View>

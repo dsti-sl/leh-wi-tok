@@ -1,5 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   ColorValue,
   StyleSheet,
@@ -24,23 +23,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
   onPress,
   backgroundColor,
 }) => {
-  const [userCompletionRate, setUserCompletionRate] = useState<unknown>(null);
-
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      const user = await AsyncStorage.getItem('completedLesson');
-      if (user) {
-        setUserCompletionRate(JSON.parse(user));
-        console.log(user);
-      }
-    };
-
-    fetchUserInfo();
-  }, []);
-
-  console.log('userCompletionRate', userCompletionRate);
-
-  const progress = Math.round((completed / totalLesson) * 100);
+  const progress = Math.round((completed / totalLesson) * 100) || 0;
   return (
     <TouchableOpacity
       onPress={onPress}
