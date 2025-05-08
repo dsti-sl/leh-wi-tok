@@ -31,3 +31,12 @@ export const parseArrayObjectToSelectables = (
 export const getFirstWord = (str: string) => {
   return str.split(' ')[0];
 };
+
+export const accumulateLessonCounts = (
+  lessonCounts: Record<string, number>,
+): number => {
+  return (Object.values(lessonCounts) as number[]).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+};

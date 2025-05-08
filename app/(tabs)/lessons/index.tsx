@@ -100,7 +100,10 @@ const index = () => {
       <LessonsBanner />
 
       {/* Current Level Progress */}
-      <CurrentLevelProgressCard accumulatedData={accumulatedData} />
+      <CurrentLevelProgressCard
+        lessonCount={lessonCount}
+        accumulatedData={accumulatedData}
+      />
 
       {/* Lesssons Categories cards listing */}
       {progressSummary && (

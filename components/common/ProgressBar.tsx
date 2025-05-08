@@ -15,8 +15,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   backgroundColor = '#F5F5FA',
   progressColor = '#FF8A00',
 }) => {
-  console.log('ProgressBar', progress);
-  console.log('width', width);
   const containerBackgroundColor =
     progress === 0 || width === 0 ? '#FFFFFF' : backgroundColor;
 
