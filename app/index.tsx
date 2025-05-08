@@ -16,6 +16,7 @@ import {
 import slidesData from '../constants/OnboardingData.json';
 
 import { Colors } from '@/constants/Colors';
+import { fetchAndInsertTranslations } from '@/data/dictionary';
 
 const { width, height } = Dimensions.get('window');
 const ONBOARDING_KEY = 'hasOnboarded';
@@ -81,6 +82,13 @@ const Onboarding = () => {
         return null;
     }
   };
+  useEffect(() => {
+    const syncTranslations = async () => {
+      console.log('Fetching and inserting translations...');
+      await fetchAndInsertTranslations();
+    };
+    syncTranslations();
+  }, []);
 
   const renderPagination = () => (
     <View style={styles.pagination}>
@@ -96,7 +104,11 @@ const Onboarding = () => {
     </View>
   );
 
-  const renderItem = ({ item }): React.JSX.Element => (
+  const renderItem = ({
+    item,
+  }: {
+    item: { image: string; title: string; description: string };
+  }): React.JSX.Element => (
     <View style={styles.slide}>
       <Image source={getImageSource(item.image)} style={styles.image} />
       <Text style={styles.title}>{item.title}</Text>
@@ -120,7 +132,7 @@ const Onboarding = () => {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onMomentumScrollEnd}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(_, index) => index.toString()}
       />
 
       <View style={styles.buttonContainer}>

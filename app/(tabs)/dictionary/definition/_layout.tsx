@@ -141,6 +141,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 5,
     fontSize: 16,
-    color: Colors.secondary,
+    color: Colors.primary,
   },
 });

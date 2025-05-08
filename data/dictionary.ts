@@ -1,6 +1,7 @@
 import { getDatabase } from '@/db/schema';
 import { fetchDictionaryData } from '@/db/retrivedata';
 import { fileDownloads } from '@/utils/filedownloads';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
@@ -275,5 +276,27 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
     console.log('All translation data fetched and stored successfully!');
   } catch (error) {
     console.error('Error fetching and storing translation data:', error);
+  }
+};
+export const checkAndUpdateTranslations = async () => {
+  try {
+    console.log('Checking for dictionary updates...');
+    const lastUpdateKey = 'lastDictionaryUpdate';
+    const currentTime = new Date().getTime();
+    const lastUpdate = await AsyncStorage.getItem(lastUpdateKey);
+
+    // Check for updates if last update was more than 24 hours ago or never
+    if (
+      !lastUpdate ||
+      currentTime - parseInt(lastUpdate) > 24 * 60 * 60 * 1000
+    ) {
+      await fetchAndInsertTranslations();
+      await AsyncStorage.setItem(lastUpdateKey, currentTime.toString());
+      console.log('Dictionary updated successfully');
+    } else {
+      console.log('Dictionary is up to date');
+    }
+  } catch (error) {
+    console.error('Error checking for dictionary updates:', error);
   }
 };

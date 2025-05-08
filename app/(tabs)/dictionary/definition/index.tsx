@@ -7,16 +7,12 @@ import {
   Dimensions,
   Alert,
   ActivityIndicator,
-  FlatList,
-  TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import {
-  GestureHandlerRootView,
-  PanGestureHandler,
-  PanGestureHandlerGestureEvent,
-} from 'react-native-gesture-handler';
+import * as FileSystem from 'expo-file-system';
 import { fetchDictionaryData } from '@/db/retrivedata';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -30,80 +26,93 @@ type DictionaryEntry = {
 
 const index = () => {
   const router = useRouter();
-  const { word, query = '' } = useLocalSearchParams();
+  const { word } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
-  const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(-1);
-  const [filteredData, setFilteredData] = useState<DictionaryEntry[]>([]);
+  const [wordData, setWordData] = useState<DictionaryEntry | null>(null);
+  const [imageError, setImageError] = useState<{
+    illustration?: string;
+    image?: string;
+  }>({});
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadWordData = async () => {
       try {
-        const data = await fetchDictionaryData();
-        setDictionaryData(data);
+        console.log('Loading dictionary data for word:', word);
+        setLoading(true);
 
-        if (query) {
-          // Filter data based on search query
-          const filtered = data.filter((entry) =>
-            entry.word
-              .toLowerCase()
-              .includes(typeof query === 'string' ? query.toLowerCase() : ''),
-          );
-          setFilteredData(filtered);
-          setLoading(false);
+        const data = await fetchDictionaryData();
+
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          console.error('Dictionary data is empty or invalid');
+          Alert.alert('Error', 'Dictionary data is not available');
+          router.back();
           return;
         }
 
-        // Find current word index if not searching
-        const index = data.findIndex(
-          (item) =>
-            item.word.toLowerCase() ===
-            (typeof word === 'string' ? word.toLowerCase() : ''),
+        console.log('Dictionary data loaded:', data.length, 'entries');
+
+        if (!word || typeof word !== 'string') {
+          console.error('Invalid word parameter:', word);
+          Alert.alert('Error', 'Invalid word parameter');
+          router.back();
+          return;
+        }
+
+        const wordEntry = data.find(
+          (entry) =>
+            entry.word.toLowerCase().trim() === word.toLowerCase().trim(),
         );
 
-        if (index === -1) {
-          Alert.alert('Word Not Found', 'The selected word does not exist.');
-          router.replace('/dictionary');
+        if (!wordEntry) {
+          console.log('Word not found:', word);
+          Alert.alert(
+            'Word Not Found',
+            'The selected word does not exist in the dictionary.',
+          );
+          router.back();
           return;
         }
 
-        setCurrentIndex(index);
+        const assetPath = `${FileSystem.documentDirectory}assets/`;
+        const processedEntry = {
+          ...wordEntry,
+          illustration: wordEntry.illustration
+            ? wordEntry.illustration.startsWith('file://')
+              ? wordEntry.illustration
+              : `${assetPath}${wordEntry.illustration}`
+            : null,
+          image: wordEntry.image
+            ? wordEntry.image.startsWith('file://')
+              ? wordEntry.image
+              : `${assetPath}${wordEntry.image}`
+            : null,
+        };
+
+        console.log('Word data processed:', {
+          word: processedEntry.word,
+          hasIllustration: !!processedEntry.illustration,
+          hasImage: !!processedEntry.image,
+        });
+
+        setWordData(processedEntry);
       } catch (error) {
-        console.error('Error loading dictionary data:', error);
-        Alert.alert('Error', 'Failed to load dictionary data');
-        router.replace('/dictionary');
+        console.error('Error in loadWordData:', error);
+        Alert.alert('Error', 'Failed to load word data. Please try again.');
+        router.back();
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
-  }, [word, query, router]);
+    loadWordData();
+  }, [word, router]);
 
-  const handleSwipe = (direction: 'left' | 'right') => {
-    if (direction === 'left' && currentIndex < dictionaryData.length - 1) {
-      const nextWord = dictionaryData[currentIndex + 1].word;
-      router.push({
-        pathname: '/(tabs)/dictionary/definition',
-        params: { word: nextWord },
-      });
-    } else if (direction === 'right' && currentIndex > 0) {
-      const prevWord = dictionaryData[currentIndex - 1].word;
-      router.push({
-        pathname: '/(tabs)/dictionary/definition',
-        params: { word: prevWord },
-      });
-    }
-  };
-
-  const onGestureEvent = (event: PanGestureHandlerGestureEvent) => {
-    const { translationX } = event.nativeEvent;
-
-    if (translationX > 50) {
-      handleSwipe('right');
-    } else if (translationX < -50) {
-      handleSwipe('left');
-    }
+  const handleImageError = (type: 'illustration' | 'image', error: string) => {
+    setImageError((prev) => ({
+      ...prev,
+      [type]: error,
+    }));
+    console.error(`${type} loading error:`, error);
   };
 
   if (loading) {
@@ -114,73 +123,55 @@ const index = () => {
     );
   }
 
-  // Show search results if there's a query
-  if (query) {
-    return (
-      <View style={styles.container}>
-        <FlatList
-          data={filteredData}
-          keyExtractor={(item) => item.word}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: '/(tabs)/dictionary/definition',
-                  params: { word: item.word, query: '' },
-                })
-              }
-              style={styles.searchResultItem}
-            >
-              <Text style={styles.searchResultText}>{item.word}</Text>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No words found.</Text>
-          }
-        />
-      </View>
-    );
-  }
-
-  // Show word definition if no query
-  const currentWord = dictionaryData[currentIndex];
-
-  if (!currentWord) {
+  if (!wordData) {
     return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <PanGestureHandler onGestureEvent={onGestureEvent}>
-        <View style={styles.container}>
-          <Text style={styles.word}>{currentWord.word}</Text>
-          <View style={styles.mediaContainer}>
-            {currentWord.illustration ? (
-              <Image
-                source={{ uri: currentWord.illustration }}
-                style={styles.gif}
-                resizeMode="cover"
-              />
-            ) : (
-              <Text style={styles.errorText}>No illustration available</Text>
-            )}
-          </View>
-          <View style={styles.definitionContainer}>
-            <Text style={styles.definitionTitle}>Definition</Text>
-            <Text style={styles.partOfSpeech}>{currentWord.partOfSpeech}</Text>
-            <Text style={styles.definitionText}>{currentWord.definition}</Text>
-          </View>
-
-          {currentWord.image && (
-            <Image
-              source={{ uri: currentWord.image }}
-              style={styles.image}
-              resizeMode="contain"
-            />
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.contentContainer}
+    >
+      {wordData.illustration && (
+        <View style={styles.mediaContainer}>
+          <Image
+            source={{ uri: wordData.illustration }}
+            style={styles.illustration}
+            resizeMode="contain"
+            onError={(e) =>
+              handleImageError('illustration', e.nativeEvent.error)
+            }
+          />
+          {imageError.illustration && (
+            <Text style={styles.errorText}>{imageError.illustration}</Text>
           )}
         </View>
-      </PanGestureHandler>
-    </GestureHandlerRootView>
+      )}
+
+      {/* Definition Section */}
+      <View style={styles.definitionContainer}>
+        <Text style={styles.partOfSpeech}>
+          {wordData.partOfSpeech || 'No part of speech available'}
+        </Text>
+        <Text style={styles.definitionText}>{wordData.definition}</Text>
+      </View>
+
+      {/* Image Section */}
+      {wordData.image && (
+        <View style={styles.mediaContainer}>
+          <Image
+            source={{ uri: wordData.image }}
+            style={styles.image}
+            resizeMode="contain"
+            onError={(e) => handleImageError('image', e.nativeEvent.error)}
+          />
+          {imageError.image && (
+            <Text style={styles.errorText}>{imageError.image}</Text>
+          )}
+        </View>
+      )}
+    </ScrollView>
   );
 };
 
@@ -196,76 +187,73 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingTop: 40,
   },
-  word: {
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  wordTitle: {
     fontSize: 24,
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',
     marginBottom: 20,
-    textTransform: 'capitalize',
   },
-  mediaContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  gif: {
-    width: SCREEN_WIDTH - 40,
-    height: 200,
-    borderRadius: 12,
-  },
-  errorText: {
+  searchQuery: {
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    marginTop: 20,
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  mediaContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minHeight: 100,
+  },
+  illustration: {
+    width: SCREEN_WIDTH - 48,
+    height: 200,
+    borderRadius: 8,
+  },
+  image: {
+    width: SCREEN_WIDTH - 48,
+    height: 200,
+    borderRadius: 8,
   },
   definitionContainer: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#f8f8f8',
-    borderRadius: 10,
-  },
-  definitionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 8,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   partOfSpeech: {
     fontSize: 16,
+    color: '#666',
     fontStyle: 'italic',
-    color: '#555',
     marginBottom: 8,
   },
   definitionText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#333',
     lineHeight: 24,
   },
-  image: {
-    width: SCREEN_WIDTH - 40,
-    height: 200,
-    marginTop: 20,
-    borderRadius: 8,
-  },
-  searchResultItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  searchResultText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#888',
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    marginTop: 8,
     textAlign: 'center',
-    marginTop: 20,
   },
 });
