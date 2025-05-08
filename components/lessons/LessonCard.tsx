@@ -23,7 +23,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
   onPress,
   backgroundColor,
 }) => {
-  const progress = Math.round((completed / totalLesson) * 100);
+  const progress = Math.round((completed / totalLesson) * 100) || 0;
   return (
     <TouchableOpacity
       onPress={onPress}

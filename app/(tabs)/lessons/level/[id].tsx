@@ -1,4 +1,5 @@
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
@@ -31,6 +32,7 @@ const Level = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [lessonTags, setLessonTags] = useState<any[]>([]);
+  const [lessonCount, setLessonCount] = useState<number>(0);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
     new Set(),
   );
@@ -48,16 +50,20 @@ const Level = () => {
         );
         const data = await response.json();
         if (response.ok) {
-          // Sort by priority
           const sortedData = data.data.sort((a, b) => a.priority - b.priority);
           setLessonTags(sortedData);
+          setLessonCount(data.meta.count);
+          const storedCompleted = await AsyncStorage.getItem('completedLesson');
+          const initialCompleted = storedCompleted
+            ? JSON.parse(storedCompleted)
+            : { user: {}, lessons: [] };
+          const currentLevel = initialCompleted.lessons.find(
+            (l) => l.level === assessment,
+          );
 
-          // Initialize completed lessons (you might want to fetch this from your backend)
-          // For demo purposes, we'll assume priority 1 is always unlocked
-          const initialCompleted = new Set<string>();
-          // Add your logic here to mark completed lessons from backend
-          setCompletedLessons(initialCompleted);
+          setCompletedLessons(new Set(currentLevel?.lessonCompleted || []));
         }
+
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching user details:', error);
@@ -68,13 +74,37 @@ const Level = () => {
     fetchLessonCategory();
   }, []);
 
-  const handleLessonClick = (lesson: any) => {
+  const handleLessonClick = async (lesson: any) => {
     handleLessonSelect(lesson);
     setSelectedGestureId(lesson?.gesture?.id);
 
-    // Mark lesson as completed when clicked (you might want to do this after actual completion)
+    const storedCompleted = await AsyncStorage.getItem('completedLesson');
+    const completedData = storedCompleted
+      ? JSON.parse(storedCompleted)
+      : { user: {}, lessons: [] };
+
+    const loginUser = await AsyncStorage.getItem('user');
+    const user = completedData.user || loginUser;
+
     const newCompleted = new Set(completedLessons);
     newCompleted.add(lesson.id);
+
+    const updatedLessons = completedData.lessons.filter(
+      (l) => l.level !== assessment,
+    );
+    updatedLessons.push({
+      lessonCompleted: Array.from(newCompleted),
+      level: assessment,
+      totalCompleted: newCompleted.size,
+      totallessons: lessonCount,
+    });
+
+    const updatedData = {
+      user,
+      lessons: updatedLessons,
+    };
+
+    await AsyncStorage.setItem('completedLesson', JSON.stringify(updatedData));
     setCompletedLessons(newCompleted);
   };
 
@@ -92,7 +122,7 @@ const Level = () => {
     return !completedLessons.has(previousLesson.id);
   };
 
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <View style={styles.container}>
         <Text>Loading...</Text>
@@ -140,7 +170,7 @@ const Level = () => {
           <View>
             <Text style={styles.title}>{assessment}</Text>
             <Text style={styles.subtitle}>
-              {completedLessons.size} of {lessonTags.length} Lessons Completed
+              {completedLessons.size} of {lessonCount} Lessons Completed
             </Text>
           </View>
         </View>
