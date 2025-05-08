@@ -14,18 +14,32 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   height = 8,
   backgroundColor = '#F5F5FA',
   progressColor = '#FF8A00',
-}) => (
-  <View
-    style={[styles.container, { width: `${width}%`, height, backgroundColor }]}
-  >
+}) => {
+  console.log('ProgressBar', progress);
+  console.log('width', width);
+  const containerBackgroundColor =
+    progress === 0 || width === 0 ? '#FFFFFF' : backgroundColor;
+
+  return (
     <View
       style={[
-        styles.progress,
-        { width: `${progress}%`, height, backgroundColor: progressColor },
+        styles.container,
+        {
+          width: `${width}%`,
+          height,
+          backgroundColor: containerBackgroundColor,
+        },
       ]}
-    />
-  </View>
-);
+    >
+      <View
+        style={[
+          styles.progress,
+          { width: `${progress}%`, height, backgroundColor: progressColor },
+        ]}
+      />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {

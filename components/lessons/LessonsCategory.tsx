@@ -1,29 +1,83 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import React from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import LessonCard from './LessonCard';
-import QuizCard from './QuizCard';
 
 import { Record } from '@/lib/types';
 
 interface LessonsCategoryProps {
   progressSummary: Record;
+  lessonCount: any;
 }
+
+interface LessonCompletionData {
+  lessons?: Array<{
+    level: string;
+    totalCompleted: number;
+    totallessons: number;
+  }>;
+}
+
 const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   progressSummary,
+  lessonCount,
 }) => {
+  const [userCompletionRate, setUserCompletionRate] =
+    useState<LessonCompletionData | null>(null);
+
+  const fetchUserInfo = useCallback(async () => {
+    try {
+      const lessonComplete = await AsyncStorage.getItem('completedLesson');
+      if (lessonComplete) {
+        setUserCompletionRate(JSON.parse(lessonComplete));
+      } else {
+        // Initialize with empty data if nothing is found
+        setUserCompletionRate({ lessons: [] });
+      }
+    } catch (error) {
+      console.error('Failed to fetch completed lessons:', error);
+      // Fallback to empty data if there's an error
+      setUserCompletionRate({ lessons: [] });
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserInfo();
+  }, [fetchUserInfo]);
+
+  // This will run whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserInfo();
+    }, [fetchUserInfo]),
+  );
+
+  // Helper function to find lesson data safely
+  const getLessonData = (level: string) => {
+    return (
+      userCompletionRate?.lessons?.find((lesson) => lesson.level === level) || {
+        totalCompleted: 0,
+        totallessons: 0,
+      }
+    );
+  };
+
+  const beginnerData = getLessonData('Beginner');
+  const basicElementaryData = getLessonData('Basic Elementary');
+  const intermediateData = getLessonData('Intermediate');
+  const advancedData = getLessonData('Advanced');
+
   return (
     <View style={styles.cardsContainer}>
       <View style={styles.cardRowContainer}>
         <LessonCard
           title={(progressSummary['Beginner'] as Record).title as string}
-          completed={
-            (progressSummary['Beginner'] as Record).completed as number
-          }
-          totalLesson={(progressSummary['Beginner'] as Record).total as number}
+          completed={beginnerData.totalCompleted}
+          totalLesson={beginnerData.totallessons || lessonCount.Beginner}
           onPress={() => {
-            console.log('Beginners');
             router.push(
               `/(tabs)/lessons/level/${(progressSummary['Beginner'] as Record).title}?assessment=Beginner`,
             );
@@ -34,51 +88,45 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
           title={
             (progressSummary['Basic Elementary'] as Record).title as string
           }
-          completed={
-            (progressSummary['Basic Elementary'] as Record).completed as number
-          }
+          completed={basicElementaryData.totalCompleted}
           totalLesson={
-            (progressSummary['Basic Elementary'] as Record).total as number
+            basicElementaryData.totallessons || lessonCount['Basic Elementary']
           }
           onPress={() => {
-            console.log('Basic Elementary ');
+            router.push(
+              `/(tabs)/lessons/level/${(progressSummary['Basic Elementary'] as Record).title}?assessment=Basic Elementary`,
+            );
           }}
           backgroundColor="#1b6c82"
         />
       </View>
-      <View
-        style={{
-          flexDirection: 'row',
-          width: '100%',
-          gap: 20,
-        }}
-      >
+      <View style={styles.cardRowContainer}>
         <LessonCard
           title={(progressSummary['Intermediate'] as Record).title as string}
-          completed={
-            (progressSummary['Intermediate'] as Record).completed as number
-          }
+          completed={intermediateData.totalCompleted}
           totalLesson={
-            (progressSummary['Intermediate'] as Record).total as number
+            intermediateData.totallessons || lessonCount.Intermediate
           }
           onPress={() => {
-            console.log('Intermediate');
+            console.log('Intermediate', progressSummary['Intermediate']);
+            router.push(
+              `/(tabs)/lessons/level/${(progressSummary['Intermediate'] as Record).title}?assessment=Intermediate`,
+            );
           }}
           backgroundColor="#2e6270"
         />
         <LessonCard
           title={(progressSummary['Advanced'] as Record).title as string}
-          completed={
-            (progressSummary['Advanced'] as Record).completed as number
-          }
-          totalLesson={(progressSummary['Advanced'] as Record).total as number}
+          completed={advancedData.totalCompleted}
+          totalLesson={advancedData.totallessons || lessonCount.Advanced}
           onPress={() => {
-            console.log('Advance');
+            router.push(
+              `/(tabs)/lessons/level/${(progressSummary['Advanced'] as Record).title}?assessment=Advanced`,
+            );
           }}
           backgroundColor="#3088a0"
         />
       </View>
-      <QuizCard completed={1} total={100} />
     </View>
   );
 };

@@ -62,6 +62,10 @@ const RoleSelection = () => {
       Alert.alert('Error', 'Please select a role before proceeding.');
       return;
     }
+    if (selectedRole === 'teacher') {
+      Alert.alert('Warning', 'Teachers are not allowed to use this app yet.');
+      return;
+    }
     setIsLoading(true);
     try {
       await updateRole(selectedRole);

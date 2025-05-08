@@ -9,18 +9,23 @@ import { Record } from '@/lib/types';
 interface CurrentLevelProgressCardProps {
   defaultTutorial?: Record;
 }
-const CurrentLevelProgressCard: React.FC<
-  CurrentLevelProgressCardProps
-> = () => {
-  // TODO: Review implementation as data source becomes available
+const CurrentLevelProgressCard: React.FC<CurrentLevelProgressCardProps> = ({
+  accumulatedData,
+}: any) => {
+  const progress =
+    Math.round(
+      (accumulatedData?.accumulatedCompletedLessons /
+        accumulatedData?.accumulatedLessons) *
+        100,
+    ) || 0;
   return (
     <View style={styles.container}>
       <View style={styles.titleContent}>
-        <Text>Level 1</Text>
-        <Text>{`${0}/${1000}`}</Text>
+        <Text>My Progress</Text>
+        <Text>{`${accumulatedData?.accumulatedCompletedLessons} / ${accumulatedData?.accumulatedLessons}`}</Text>
       </View>
-      <ProgressBar progress={50} />
-      <Text>{`${'L1'}/${'L10'}`}</Text>
+      <ProgressBar progress={progress} />
+      <Text>{`${progress}% Completed`}</Text>
     </View>
   );
 };
@@ -31,7 +36,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     padding: 20,
-    marginTop: -95,
+    marginTop: -90,
     width: '90%',
     borderRadius: 10,
     shadowColor: '#000',
@@ -45,6 +50,7 @@ const styles = StyleSheet.create({
   titleContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    shadowOffset: { width: 0, height: 2 },
     gap: 10,
   },
   txtDescription: {
