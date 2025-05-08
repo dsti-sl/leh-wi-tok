@@ -17,11 +17,8 @@ import { Colors } from '@/constants/Colors';
   /*
 
 Check this out: 
-- Ensure that the word replace the definition 
-- Fix up the index page to work with the definition 
 - Load difinition and its illustration and gesture images. 
 - Retouch and Restyle 
-- Pass the search word and result to the definition page
 */
 }
 
