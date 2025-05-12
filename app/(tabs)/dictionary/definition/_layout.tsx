@@ -1,4 +1,4 @@
-import { useRouter, Stack } from 'expo-router';
+import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useRef } from 'react';
 import {
@@ -13,18 +13,18 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 
-{/*
+{
+  /*
 
 Check this out: 
-
-- Ensure that the word displaces instead of defination 
-- Fix up the index page to work with the defination 
-- Load difination and its illustrator and gesture images. 
+- Load difinition and its illustration and gesture images. 
 - Retouch and Restyle 
-*/}
+*/
+}
 
 const _layout = () => {
   const router = useRouter();
+  const { word } = useLocalSearchParams();
   const [isSearching, setIsSearching] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<TextInput>(null);
@@ -37,7 +37,7 @@ const _layout = () => {
       setQuery('');
       router.push({
         pathname: '/(tabs)/dictionary/definition',
-        params: { query: '' },
+        params: { word, query: '' },
       });
     }
   };
@@ -46,7 +46,7 @@ const _layout = () => {
     setQuery(text);
     router.push({
       pathname: '/(tabs)/dictionary/definition',
-      params: { query: text },
+      params: { word, query: text },
     });
   };
 
@@ -66,7 +66,6 @@ const _layout = () => {
             headerStyle: { backgroundColor: '#ffffff' },
             header: () => (
               <View style={styles.headerContainer}>
-                {/* Back Button */}
                 <TouchableOpacity onPress={() => router.back()}>
                   <Ionicons
                     name="arrow-back"
@@ -75,7 +74,6 @@ const _layout = () => {
                   />
                 </TouchableOpacity>
 
-                {/* Title or Search Bar */}
                 <View style={styles.titleContainer}>
                   {isSearching ? (
                     <TextInput
@@ -86,16 +84,19 @@ const _layout = () => {
                       onChangeText={handleQueryChange}
                     />
                   ) : (
-                    <Text style={styles.headerTitle}>Definition</Text>
+                    <Text style={styles.headerTitle}>
+                      {typeof word === 'string' && word.length > 0
+                        ? word
+                        : 'Definition'}
+                    </Text>
                   )}
                 </View>
 
-                {/* Search Icon */}
                 <TouchableOpacity onPress={handleSearchToggle}>
                   <Ionicons
                     name={isSearching ? 'close' : 'search'}
                     size={24}
-                    color={Colors.primary}
+                    color={Colors.secondary}
                   />
                 </TouchableOpacity>
               </View>
@@ -118,10 +119,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
   },
-  backIcon: {
-    width: 24,
-    height: 24,
-  },
   titleContainer: {
     flex: 1,
     alignItems: 'center',
@@ -131,14 +128,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '500',
     color: Colors.primary,
+    textTransform: 'capitalize',
   },
   searchInput: {
-    flex: 1,
     height: 40,
+    width: '90%',
     borderWidth: 1,
-    borderColor: Colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderColor: Colors.secondary,
+    borderRadius: 5,
+    paddingHorizontal: 5,
     fontSize: 16,
     color: Colors.primary,
   },
