@@ -24,7 +24,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0F4C5C"
       },
-      "permissions": ["CAMERA", "READ_ExTERNAL_STORAGE"]
+      "permissions": [
+        "CAMERA",
+        "READ_ExTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",

@@ -20,6 +20,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     infoPlist: {
       NSPhotoLibraryUsageDescription: 'Le Wi Tok access ',
     },
+    bundleIdentifier: 'com.dsti.lehwitok',
   },
   android: {
     adaptiveIcon: {
@@ -27,6 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: '#0F4C5C',
     },
     permissions: ['CAMERA', 'READ_EXTERNAL_STORAGE'],
+    package: 'com.dsti.lehwitok',
   },
   web: {
     bundler: 'metro',
