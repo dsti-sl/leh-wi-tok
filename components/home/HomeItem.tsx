@@ -60,6 +60,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 15,
     gap: 10,
+    marginBottom: 15,
     alignItems: 'center',
   },
   contentContainer: {
