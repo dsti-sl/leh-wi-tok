@@ -1,6 +1,6 @@
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,45 +8,56 @@ import {
   TouchableOpacity,
   Platform,
   StyleSheet,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 
-{
-  /*
-
-Check this out: 
-- Load difinition and its illustration and gesture images. 
-- Retouch and Restyle 
-*/
-}
-
 const _layout = () => {
   const router = useRouter();
-  const { word } = useLocalSearchParams();
-  const [isSearching, setIsSearching] = useState(false);
-  const [query, setQuery] = useState('');
+  const { word: initialDefinitionWord, query: urlQueryParam } =
+    useLocalSearchParams<{
+      word: string;
+      query?: string;
+    }>();
+
+  const [isSearching, setIsSearching] = useState<boolean>(!!urlQueryParam);
+  const [searchInputText, setSearchInputText] = useState<string>(
+    urlQueryParam || '',
+  );
   const inputRef = useRef<TextInput>(null);
 
-  const handleSearchToggle = () => {
-    setIsSearching((prev) => !prev);
-    if (!isSearching) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    } else {
-      setQuery('');
-      router.push({
-        pathname: '/(tabs)/dictionary/definition',
-        params: { word, query: '' },
-      });
+  useEffect(() => {
+    if (isSearching) {
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
+  }, [isSearching]);
+
+  useEffect(() => {
+    if ((urlQueryParam || '') !== searchInputText) {
+      setSearchInputText(urlQueryParam || '');
+      setIsSearching(!!urlQueryParam);
+    }
+  }, [urlQueryParam]);
+
+  const handleSearchToggle = () => {
+    setIsSearching((prev) => {
+      const nextIsSearching = !prev;
+      if (!nextIsSearching) {
+        setSearchInputText('');
+        router.push({
+          pathname: '/(tabs)/dictionary/definition',
+          params: { word: initialDefinitionWord, query: '' },
+        });
+      }
+      return nextIsSearching;
+    });
   };
 
   const handleQueryChange = (text: string) => {
-    setQuery(text);
+    setSearchInputText(text);
     router.push({
       pathname: '/(tabs)/dictionary/definition',
-      params: { word, query: text },
+      params: { word: initialDefinitionWord, query: text },
     });
   };
 
@@ -80,13 +91,14 @@ const _layout = () => {
                       ref={inputRef}
                       style={styles.searchInput}
                       placeholder="Search words..."
-                      value={query}
+                      value={searchInputText}
                       onChangeText={handleQueryChange}
                     />
                   ) : (
                     <Text style={styles.headerTitle}>
-                      {typeof word === 'string' && word.length > 0
-                        ? word
+                      {typeof initialDefinitionWord === 'string' &&
+                      initialDefinitionWord.length > 0
+                        ? initialDefinitionWord
                         : 'Definition'}
                     </Text>
                   )}

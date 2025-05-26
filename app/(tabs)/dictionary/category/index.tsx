@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,77 +10,96 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { fetchDictionaryData } from '@/db/retrivedata';
+import useSearch from '@/hooks/useSearch';
 
-type DictionaryEntry = {
+interface DictionaryEntry {
   word: string;
   categories: string[];
-};
+}
+
+interface GroupedWordsSection {
+  title: string;
+  data: DictionaryEntry[];
+}
 
 const index = () => {
   const router = useRouter();
-  const { categoryName, query = '' } = useLocalSearchParams() as {
+  const { categoryName, query: searchParamQuery = '' } = useLocalSearchParams<{
     categoryName: string;
-    query: string;
-  };
+    query?: string;
+  }>();
 
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
-  const [groupedWords, setGroupedWords] = useState<
-    { title: string; data: DictionaryEntry[] }[]
-  >([]);
-  const [filteredData, setFilteredData] = useState<DictionaryEntry[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const {
+    query,
+    setQuery,
+    filteredData: globalFilteredData,
+  } = useSearch({
+    data: dictionaryData,
+    searchKey: 'word',
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await fetchDictionaryData();
+        const data: DictionaryEntry[] = await fetchDictionaryData();
         setDictionaryData(data);
-
-        if (query) {
-          const filtered = data.filter((entry) =>
-            entry.word.toLowerCase().includes(query.toLowerCase()),
-          );
-          setFilteredData(filtered);
-        } else {
-          const filteredWords = data.filter((entry) =>
-            entry.categories.includes(categoryName),
-          );
-
-          const groupedData = filteredWords.reduce(
-            (acc: Record<string, DictionaryEntry[]>, item) => {
-              const firstLetter = item.word[0].toUpperCase();
-              if (!acc[firstLetter]) acc[firstLetter] = [];
-              acc[firstLetter].push(item);
-              return acc;
-            },
-            {} as Record<string, DictionaryEntry[]>,
-          );
-
-          const groupedWordsArray = Object.keys(groupedData)
-            .sort()
-            .map((key) => ({
-              title: key,
-              data: groupedData[key].sort((a, b) =>
-                a.word.localeCompare(b.word),
-              ),
-            }));
-
-          setGroupedWords(groupedWordsArray);
+        if (searchParamQuery !== query) {
+          setQuery(searchParamQuery);
         }
       } catch (error) {
         console.error('Error fetching dictionary data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, [categoryName, query]);
+  }, [searchParamQuery, setQuery]);
+  const categoryGroupedWords: GroupedWordsSection[] = useMemo(() => {
+    if (loading || query) {
+      return [];
+    }
+
+    const wordsForCurrentCategory = dictionaryData.filter((entry) =>
+      entry.categories.includes(categoryName),
+    );
+
+    const groupedData = wordsForCurrentCategory.reduce(
+      (acc: Record<string, DictionaryEntry[]>, item) => {
+        const firstLetter = item.word[0].toUpperCase();
+        if (!acc[firstLetter]) acc[firstLetter] = [];
+        acc[firstLetter].push(item);
+        return acc;
+      },
+      {} as Record<string, DictionaryEntry[]>,
+    );
+
+    return Object.keys(groupedData)
+      .sort()
+      .map((key) => ({
+        title: key,
+        data: groupedData[key].sort((a, b) => a.word.localeCompare(b.word)),
+      }));
+  }, [dictionaryData, categoryName, query, loading]);
+
+  if (loading) {
+    return (
+      <View style={styles.centeredContainer}>
+        <Text style={styles.loadingText}>Loading category words...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       {query ? (
         <FlatList
-          data={filteredData}
-          keyExtractor={(item) => item.word}
-          renderItem={({ item }) => (
+          data={globalFilteredData}
+          keyExtractor={(item: DictionaryEntry) => item.word}
+          renderItem={({ item }: { item: DictionaryEntry }) => (
             <TouchableOpacity
               onPress={() =>
                 router.push({
@@ -94,14 +113,16 @@ const index = () => {
             </TouchableOpacity>
           )}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No words found.</Text>
+            <Text style={styles.emptyText}>
+              No words found matching search.
+            </Text>
           }
         />
       ) : (
         <SectionList
-          sections={groupedWords}
-          keyExtractor={(item) => item.word}
-          renderItem={({ item }) => (
+          sections={categoryGroupedWords}
+          keyExtractor={(item: DictionaryEntry) => item.word}
+          renderItem={({ item }: { item: DictionaryEntry }) => (
             <TouchableOpacity
               onPress={() =>
                 router.push({
@@ -137,7 +158,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingTop: 40,
+    paddingTop: 0,
+  },
+  centeredContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sectionHeaderContainer: {
     backgroundColor: '#F0F0F0',
@@ -166,5 +193,10 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
     marginTop: 20,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#333',
+    textAlign: 'center',
   },
 });
