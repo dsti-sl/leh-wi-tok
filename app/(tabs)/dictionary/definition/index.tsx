@@ -1,181 +1,267 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Image,
   Dimensions,
-  Alert,
   ActivityIndicator,
   ScrollView,
+  Alert,
+  FlatList,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
 import { fetchDictionaryData } from '@/db/retrivedata';
-
+import {
+  getAbsoluteImagePath,
+  nuclearImageValidation,
+} from '@/utils/imageHandler';
+import useSearch from '@/hooks/useSearch';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type DictionaryEntry = {
+interface DictionaryEntry {
   word: string;
   definition: string;
   partOfSpeech: string | null;
   illustration: string | null;
   image: string | null;
-};
+}
 
 const index = () => {
   const router = useRouter();
-  const { word } = useLocalSearchParams();
-  const [loading, setLoading] = useState(true);
+  const { word: definitionWord, query: urlSearchQuery = '' } =
+    useLocalSearchParams<{
+      word: string;
+      query?: string;
+    }>();
+
+  const [allDictionaryData, setAllDictionaryData] = useState<DictionaryEntry[]>(
+    [],
+  );
   const [wordData, setWordData] = useState<DictionaryEntry | null>(null);
-  const [imageError, setImageError] = useState<{
-    illustration?: string;
-    image?: string;
-  }>({});
+  const [isLoadingDefinition, setIsLoadingDefinition] = useState<boolean>(true); // Specific loading for definition
+  const [imageStatus, setImageStatus] = useState({
+    illustration: { loading: false, error: false },
+    image: { loading: false, error: false },
+  });
+
+  const { filteredData, setQuery: setUseSearchQuery } = useSearch({
+    data: allDictionaryData,
+    searchKey: 'word',
+  });
 
   useEffect(() => {
-    const loadWordData = async () => {
+    nuclearImageValidation();
+  }, []);
+
+  useEffect(() => {
+    const loadAllDictionaryData = async () => {
       try {
-        console.log('Loading dictionary data for word:', word);
-        setLoading(true);
-
         const data = await fetchDictionaryData();
-
-        if (!data || !Array.isArray(data) || data.length === 0) {
-          console.error('Dictionary data is empty or invalid');
-          Alert.alert('Error', 'Dictionary data is not available');
-          router.back();
-          return;
-        }
-
-        console.log('Dictionary data loaded:', data.length, 'entries');
-
-        if (!word || typeof word !== 'string') {
-          console.error('Invalid word parameter:', word);
-          Alert.alert('Error', 'Invalid word parameter');
-          router.back();
-          return;
-        }
-
-        const wordEntry = data.find(
-          (entry) =>
-            entry.word.toLowerCase().trim() === word.toLowerCase().trim(),
-        );
-
-        if (!wordEntry) {
-          console.log('Word not found:', word);
-          Alert.alert(
-            'Word Not Found',
-            'The selected word does not exist in the dictionary.',
-          );
-          router.back();
-          return;
-        }
-
-        const assetPath = `${FileSystem.documentDirectory}assets/`;
-        const processedEntry = {
-          ...wordEntry,
-          illustration: wordEntry.illustration
-            ? wordEntry.illustration.startsWith('file://')
-              ? wordEntry.illustration
-              : `${assetPath}${wordEntry.illustration}`
-            : null,
-          image: wordEntry.image
-            ? wordEntry.image.startsWith('file://')
-              ? wordEntry.image
-              : `${assetPath}${wordEntry.image}`
-            : null,
-        };
-
-        console.log('Word data processed:', {
-          word: processedEntry.word,
-          hasIllustration: !!processedEntry.illustration,
-          hasImage: !!processedEntry.image,
-        });
-
-        setWordData(processedEntry);
+        setAllDictionaryData(data);
       } catch (error) {
-        console.error('Error in loadWordData:', error);
-        Alert.alert('Error', 'Failed to load word data. Please try again.');
-        router.back();
-      } finally {
-        setLoading(false);
+        Alert.alert('Error', 'Failed to load all dictionary data.');
+        console.error('Failed to load all dictionary data:', error);
       }
     };
+    loadAllDictionaryData();
+  }, []);
 
-    loadWordData();
-  }, [word, router]);
+  useEffect(() => {
+    if (setUseSearchQuery && urlSearchQuery !== undefined) {
+      setUseSearchQuery(urlSearchQuery);
+    }
 
-  const handleImageError = (type: 'illustration' | 'image', error: string) => {
-    setImageError((prev) => ({
-      ...prev,
-      [type]: error,
-    }));
-    console.error(`${type} loading error:`, error);
+    if (urlSearchQuery) {
+      setWordData(null);
+      setIsLoadingDefinition(false);
+    } else {
+      if (definitionWord && allDictionaryData.length > 0) {
+        if (
+          !wordData ||
+          wordData.word.toLowerCase() !== definitionWord.toLowerCase()
+        ) {
+          loadWordDefinition(definitionWord, allDictionaryData);
+        } else {
+          setIsLoadingDefinition(false);
+        }
+      } else if (!definitionWord) {
+        setWordData(null);
+        setIsLoadingDefinition(false);
+        if (allDictionaryData.length > 0 && !router.canGoBack()) {
+          Alert.alert('Error', 'No word provided to display definition.');
+        }
+      }
+    }
+  }, [
+    urlSearchQuery,
+    definitionWord,
+    allDictionaryData.length,
+    setUseSearchQuery,
+    wordData,
+    router,
+  ]);
+
+  const loadWordDefinition = async (word: string, data: DictionaryEntry[]) => {
+    setIsLoadingDefinition(true);
+    try {
+      const entry = data.find(
+        (e) => e.word.toLowerCase() === word.toLowerCase(),
+      );
+      if (!entry) {
+        setWordData(null);
+        throw new Error(`Definition for "${word}" not found.`);
+      }
+
+      const [illustration, image] = await Promise.all([
+        getAbsoluteImagePath(entry.illustration),
+        getAbsoluteImagePath(entry.image),
+      ]);
+
+      const verifyImage = async (uri: string | null) => {
+        if (!uri) return null;
+        const { exists } = await FileSystem.getInfoAsync(uri);
+        return exists ? uri : null;
+      };
+
+      setWordData({
+        ...entry,
+        illustration: await verifyImage(illustration),
+        image: await verifyImage(image),
+      });
+    } catch (error) {
+      setWordData(null);
+      Alert.alert(
+        'Error',
+        error instanceof Error
+          ? error.message
+          : 'Failed to load word definition.',
+      );
+      console.error('Error loading word definition:', error);
+    } finally {
+      setIsLoadingDefinition(false);
+    }
   };
 
-  if (loading) {
+  const renderImage = (uri: string | null, type: 'illustration' | 'image') => {
+    if (!uri) return null;
+
+    return (
+      <View style={styles.mediaContainer}>
+        <Image
+          source={{ uri }}
+          style={[
+            type === 'illustration' ? styles.illustration : styles.image,
+            imageStatus[type].loading && styles.imageLoading,
+          ]}
+          resizeMode="contain"
+          onLoadStart={() =>
+            setImageStatus((s) => ({
+              ...s,
+              [type]: { loading: true, error: false },
+            }))
+          }
+          onLoad={() =>
+            setImageStatus((s) => ({
+              ...s,
+              [type]: { loading: false, error: false },
+            }))
+          }
+          onError={() =>
+            setImageStatus((s) => ({
+              ...s,
+              [type]: { loading: false, error: true },
+            }))
+          }
+        />
+
+        {imageStatus[type].loading && (
+          <ActivityIndicator
+            size="large"
+            color="#007AFF"
+            style={styles.imageLoader}
+          />
+        )}
+
+        {imageStatus[type].error && (
+          <Text style={styles.errorText}>Image load failed</Text>
+        )}
+      </View>
+    );
+  };
+
+  if (urlSearchQuery) {
+    return (
+      <View style={styles.container}>
+        <FlatList
+          data={filteredData}
+          keyExtractor={(item) => item.word}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => {
+                router.push({
+                  pathname: '/(tabs)/dictionary/definition',
+                  params: { word: item.word, query: '' },
+                });
+              }}
+              style={styles.FlatlistItemContainer}
+            >
+              <Text style={styles.FlatlistItemText}>{item.word}</Text>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No matching words found</Text>
+            </View>
+          )}
+        />
+      </View>
+    );
+  }
+
+  if (isLoadingDefinition) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading definition...</Text>
       </View>
     );
   }
 
   if (!wordData) {
-    return null;
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.errorText}>
+          Definition not found for "{definitionWord || 'N/A'}"
+        </Text>
+      </View>
+    );
   }
 
   return (
     <ScrollView
       style={styles.container}
-      showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false} 
     >
-      {wordData.illustration && (
-        <View style={styles.mediaContainer}>
-          <Image
-            source={{ uri: wordData.illustration }}
-            style={styles.illustration}
-            resizeMode="contain"
-            onError={(e) =>
-              handleImageError('illustration', e.nativeEvent.error)
-            }
-          />
-          {imageError.illustration && (
-            <Text style={styles.errorText}>{imageError.illustration}</Text>
-          )}
-        </View>
-      )}
+      <Text style={styles.wordTitle}>{wordData.word}</Text>
 
-      {/* Definition Section */}
+      {renderImage(wordData.illustration, 'illustration')}
+
       <View style={styles.definitionContainer}>
         <Text style={styles.partOfSpeech}>
-          {wordData.partOfSpeech || 'No part of speech available'}
+          {wordData.partOfSpeech || 'No part of speech'}
         </Text>
         <Text style={styles.definitionText}>{wordData.definition}</Text>
       </View>
 
-      {/* Image Section */}
-      {wordData.image && (
-        <View style={styles.mediaContainer}>
-          <Image
-            source={{ uri: wordData.image }}
-            style={styles.image}
-            resizeMode="contain"
-            onError={(e) => handleImageError('image', e.nativeEvent.error)}
-          />
-          {imageError.image && (
-            <Text style={styles.errorText}>{imageError.image}</Text>
-          )}
-        </View>
-      )}
+      {renderImage(wordData.image, 'image')}
     </ScrollView>
   );
 };
-
-export default index;
 
 const styles = StyleSheet.create({
   loadingContainer: {
@@ -199,13 +285,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  searchQuery: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
-    fontStyle: 'italic',
-  },
   mediaContainer: {
     alignItems: 'center',
     marginVertical: 16,
@@ -228,6 +307,17 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH - 48,
     height: 200,
     borderRadius: 8,
+  },
+  imageLoading: {
+    opacity: 0.7,
+  },
+  imageLoader: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginLeft: -20,
+    marginTop: -20,
+    zIndex: 1,
   },
   definitionContainer: {
     backgroundColor: '#fff',
@@ -256,4 +346,35 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
+  loadingText: {
+    fontSize: 18,
+    color: '#333',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  FlatlistItemContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  FlatlistItemText: {
+    fontSize: 16,
+    color: '#555',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 16,
+  },
 });
+
+export default index;
