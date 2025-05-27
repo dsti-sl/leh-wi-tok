@@ -90,6 +90,6 @@ export async function fileDownloads(
       `[fileDownloads] Error downloading file ID ${fileId}, filename ${filename}:`,
       error,
     );
-    return ''; 
+    return '';
   }
 }
