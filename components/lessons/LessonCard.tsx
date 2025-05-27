@@ -34,7 +34,13 @@ const LessonCard: React.FC<LessonCardProps> = ({
         <ProgressBar progress={progress} />
         <View style={{ gap: 10 }}>
           <Text style={{ color: '#fff' }}>
-            {totalLesson > completed ? 'In-Progress' : 'Completed'}
+            {totalLesson === 0
+              ? 'No Lesson(s) added'
+              : completed === 0
+                ? 'Not Started'
+                : totalLesson > completed
+                  ? 'In-Progress'
+                  : 'Completed'}
           </Text>
           <Text style={styles.txtBold}>{`${completed}/${totalLesson}`}</Text>
         </View>

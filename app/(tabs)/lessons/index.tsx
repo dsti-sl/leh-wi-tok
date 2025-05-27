@@ -16,6 +16,27 @@ const index = () => {
   const [accumulatedData, setAccumulatedData] = useState<unknown>(null);
   const [completedData, setCompletedData] = useState<unknown>(null);
   const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+  const [serverProgress, setServerProgress] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchLesson = async () => {
+      const user = await AsyncStorage.getItem('user');
+      const userId = user ? JSON.parse(user).id : null;
+      try {
+        const progressRes = await fetch(
+          `${BASE_URL}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`,
+        );
+        const progressJson = await progressRes.json();
+
+        if (progressJson.data) {
+          setServerProgress(progressJson?.data);
+        }
+      } catch (apiError) {
+        console.warn('Lesson progress API failed, trying local fallback.');
+      }
+    };
+    fetchLesson();
+  }, []);
 
   const getLesson = async () => {
     const storedCompleted: unknown =
@@ -70,6 +91,12 @@ const index = () => {
       console.error('Error fetching lesson counts:', error);
     }
   }, []);
+
+  console.log('+++++++++++++++++++');
+  console.log('OUT ==>', serverProgress);
+  console.log('+++++++++++++++++++');
+  console.log(accumulatedData);
+  console.log('+++++++++++++++++++');
 
   useEffect(() => {
     fetchLessonCounts();

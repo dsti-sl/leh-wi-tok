@@ -27,6 +27,29 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
 }) => {
   const [userCompletionRate, setUserCompletionRate] =
     useState<LessonCompletionData | null>(null);
+  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+  const [serverProgress, setServerProgress] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchLesson = async () => {
+      const user = await AsyncStorage.getItem('user');
+      const userId = user ? JSON.parse(user).id : null;
+      try {
+        const progressRes = await fetch(
+          `${BASE_URL}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`,
+        );
+        const progressJson = await progressRes.json();
+
+        if (progressJson.data) {
+          setServerProgress(progressJson.data);
+        }
+      } catch (apiError) {
+        console.warn('Lesson progress API failed, trying local fallback.');
+      }
+    };
+    fetchLesson();
+  }, []);
 
   const fetchUserInfo = useCallback(async () => {
     try {
@@ -69,6 +92,9 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   const basicElementaryData = getLessonData('Basic Elementary');
   const intermediateData = getLessonData('Intermediate');
   const advancedData = getLessonData('Advanced');
+
+  console.log('serverProgress Data:', serverProgress);
+  console.log('userCompletionRate Data:', userCompletionRate);
 
   return (
     <View style={styles.cardsContainer}>
