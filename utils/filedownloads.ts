@@ -1,12 +1,9 @@
 import * as FileSystem from 'expo-file-system';
 
 /**
- * This utility function here downloads the translation remote files
- * and saves it locally, it then returns the local URI.
- * Ensures unique filenames and handles errors gracefully.
- * @param fileId The ID of the file to download
- * @param filename Desired local file name (with extension)
- * @returns Full local file URI or a fallback URI if the download fails
+ * @param fileId gets the unique file ID
+ * @param filename maintains the original filename
+ * @returns Local file if something fucks up.
  */
 export async function fileDownloads(
   fileId: string,
@@ -15,37 +12,84 @@ export async function fileDownloads(
   try {
     const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
     if (!BASE_URL) {
-      throw new Error('BASE_URL is not defined.');
+      throw new Error('BASE_URL is not defined in .env!');
     }
 
-    const downloadUrl = `${BASE_URL}/file/download?id=${fileId}`;
+    const baseUrlClean = BASE_URL.endsWith('/')
+      ? BASE_URL.slice(0, -1)
+      : BASE_URL;
+
+    const downloadUrl = `${baseUrlClean}/file/download?id=${fileId}`;
     const assetsDir = FileSystem.documentDirectory + 'assets/';
     const uniqueFilename = `${Date.now()}_${filename}`;
-    const localUri = assetsDir + uniqueFilename;
+    const localPath = assetsDir + uniqueFilename;
 
-    // Ensure directory exists
     const dirInfo = await FileSystem.getInfoAsync(assetsDir);
     if (!dirInfo.exists) {
+      console.log(`[fileDownloads] Creating assets directory: ${assetsDir}`);
       await FileSystem.makeDirectoryAsync(assetsDir, { intermediates: true });
     }
-
-    // this prevents duplications of files
-    const fileInfo = await FileSystem.getInfoAsync(localUri);
-    if (fileInfo.exists) {
-      console.log(`File already exists: ${localUri}`);
-      return localUri;
+    const existingFileInfo = await FileSystem.getInfoAsync(localPath);
+    if (
+      existingFileInfo.exists &&
+      existingFileInfo.size &&
+      existingFileInfo.size > 100 // Minimal size check to avoid empty/error files
+    ) {
+      console.log(`[fileDownloads] File already exists locally: ${localPath}`);
+      return `file://${localPath}`;
     }
 
-    // Download and return path
-    const { uri } = await FileSystem.downloadAsync(downloadUrl, localUri);
-    console.log(`File downloaded successfully: ${uri}`);
-    return uri;
+    console.log(
+      `[fileDownloads] Attempting to download from ${downloadUrl} to ${localPath}`,
+    );
+    const { uri: downloadedFileUri } = await FileSystem.downloadAsync(
+      downloadUrl,
+      localPath,
+    );
+    // FileSystem.downloadAsync returns the file:// URI directly if successful but dont't touch please.
+
+    console.log(`[fileDownloads] File downloaded to: ${downloadedFileUri}`);
+
+    const downloadedFileInfo = await FileSystem.getInfoAsync(downloadedFileUri);
+    if (
+      !downloadedFileInfo.exists ||
+      (downloadedFileInfo.exists &&
+        downloadedFileInfo.size !== undefined &&
+        downloadedFileInfo.size < 100)
+    ) {
+      const sizeInfo =
+        downloadedFileInfo.exists && typeof downloadedFileInfo.size === 'number'
+          ? downloadedFileInfo.size
+          : 'N/A';
+      console.warn(
+        `[fileDownloads] Downloaded file seems invalid for ID ${fileId} (size: ${sizeInfo})`,
+      );
+      await FileSystem.deleteAsync(downloadedFileUri, { idempotent: true });
+      return '';
+    }
+
+    try {
+      const snippet = await FileSystem.readAsStringAsync(downloadedFileUri, {
+        encoding: FileSystem.EncodingType.Base64,
+        length: 40,
+      });
+      console.log(
+        '[fileDownloads] Base64 start of file (first 10 chars):',
+        snippet.slice(0, 10),
+      );
+    } catch (readError) {
+      console.warn(
+        '[fileDownloads] Could not read file snippet for debug:',
+        readError,
+      );
+    }
+
+    return downloadedFileUri;
   } catch (error) {
     console.error(
-      `Error downloading ${filename} from file ID ${fileId}:`,
+      `[fileDownloads] Error downloading file ID ${fileId}, filename ${filename}:`,
       error,
     );
-
-    return '';
+    return ''; 
   }
 }

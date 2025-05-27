@@ -1,9 +1,31 @@
 import { getDatabase } from '@/db/schema';
-import { fetchDictionaryData } from '@/db/retrivedata';
 import { fileDownloads } from '@/utils/filedownloads';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+interface ApiTranslationItem {
+  id: string;
+  phrase: string;
+  description: string;
+  gesture?: { id: string; name: string; path: string; contentType: string }; // Assuming these have IDs now
+  illustration?: {
+    id: string;
+    name: string;
+    path: string;
+    contentType: string;
+  };
+  tags?: { category: string; title: string }[];
+}
+
+export interface LocalDictionaryEntry {
+  word: string;
+  definition: string;
+  illustration: string | null;
+  image: string | null;
+  partOfSpeech: string | null;
+  categories: string[];
+}
 
 /**
  * To check if a word already exists in the database.
@@ -26,15 +48,15 @@ const doesWordExist = async (word: string): Promise<boolean> => {
 
 /**
  * Updates an existing word in the database.
- * @param word The word to update
- * @param data The new data to update
+ * @param word
+ * @param data
  */
 const updateWord = async (
   word: string,
   data: {
     definition: string;
-    illustration?: string;
-    image?: string;
+    illustration?: string | null;
+    image?: string | null;
     partOfSpeech?: string;
     categories?: string[];
   },
@@ -47,11 +69,11 @@ const updateWord = async (
        SET definition = ?, illustration = ?, image = ?, partOfSpeech = ?, categories = ?
        WHERE word = ?`,
       [
-        data.definition,
-        data.illustration || null,
-        data.image || null,
-        data.partOfSpeech || null,
-        JSON.stringify(data.categories || []),
+        data.definition ?? null,
+        data.illustration ?? null,
+        data.image ?? null,
+        data.partOfSpeech ?? null,
+        JSON.stringify(data.categories ?? []),
         word,
       ],
     );
@@ -63,81 +85,39 @@ const updateWord = async (
 };
 
 /**
+ * Don't mess this up.
  * Inserts or updates dictionary data in the database.
  * Downloads and stores illustrations and images locally,
  * then saves their file paths in the database.
- * @param data Array of dictionary entries to insert or update
+ * @param data Array of dictionary entries (LocalDictionaryEntry) to insert or update
  */
 export const insertDictionaryData = async (
-  data: {
-    word: string;
-    definition: string;
-    illustration?: string;
-    image?: string;
-    partOfSpeech?: string;
-    categories?: string[];
-  }[],
+  data: LocalDictionaryEntry[],
 ): Promise<void> => {
   if (!data || data.length === 0) return;
 
   try {
     const db = await getDatabase();
 
-    // Download and prepare all items BEFORE transaction
-    const preparedItems = await Promise.all(
-      data.map(async (item) => {
+    await db.withTransactionAsync(async () => {
+      for (const item of data) {
         if (!item.word || !item.definition) {
           console.warn(
             'Skipping invalid entry (missing word/definition):',
             item,
           );
-          return null;
+          continue;
         }
 
-        try {
-          const illustrationPath = item.illustration
-            ? await fileDownloads(
-                item.illustration,
-                `${item.word}_illustration.gif`,
-              )
-            : null;
-
-          const imagePath = item.image
-            ? await fileDownloads(item.image, `${item.word}_image.png`)
-            : null;
-
-          return {
-            ...item,
-            illustrationPath,
-            imagePath,
-            categoriesJSON: JSON.stringify(item.categories || []),
-          };
-        } catch (err) {
-          console.error(
-            `Failed to download assets for word "${item.word}":`,
-            err,
-          );
-          return null;
-        }
-      }),
-    );
-
-    // Start transaction
-    await db.withTransactionAsync(async () => {
-      for (const item of preparedItems) {
-        if (!item) continue;
-
-        // Check if the word already exists
         const wordExists = await doesWordExist(item.word);
 
         if (wordExists) {
-          // Update the existing word
           await updateWord(item.word, {
             definition: item.definition,
-            illustration: item.illustrationPath || undefined,
-            image: item.imagePath || undefined,
-            partOfSpeech: item.partOfSpeech,
-            categories: JSON.parse(item.categoriesJSON || '[]'),
+            illustration: item.illustration,
+            image: item.image,
+            partOfSpeech: item.partOfSpeech ?? undefined,
+            categories: item.categories,
           });
         } else {
           // Insert the new word
@@ -147,10 +127,10 @@ export const insertDictionaryData = async (
             [
               item.word,
               item.definition,
-              item.illustrationPath,
-              item.imagePath,
+              item.illustration,
+              item.image,
               item.partOfSpeech || null,
-              item.categoriesJSON,
+              JSON.stringify(item.categories || []), // categories need to be stringified for SQLite
             ],
           );
         }
@@ -164,24 +144,35 @@ export const insertDictionaryData = async (
 };
 
 /**
- * Fetches translation data from the API and stores it in the database in batches.
+ * Fetches dictionary data from the API and processes it.
+ * This function will now handle downloading images and converting them to local URIs.
  */
 export const fetchAndInsertTranslations = async (): Promise<void> => {
   if (!BASE_URL) {
-    console.error('BASE_URL is not defined....');
+    console.error('BASE_URL is not defined in .env!');
     return;
   }
 
-  const urlParams = `${BASE_URL}/translation?select=id,phrase,description,
+  const baseUrlClean = BASE_URL.endsWith('/')
+    ? BASE_URL.slice(0, -1)
+    : BASE_URL;
+
+  // Backend's translation endpoint. Processes words in a batch of 50s.
+  const urlParams = `${baseUrlClean}/translation?select=id,phrase,description,
   gesture(id,name,path,contentType),illustration(id,name,path,contentType),
   tags(category,title)&page-size=50`;
 
   try {
-    console.log(`Fetching data from API: ${urlParams}`);
+    console.log(
+      `[fetchAndInsertTranslations] Fetching data from API: ${urlParams}`,
+    );
     const response = await fetch(urlParams);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch data from API: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to fetch data from API: ${response.status} ${response.statusText} - ${errorText}`,
+      );
     }
 
     const apiResponse = await response.json();
@@ -189,72 +180,71 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
       throw new Error('Invalid API response structure');
     }
 
-    let translations = apiResponse.data;
-    translations = translations.sort(
-      (a: { phrase: string }, b: { phrase: string }) =>
-        a.phrase.localeCompare(b.phrase, undefined, { numeric: true }),
+    let translations: ApiTranslationItem[] = apiResponse.data;
+    translations = translations.sort((a, b) =>
+      a.phrase.localeCompare(b.phrase, undefined, { numeric: true }),
     );
 
-    // This processes translations data in batches of 50
     const batchSize = 50;
     for (let i = 0; i < translations.length; i += batchSize) {
       const batch = translations.slice(i, i + batchSize);
+
+      // Transform and download assets for the current batch
       const transformedBatch = await Promise.all(
-        batch.map(async (item: any) => {
+        batch.map(async (item) => {
           if (!item.phrase) {
             console.warn('Skipping entry with missing phrase:', item);
             return null;
           }
 
           try {
-            // Extract partOfSpeech and categories from tags
             const tags = item.tags || [];
             const partOfSpeechTag = tags.find(
-              (tag: { category: string }) => tag.category === 'part-of-speech',
+              (tag) => tag.category === 'part-of-speech',
             );
             const categoriesTags = tags
-              .filter(
-                (tag: { category: string }) => tag.category === 'categories',
-              )
-              .map((tag: { title: string }) => tag.title);
+              .filter((tag) => tag.category === 'categories')
+              .map((tag) => tag.title);
 
             const partOfSpeech = partOfSpeechTag?.title || null;
 
-            const gesturePath = item.gesture?.id
-              ? await fileDownloads(
-                  item.gesture.id, // Pass the file ID to fileDownloads
-                  `${item.phrase}_gesture.png`,
-                ).catch((err) => {
-                  console.error(
-                    `Failed to download gesture for "${item.phrase}":`,
-                    err,
-                  );
-                  return null;
-                })
-              : null;
+            // Use fileDownloads with the image ID and the original filename.
+            // Fuck. Nobody should fuck with this section.
+            const gesturePath =
+              item.gesture?.id && item.gesture?.name
+                ? await fileDownloads(item.gesture.id, item.gesture.name).catch(
+                    (err) => {
+                      console.error(
+                        `Failed to download gesture for "${item.phrase}" (ID: ${item.gesture?.id}):`,
+                        err,
+                      );
+                      return null;
+                    },
+                  )
+                : null;
 
-            const illustrationPath = item.illustration?.id
-              ? await fileDownloads(
-                  item.illustration.id, // Pass the file ID to fileDownloads
-                  `${item.phrase}_illustration.png`,
-                ).catch((err) => {
-                  console.error(
-                    `Failed to download illustration for "${item.phrase}":`,
-                    err,
-                  );
-                  return null;
-                })
-              : null;
+            const illustrationPath =
+              item.illustration?.id && item.illustration?.name
+                ? await fileDownloads(
+                    item.illustration.id,
+                    item.illustration.name,
+                  ).catch((err) => {
+                    console.error(
+                      `Failed to download illustration for "${item.phrase}" (ID: ${item.illustration?.id}):`,
+                      err,
+                    );
+                    return null;
+                  })
+                : null;
 
             return {
-              // Mapping translation to local db schema format
               word: item.phrase,
               definition: item.description || 'No description available',
               illustration: illustrationPath,
               image: gesturePath,
-              partOfSpeech, // Store the title of the "part-of-speech" category
-              categories: categoriesTags, // Store the titles of the "categories" category
-            };
+              partOfSpeech,
+              categories: categoriesTags,
+            } as LocalDictionaryEntry;
           } catch (error) {
             console.error(`Error processing entry "${item.phrase}":`, error);
             return null;
@@ -262,23 +252,37 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
         }),
       );
 
-      // This filters out null entries
-      const validData = transformedBatch.filter((item) => item !== null);
+      const validData = transformedBatch.filter(
+        (item) => item !== null,
+      ) as LocalDictionaryEntry[];
 
       if (validData.length > 0) {
         await insertDictionaryData(validData);
-        console.log(`Processed batch of ${validData.length} entries.`);
+        console.log(
+          `[fetchAndInsertTranslations] Processed batch of ${validData.length} entries.`,
+        );
       } else {
-        console.warn('No valid data in this batch.');
+        console.warn(
+          '[fetchAndInsertTranslations] No valid data in this batch.',
+        );
       }
     }
 
-    console.log('All translation data fetched and stored successfully!');
+    console.log(
+      '[fetchAndInsertTranslations] All translation data fetched and stored successfully!',
+    );
   } catch (error) {
-    console.error('Error fetching and storing translation data:', error);
+    console.error(
+      '[fetchAndInsertTranslations] Error fetching and storing translation data:',
+      error,
+    );
   }
 };
-export const checkAndUpdateTranslations = async () => {
+
+/**
+ * Checks if the Dictionary need to be updated and updates it if necessary.
+ */
+export const checkAndUpdateTranslations = async (): Promise<void> => {
   try {
     console.log('Checking for dictionary updates...');
     const lastUpdateKey = 'lastDictionaryUpdate';
@@ -298,5 +302,24 @@ export const checkAndUpdateTranslations = async () => {
     }
   } catch (error) {
     console.error('Error checking for dictionary updates:', error);
+  }
+};
+
+export const fetchDictionaryData = async (): Promise<
+  LocalDictionaryEntry[]
+> => {
+  try {
+    const db = await getDatabase();
+    const results = db.getAllSync<LocalDictionaryEntry>(
+      'SELECT word, definition, illustration, image, partOfSpeech, categories FROM dictionary',
+    );
+
+    return results.map((row) => ({
+      ...row,
+      categories: JSON.parse((row.categories as any) || '[]'),
+    }));
+  } catch (error) {
+    console.error('Error fetching dictionary data from local DB:', error);
+    return [];
   }
 };
