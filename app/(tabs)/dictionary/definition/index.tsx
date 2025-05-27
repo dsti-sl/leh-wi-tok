@@ -14,10 +14,8 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
 import { fetchDictionaryData } from '@/db/retrivedata';
-import {
-  getAbsoluteImagePath,
-  nuclearImageValidation,
-} from '@/utils/imageHandler';
+import { fileDownloads } from '@/utils/filedownloads';
+import { nuclearImageValidation } from '@/utils/imageHandler';
 import useSearch from '@/hooks/useSearch';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -116,21 +114,36 @@ const index = () => {
         throw new Error(`Definition for "${word}" not found.`);
       }
 
-      const [illustration, image] = await Promise.all([
-        getAbsoluteImagePath(entry.illustration),
-        getAbsoluteImagePath(entry.image),
-      ]);
+      const downloadAndVerify = async (
+        fileId: string | null,
+        filename: string,
+        label: string,
+      ) => {
+        if (!fileId) {
+          console.warn(`[DEBUG] No fileId for ${label}`);
+          return null;
+        }
 
-      const verifyImage = async (uri: string | null) => {
-        if (!uri) return null;
-        const { exists } = await FileSystem.getInfoAsync(uri);
-        return exists ? uri : null;
+        const uri = await fileDownloads(fileId, filename);
+        const info = await FileSystem.getInfoAsync(uri);
+        const valid = uri && info.exists;
+        console.log(`[DEBUG] ${label} URI: ${uri} | Exists: ${valid}`);
+        return valid ? uri : null;
       };
+
+      const [illustrationUri, imageUri] = await Promise.all([
+        downloadAndVerify(
+          entry.illustration,
+          'illustration.jpg',
+          'Illustration',
+        ),
+        downloadAndVerify(entry.image, 'image.jpg', 'Image'),
+      ]);
 
       setWordData({
         ...entry,
-        illustration: await verifyImage(illustration),
-        image: await verifyImage(image),
+        illustration: illustrationUri,
+        image: imageUri,
       });
     } catch (error) {
       setWordData(null);
@@ -170,12 +183,17 @@ const index = () => {
               [type]: { loading: false, error: false },
             }))
           }
-          onError={() =>
+          onError={(e) => {
+            console.warn(
+              `Image load error [${type}] at URI:`,
+              uri,
+              e.nativeEvent,
+            );
             setImageStatus((s) => ({
               ...s,
               [type]: { loading: false, error: true },
-            }))
-          }
+            }));
+          }}
         />
 
         {imageStatus[type].loading && (
@@ -245,10 +263,8 @@ const index = () => {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false} 
+      showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.wordTitle}>{wordData.word}</Text>
-
       {renderImage(wordData.illustration, 'illustration')}
 
       <View style={styles.definitionContainer}>
