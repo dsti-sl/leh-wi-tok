@@ -6,10 +6,7 @@ import 'react-native-reanimated';
 import { StatusBar } from 'react-native';
 import { initializeDatabase } from '@/db/schema';
 import { getDatabase } from '@/db/schema';
-//import { fetchAndInsertTranslations } from '@/data/dictionary';
-//import { fetchDictionaryData } from '@/db/retrivedata';
-import * as FileSystem from 'expo-file-system';
-//import { deleteAllEntries } from '@/utils/deleteEntries';
+
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -29,7 +26,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     initializeDatabase();
-    //fetchDictionaryData();
     console.log('Database', getDatabase.toString());
     StatusBar.setBarStyle('light-content');
     if (loaded) {
@@ -41,7 +37,7 @@ export default function RootLayout() {
     return null;
   }
 
-/*   const syncTranlations = async () => {
+  /*   const syncTranlations = async () => {
     console.log('Fetching and inserting translations...');
     await fetchAndInsertTranslations();
   };

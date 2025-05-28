@@ -12,23 +12,13 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import * as FileSystem from 'expo-file-system';
-import { fetchDictionaryData } from '@/db/retrivedata';
 import {
-  getAbsoluteImagePath,
-  nuclearImageValidation,
-} from '@/utils/imageHandler';
+  fetchDictionaryData,
+  LocalDictionaryEntry as DictionaryEntry,
+} from '@/data/dictionary';
 import useSearch from '@/hooks/useSearch';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-interface DictionaryEntry {
-  word: string;
-  definition: string;
-  partOfSpeech: string | null;
-  illustration: string | null;
-  image: string | null;
-}
 
 const index = () => {
   const router = useRouter();
@@ -42,7 +32,7 @@ const index = () => {
     [],
   );
   const [wordData, setWordData] = useState<DictionaryEntry | null>(null);
-  const [isLoadingDefinition, setIsLoadingDefinition] = useState<boolean>(true); // Specific loading for definition
+  const [isLoadingDefinition, setIsLoadingDefinition] = useState<boolean>(true);
   const [imageStatus, setImageStatus] = useState({
     illustration: { loading: false, error: false },
     image: { loading: false, error: false },
@@ -54,14 +44,13 @@ const index = () => {
   });
 
   useEffect(() => {
-    nuclearImageValidation();
-  }, []);
-
-  useEffect(() => {
     const loadAllDictionaryData = async () => {
       try {
         const data = await fetchDictionaryData();
         setAllDictionaryData(data);
+        console.log(
+          `[index.tsx] Loaded ${data.length} dictionary entries from local DB.`,
+        );
       } catch (error) {
         Alert.alert('Error', 'Failed to load all dictionary data.');
         console.error('Failed to load all dictionary data:', error);
@@ -115,23 +104,7 @@ const index = () => {
         setWordData(null);
         throw new Error(`Definition for "${word}" not found.`);
       }
-
-      const [illustration, image] = await Promise.all([
-        getAbsoluteImagePath(entry.illustration),
-        getAbsoluteImagePath(entry.image),
-      ]);
-
-      const verifyImage = async (uri: string | null) => {
-        if (!uri) return null;
-        const { exists } = await FileSystem.getInfoAsync(uri);
-        return exists ? uri : null;
-      };
-
-      setWordData({
-        ...entry,
-        illustration: await verifyImage(illustration),
-        image: await verifyImage(image),
-      });
+      setWordData(entry);
     } catch (error) {
       setWordData(null);
       Alert.alert(
@@ -147,7 +120,21 @@ const index = () => {
   };
 
   const renderImage = (uri: string | null, type: 'illustration' | 'image') => {
-    if (!uri) return null;
+    if (!uri) {
+      console.warn(`[renderImage] No URI provided for ${type}.`);
+      return null;
+    }
+
+    if (!uri.startsWith('file://')) {
+      console.error(
+        `[renderImage] Invalid URI format for ${type}: ${uri}. Expected file://`,
+      );
+      return (
+        <View style={styles.mediaContainer}>
+          <Text style={styles.errorText}>Invalid image URI format</Text>
+        </View>
+      );
+    }
 
     return (
       <View style={styles.mediaContainer}>
@@ -170,12 +157,17 @@ const index = () => {
               [type]: { loading: false, error: false },
             }))
           }
-          onError={() =>
+          onError={(e) => {
+            console.warn(
+              `Image load error [${type}] at URI:`,
+              uri,
+              e.nativeEvent,
+            );
             setImageStatus((s) => ({
               ...s,
               [type]: { loading: false, error: true },
-            }))
-          }
+            }));
+          }}
         />
 
         {imageStatus[type].loading && (
@@ -245,20 +237,16 @@ const index = () => {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false} 
+      showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.wordTitle}>{wordData.word}</Text>
-
-      {renderImage(wordData.illustration, 'illustration')}
-
+      {renderImage(wordData.image, 'image')}
       <View style={styles.definitionContainer}>
         <Text style={styles.partOfSpeech}>
           {wordData.partOfSpeech || 'No part of speech'}
         </Text>
         <Text style={styles.definitionText}>{wordData.definition}</Text>
       </View>
-
-      {renderImage(wordData.image, 'image')}
+      {renderImage(wordData.illustration, 'illustration')}
     </ScrollView>
   );
 };
@@ -288,7 +276,7 @@ const styles = StyleSheet.create({
   mediaContainer: {
     alignItems: 'center',
     marginVertical: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 8,
     shadowColor: '#000',
