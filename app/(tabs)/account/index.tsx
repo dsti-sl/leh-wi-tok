@@ -23,8 +23,7 @@ const Account = () => {
   }, []);
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('user');
-    await AsyncStorage.removeItem('completedLesson');
+    await AsyncStorage.clear();
     Alert.alert('Logged out');
     router.replace('/');
   };

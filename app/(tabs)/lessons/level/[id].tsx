@@ -11,7 +11,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import ImageViewer from '@/components/common/ImageViewer';
+import MediaPlayer from '@/components/common/MediaPlayer';
+import MediaPlayer from '@/components/common/MediaPlayer';
 import { Colors } from '@/constants/Colors';
 import useLessonLevel from '@/hooks/useLessonLevel';
 import {
@@ -36,6 +37,7 @@ const Level = () => {
   const { assessment } = useLocalSearchParams<{ assessment: string }>();
   const [isLoading, setIsLoading] = useState(false);
   const [lessonTags, setLessonTags] = useState<any[]>([]);
+  const [lessonGestureInfo, setLessonGestureInfo] = useState({});
   const [lessonCount, setLessonCount] = useState<number>(0);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
     new Set(),
@@ -125,7 +127,7 @@ const Level = () => {
     async (lesson: any) => {
       handleLessonSelect(lesson);
       setSelectedGestureId(lesson?.gesture?.id);
-
+      setLessonGestureInfo(lesson?.gesture);
       const userId = await getStoredUserId();
       if (!userId) return;
 
@@ -232,7 +234,10 @@ const Level = () => {
           </TouchableOpacity>
         </View>
         {selectedGestureId && (
-          <ImageViewer gestureId={selectedGestureId as string} />
+          <MediaPlayer
+            gestureInfo={lessonGestureInfo}
+            gestureId={selectedGestureId as string}
+          />
         )}
       </View>
 
@@ -300,8 +305,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+
   videoContainer: {
-    height: 290,
+    height: 300,
+    width: 200,
     backgroundColor: '#2d2d2d',
   },
   video: {
