@@ -24,7 +24,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0F4C5C"
       },
-      "permissions": ["CAMERA", "READ_ExTERNAL_STORAGE"]
+      "permissions": [
+        "CAMERA",
+        "READ_ExTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -54,7 +57,14 @@
       "typedRoutes": true
     },
     "extra": {
-      "API_URL": "http://10.0.2.2:5173/api"
-    }
+      "API_URL": "http://localhost:5173/api",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "aacef87d-4cb4-4d7c-83c7-299db6fc6c1a"
+      }
+    },
+    "owner": "dsti"
   }
 }

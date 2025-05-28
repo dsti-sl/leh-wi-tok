@@ -16,6 +16,59 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
     npx expo start
    ```
 
+3. Create Development Builds
+
+   ### Local Development Build
+   ```bash
+   # Install the dev client
+   npx expo install expo-dev-client
+
+   # Generate native folders (Android/iOS)
+   npx expo prebuild
+
+   # Create a development build locally
+   npx expo run:android # For Android
+   npx expo run:ios     # For iOS (requires macOS)
+   ```
+
+   ### EAS Development Build
+   ```bash
+   # Install EAS CLI (if not already done)
+   npm install -g eas-cli
+
+   # Login to your Expo account
+   eas login
+
+   # Configure your project (if not already done)
+   eas build:configure
+
+   # Create a development build
+   eas build --profile development --platform android # For Android
+   eas build --profile development --platform ios     # For iOS
+
+   # After build completes, install on device or simulator
+   eas build:run -p android # For Android
+   eas build:run -p ios     # For iOS
+   ```
+
+   ### EAS Preview Build (Staging)
+   ```bash
+   # Create a preview (staging) build for internal testing
+   eas build --profile preview --platform android # For Android
+   eas build --profile preview --platform ios     # For iOS
+   ```
+
+   ### EAS Production Build
+   ```bash
+   # Create a production build
+   eas build --profile production --platform android # For Android
+   eas build --profile production --platform ios     # For iOS
+
+   # Optional: Submit to app stores
+   eas submit --platform android # For Android
+   eas submit --platform ios     # For iOS
+   ```
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)

@@ -23,3 +23,7 @@ expo-env.d.ts
 tmp/
 temp/
 .env
+
+# EAS IGNORES
+android
+ios
