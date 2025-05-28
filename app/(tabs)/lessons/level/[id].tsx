@@ -194,11 +194,7 @@ const Level = () => {
   );
 
   // --- Lesson locked logic ---
-  const isLessonLocked = (
-    currentLesson: any,
-    index: number,
-    lessons: any[],
-  ) => {
+  const isLessonLocked = (index: number, lessons: any[]) => {
     if (index === 0) return false;
     const previousLesson = lessons[index - 1];
     return !completedLessons.has(previousLesson.id);

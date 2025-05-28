@@ -20,14 +20,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
 
-  console.log('File URL:', fileUrl);
-  console.log('gestureInfo:', gestureInfo);
-
   // Conditional rendering
   let content = null;
   if (gestureInfo?.contentType === 'video/mp4') {
     content = (
-      <View className="w-20 max-h-10">
+      <View className="mt-20 mx-10 h-1">
         <Video
           source={{ uri: fileUrl }}
           rate={1.0}
@@ -36,11 +33,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           shouldPlay
           useNativeControls
           resizeMode="cover"
-          style={styles.media}
+          style={{ width: '10%', height: '10%' }}
         />
       </View>
     );
-  } else {
+  } else if (gestureInfo?.contentType === 'image/gif') {
     content = (
       <Image
         source={{ uri: fileUrl }}
@@ -51,6 +48,10 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         accessibilityLabel="Gesture preview"
       />
     );
+  } else {
+    <View>
+      Unspported video format: please include gif or mp4 videos for gesture
+    </View>;
   }
 
   return <View style={styles.container}>{content}</View>;
