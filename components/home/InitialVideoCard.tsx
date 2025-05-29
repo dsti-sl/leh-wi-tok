@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
 
@@ -29,7 +28,7 @@ const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
             console.log('Playing preview video');
           }}
         >
-          <Ionicons name="play-outline" size={25} color={Colors.primary} />
+          {/* <Ionicons name="play-outline" size={25} color={Colors.primary} /> */}
           {/* <Text style={[styles.playTxt]}>Play Video</Text> */}
         </TouchableOpacity>
       </View>
