@@ -1,7 +1,7 @@
-import { Video } from 'expo-av';
 import { Image } from 'expo-image';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 
 interface GestureInfo {
   contentType: string;
@@ -20,20 +20,28 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
 
-  // Conditional rendering
+  console.log('MediaPlayer fileUrl:', gestureInfo);
+  // Initialize the VideoPlayer using the useVideoPlayer hook
+  const player = useVideoPlayer(
+    {
+      uri: gestureInfo.path,
+    },
+    (playerInstance) => {
+      playerInstance.loop = true;
+      playerInstance.play();
+    },
+  );
+
+  // Conditional rendering based on content type
   let content = null;
   if (gestureInfo?.contentType === 'video/mp4') {
     content = (
-      <View className="mt-20 mx-10 h-1">
-        <Video
-          source={{ uri: fileUrl }}
-          rate={1.0}
-          volume={1.0}
-          isMuted={false}
-          shouldPlay
-          useNativeControls
-          resizeMode="cover"
-          style={{ width: '10%', height: '10%' }}
+      <View style={styles.videoContainer}>
+        <VideoView
+          player={player}
+          style={styles.video}
+          allowsFullscreen
+          allowsPictureInPicture
         />
       </View>
     );
@@ -49,9 +57,14 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       />
     );
   } else {
-    <View>
-      Unspported video format: please include gif or mp4 videos for gesture
-    </View>;
+    content = (
+      <View>
+        <Text>
+          Unsupported media format: please include GIF or MP4 files for
+          gestures.
+        </Text>
+      </View>
+    );
   }
 
   return <View style={styles.container}>{content}</View>;
@@ -63,6 +76,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
+  },
+  videoContainer: {
+    width: '100%',
+    height: '100%',
+  },
+  video: {
+    width: '100%',
+    height: '100%',
   },
   media: {
     width: '100%',

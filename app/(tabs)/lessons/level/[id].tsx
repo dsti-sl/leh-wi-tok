@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 
 import MediaPlayer from '@/components/common/MediaPlayer';
-import MediaPlayer from '@/components/common/MediaPlayer';
 import { Colors } from '@/constants/Colors';
 import useLessonLevel from '@/hooks/useLessonLevel';
 import {
@@ -194,7 +193,11 @@ const Level = () => {
   );
 
   // --- Lesson locked logic ---
-  const isLessonLocked = (index: number, lessons: any[]) => {
+  const isLessonLocked = (
+    currentLesson: any,
+    index: number,
+    lessons: any[],
+  ) => {
     if (index === 0) return false;
     const previousLesson = lessons[index - 1];
     return !completedLessons.has(previousLesson.id);
@@ -304,7 +307,6 @@ const styles = StyleSheet.create({
 
   videoContainer: {
     height: 300,
-    width: 200,
     backgroundColor: '#2d2d2d',
   },
   video: {
