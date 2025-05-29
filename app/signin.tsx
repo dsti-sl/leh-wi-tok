@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import {
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
+import { getStoredUserId } from '@/utils';
 
 const OAUTH_ENDPOINTS = {
   google: 'https://example.com/oauth/google',
@@ -38,6 +39,18 @@ const SignInScreen = () => {
     return '';
   };
   const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const user = await getStoredUserId();
+      if (user) {
+        router.push('/home');
+      } else {
+        router.push('/signin');
+      }
+    };
+    checkUser();
+  }, []);
   const handleRequestOTP = async () => {
     const validationError = validatePhoneNumber();
     if (validationError) {

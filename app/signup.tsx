@@ -219,8 +219,7 @@ const SignUpScreen = () => {
 
       <C_Button
         title="Sign up"
-        // onPress={() => router.push('/otpscreen')}
-        onPress={() => handleSignUp()}
+        onPress={handleSignUp}
         buttonStyle={styles.signupButton}
       />
       <TouchableOpacity
