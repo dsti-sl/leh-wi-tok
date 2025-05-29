@@ -64,11 +64,6 @@ const OtpScreen = () => {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert(
-          'Success',
-          `OTP verified successfully for ${isSignIn ? 'Sign In' : 'Sign Up'}!`,
-        );
-
         isSignIn ? router.replace('/home') : router.replace('/preferences');
       } else {
         setError(data.message || 'Invalid OTP. Please try again.');
