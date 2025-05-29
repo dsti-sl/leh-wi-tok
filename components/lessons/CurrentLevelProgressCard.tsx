@@ -5,25 +5,29 @@ import ProgressBar from '../common/ProgressBar';
 
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
+import { accumulateLessonCounts } from '@/utils';
 
 interface CurrentLevelProgressCardProps {
   defaultTutorial?: Record;
 }
 const CurrentLevelProgressCard: React.FC<CurrentLevelProgressCardProps> = ({
   accumulatedData,
+  lessonCount,
 }: any) => {
+  const completedLessons =
+    accumulateLessonCounts(lessonCount) || accumulatedData?.accumulatedLessons;
+
   const progress =
     Math.round(
-      (accumulatedData?.accumulatedCompletedLessons /
-        accumulatedData?.accumulatedLessons) *
-        100,
+      (accumulatedData?.accumulatedCompletedLessons / completedLessons) * 100,
     ) || 0;
   return (
     <View style={styles.container}>
       <View style={styles.titleContent}>
         <Text>My Progress</Text>
-        <Text>{`${accumulatedData?.accumulatedCompletedLessons} / ${accumulatedData?.accumulatedLessons}`}</Text>
+        <Text>{`${accumulatedData?.accumulatedCompletedLessons} / ${completedLessons}`}</Text>
       </View>
+      {/* <ProgressBar progress={0} /> */}
       <ProgressBar progress={progress} />
       <Text>{`${progress}% Completed`}</Text>
     </View>

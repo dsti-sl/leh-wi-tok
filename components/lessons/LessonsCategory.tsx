@@ -1,131 +1,186 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import { useFocusEffect } from 'expo-router';
-import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect, router } from 'expo-router';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import LessonCard from './LessonCard';
 
 import { Record } from '@/lib/types';
+import {
+  LessonCompletionData,
+  LessonLevel,
+  LessonProgress,
+  LessonsCategoryProps,
+} from '@/utils';
 
-interface LessonsCategoryProps {
-  progressSummary: Record;
-  lessonCount: any;
-}
+// -- Helper functions outside component (pure, testable) --
+const getStoredUserId = async (): Promise<string | null> => {
+  const user = await AsyncStorage.getItem('user');
+  return user ? JSON.parse(user).id : null;
+};
 
-interface LessonCompletionData {
-  lessons?: Array<{
-    level: string;
-    totalCompleted: number;
-    totallessons: number;
-  }>;
-}
+const fetchLessonProgress = async (baseUrl: string, userId: string) => {
+  const url = `${baseUrl}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`;
+  const response = await fetch(url);
+  const { data } = await response.json();
+  return data as LessonProgress[] | undefined;
+};
 
+const storeCompletedLessons = async (lessons: LessonProgress[]) => {
+  await AsyncStorage.setItem('completedLesson', JSON.stringify({ lessons }));
+};
+
+const getStoredCompletionData = async (): Promise<LessonCompletionData> => {
+  const data = await AsyncStorage.getItem('completedLesson');
+  if (data) {
+    return JSON.parse(data);
+  }
+  return { lessons: [] };
+};
+
+const defaultLessonData = { totalCompleted: 0, totalLessons: 0 };
+
+// -- Main Component --
 const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   progressSummary,
   lessonCount,
 }) => {
   const [userCompletionRate, setUserCompletionRate] =
-    useState<LessonCompletionData | null>(null);
+    useState<LessonCompletionData>({ lessons: [] });
+  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
-  const fetchUserInfo = useCallback(async () => {
-    try {
-      const lessonComplete = await AsyncStorage.getItem('completedLesson');
-      if (lessonComplete) {
-        setUserCompletionRate(JSON.parse(lessonComplete));
-      } else {
-        // Initialize with empty data if nothing is found
-        setUserCompletionRate({ lessons: [] });
+  // Fetch latest server data and cache it locally on mount only
+  useEffect(() => {
+    const fetchAndStoreLessonProgress = async () => {
+      try {
+        const userId = await getStoredUserId();
+        if (!userId || !BASE_URL) return;
+        const serverLessons = await fetchLessonProgress(BASE_URL, userId);
+        if (serverLessons) {
+          await storeCompletedLessons(serverLessons);
+        }
+      } catch (error) {
+        console.warn(
+          'Lesson progress API failed, trying local fallback.',
+          error,
+        );
       }
+    };
+    fetchAndStoreLessonProgress();
+  }, [getStoredUserId]);
+
+  // Local (possibly stale) state update
+  const updateCompletionFromStorage = useCallback(async () => {
+    try {
+      const completionData = await getStoredCompletionData();
+      setUserCompletionRate(completionData);
     } catch (error) {
       console.error('Failed to fetch completed lessons:', error);
-      // Fallback to empty data if there's an error
       setUserCompletionRate({ lessons: [] });
     }
   }, []);
 
+  // Load local completion state on mount and focus
   useEffect(() => {
-    fetchUserInfo();
-  }, [fetchUserInfo]);
+    updateCompletionFromStorage();
+  }, [updateCompletionFromStorage]);
 
-  // This will run whenever the screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchUserInfo();
-    }, [fetchUserInfo]),
+      updateCompletionFromStorage();
+    }, [updateCompletionFromStorage]),
   );
 
-  // Helper function to find lesson data safely
-  const getLessonData = (level: string) => {
-    return (
-      userCompletionRate?.lessons?.find((lesson) => lesson.level === level) || {
-        totalCompleted: 0,
-        totallessons: 0,
-      }
-    );
-  };
+  // Helper for level-based lesson data
+  const getLessonData = useCallback(
+    (level: LessonLevel) =>
+      userCompletionRate.lessons.find((lesson) => lesson.level === level) ?? {
+        ...defaultLessonData,
+        totalLessons: lessonCount[level] ?? 0,
+      },
+    [userCompletionRate.lessons, lessonCount],
+  );
 
-  const beginnerData = getLessonData('Beginner');
-  const basicElementaryData = getLessonData('Basic Elementary');
-  const intermediateData = getLessonData('Intermediate');
-  const advancedData = getLessonData('Advanced');
+  // Memoized lesson data (prevents unnecessary re-calculation)
+  const lessonData = useMemo(
+    () => ({
+      Beginner: getLessonData('Beginner'),
+      BasicElementary: getLessonData('Basic Elementary'),
+      Intermediate: getLessonData('Intermediate'),
+      Advanced: getLessonData('Advanced'),
+    }),
+    [getLessonData],
+  );
+
+  // Card definitions for DRYness and easy updates
+  const cards = [
+    {
+      key: 'Beginner',
+      color: '#3e585e',
+      assessment: 'Beginner',
+    },
+    {
+      key: 'Basic Elementary',
+      color: '#1b6c82',
+      assessment: 'Basic Elementary',
+    },
+    {
+      key: 'Intermediate',
+      color: '#2e6270',
+      assessment: 'Intermediate',
+    },
+    {
+      key: 'Advanced',
+      color: '#3088a0',
+      assessment: 'Advanced',
+    },
+  ] as const;
 
   return (
     <View style={styles.cardsContainer}>
       <View style={styles.cardRowContainer}>
-        <LessonCard
-          title={(progressSummary['Beginner'] as Record).title as string}
-          completed={beginnerData.totalCompleted}
-          totalLesson={beginnerData.totallessons || lessonCount.Beginner}
-          onPress={() => {
-            router.push(
-              `/(tabs)/lessons/level/${(progressSummary['Beginner'] as Record).title}?assessment=Beginner`,
-            );
-          }}
-          backgroundColor="#3e585e"
-        />
-        <LessonCard
-          title={
-            (progressSummary['Basic Elementary'] as Record).title as string
-          }
-          completed={basicElementaryData.totalCompleted}
-          totalLesson={
-            basicElementaryData.totallessons || lessonCount['Basic Elementary']
-          }
-          onPress={() => {
-            router.push(
-              `/(tabs)/lessons/level/${(progressSummary['Basic Elementary'] as Record).title}?assessment=Basic Elementary`,
-            );
-          }}
-          backgroundColor="#1b6c82"
-        />
+        {cards.slice(0, 2).map(({ key, color, assessment }) => (
+          <LessonCard
+            key={key}
+            title={(progressSummary[key] as Record).title as string}
+            completed={
+              lessonData[key.replace(' ', '') as keyof typeof lessonData]
+                .totalCompleted
+            }
+            totalLesson={
+              lessonData[key.replace(' ', '') as keyof typeof lessonData]
+                .totalLessons
+            }
+            onPress={() =>
+              router.push(
+                `/(tabs)/lessons/level/${(progressSummary[key] as Record).title}?assessment=${assessment}`,
+              )
+            }
+            backgroundColor={color}
+          />
+        ))}
       </View>
       <View style={styles.cardRowContainer}>
-        <LessonCard
-          title={(progressSummary['Intermediate'] as Record).title as string}
-          completed={intermediateData.totalCompleted}
-          totalLesson={
-            intermediateData.totallessons || lessonCount.Intermediate
-          }
-          onPress={() => {
-            console.log('Intermediate', progressSummary['Intermediate']);
-            router.push(
-              `/(tabs)/lessons/level/${(progressSummary['Intermediate'] as Record).title}?assessment=Intermediate`,
-            );
-          }}
-          backgroundColor="#2e6270"
-        />
-        <LessonCard
-          title={(progressSummary['Advanced'] as Record).title as string}
-          completed={advancedData.totalCompleted}
-          totalLesson={advancedData.totallessons || lessonCount.Advanced}
-          onPress={() => {
-            router.push(
-              `/(tabs)/lessons/level/${(progressSummary['Advanced'] as Record).title}?assessment=Advanced`,
-            );
-          }}
-          backgroundColor="#3088a0"
-        />
+        {cards.slice(2).map(({ key, color, assessment }) => (
+          <LessonCard
+            key={key}
+            title={(progressSummary[key] as Record).title as string}
+            completed={
+              lessonData[key.replace(' ', '') as keyof typeof lessonData]
+                .totalCompleted
+            }
+            totalLesson={
+              lessonData[key.replace(' ', '') as keyof typeof lessonData]
+                .totalLessons
+            }
+            onPress={() =>
+              router.push(
+                `/(tabs)/lessons/level/${(progressSummary[key] as Record).title}?assessment=${assessment}`,
+              )
+            }
+            backgroundColor={color}
+          />
+        ))}
       </View>
     </View>
   );

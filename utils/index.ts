@@ -1,5 +1,7 @@
 // UTILITIES METHODS
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { Record } from '@/lib/types';
 
 /**
@@ -31,3 +33,77 @@ export const parseArrayObjectToSelectables = (
 export const getFirstWord = (str: string) => {
   return str.split(' ')[0];
 };
+
+export const accumulateLessonCounts = (
+  lessonCounts: Record<string, number>,
+): number => {
+  return (Object.values(lessonCounts) as number[]).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+};
+
+// ----- Helpers for AsyncStorage -----
+export type LessonData = {
+  id?: string;
+  level: string;
+  totalCompleted: number;
+  totalLessons: number;
+  userId: string;
+  lessonsCompleted: string[];
+};
+
+export type CompletedLessonData = {
+  lessons: LessonData[];
+};
+
+export const getStoredUserId = async (): Promise<string | null> => {
+  const user = await AsyncStorage.getItem('user');
+  return user ? JSON.parse(user).id : null;
+};
+
+export const getStoredCompletedLessons =
+  async (): Promise<CompletedLessonData> => {
+    const stored = await AsyncStorage.getItem('completedLesson');
+    return stored ? JSON.parse(stored) : { lessons: [] };
+  };
+
+export const storeCompletedLessons = async (lessons: LessonData[]) => {
+  await AsyncStorage.setItem('completedLesson', JSON.stringify({ lessons }));
+};
+
+export type LessonLevel =
+  | 'Beginner'
+  | 'Basic Elementary'
+  | 'Intermediate'
+  | 'Advanced';
+export type LessonCount = Record<LessonLevel, number>;
+
+export interface LessonCompletionData {
+  lessons: LessonData[];
+}
+export interface OverallData {
+  accumulatedLessons: number;
+  accumulatedCompletedLessons: number;
+}
+export const LEVELS: LessonLevel[] = [
+  'Beginner',
+  'Basic Elementary',
+  'Intermediate',
+  'Advanced',
+];
+
+export interface LessonsCategoryProps {
+  progressSummary: Record;
+  lessonCount: { [key: string]: number };
+}
+
+export interface LessonProgress {
+  level: LessonLevel;
+  totalCompleted: number;
+  totalLessons: number;
+}
+
+export interface LessonCompletionData {
+  lessons: LessonProgress[];
+}
