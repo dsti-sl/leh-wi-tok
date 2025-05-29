@@ -30,7 +30,7 @@ const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
           }}
         >
           <Ionicons name="play-outline" size={25} color={Colors.primary} />
-          <Text style={[styles.playTxt]}>Play Video</Text>
+          {/* <Text style={[styles.playTxt]}>Play Video</Text> */}
         </TouchableOpacity>
       </View>
     </View>
