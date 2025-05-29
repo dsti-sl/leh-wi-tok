@@ -143,8 +143,9 @@ const index = () => {
           style={[
             type === 'illustration' ? styles.illustration : styles.image,
             imageStatus[type].loading && styles.imageLoading,
+            { width: '100%', height: undefined, aspectRatio: 1 },
           ]}
-          resizeMode="contain"
+          resizeMode="cover"
           onLoadStart={() =>
             setImageStatus((s) => ({
               ...s,
@@ -266,18 +267,13 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  wordTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
   mediaContainer: {
+    width: SCREEN_WIDTH - 32,
     alignItems: 'center',
     marginVertical: 16,
     backgroundColor: '#fff',
     borderRadius: 12,
+    overflow: 'hidden',
     padding: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -287,13 +283,15 @@ const styles = StyleSheet.create({
     minHeight: 100,
   },
   illustration: {
-    width: SCREEN_WIDTH - 48,
-    height: 200,
+    width: '100%',
+    height: undefined,
+    aspectRatio: 16 / 9,
     borderRadius: 8,
   },
   image: {
-    width: SCREEN_WIDTH - 48,
-    height: 200,
+    width: '100%',
+    height: undefined,
+    aspectRatio: 16 / 9,
     borderRadius: 8,
   },
   imageLoading: {
@@ -315,7 +313,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 1,
   },
   partOfSpeech: {
     fontSize: 16,
