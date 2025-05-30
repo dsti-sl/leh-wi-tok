@@ -13,6 +13,7 @@ import {
   Image,
   Alert,
   Linking,
+  ActivityIndicator, // <== for spinner
 } from 'react-native';
 
 import C_Button from '@/components/common/Button';
@@ -44,21 +45,22 @@ const SignUpScreen = () => {
   }, [fullName, phoneNumber, email]);
 
   const handleSignUp = useCallback(async () => {
-    setError(''); // Clear error before new submit
-    setIsLoading(true);
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    const userData = {
-      name: fullName,
-      phone: phoneNumber,
-      user: phoneNumber,
-    };
+    setError('');
+    setIsLoading(true); // Start loading
 
     try {
+      const validationError = validateForm();
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+
+      const userData = {
+        name: fullName,
+        phone: phoneNumber,
+        user: phoneNumber,
+      };
+
       // Register user
       const registerResponse = await fetch(
         `${EXPO_PUBLIC_BASE_URL}/user/register`,
@@ -87,7 +89,6 @@ const SignUpScreen = () => {
       });
       const loginData = await loginResponse.json().catch(() => ({}));
       if (loginResponse.ok) {
-        setIsLoading(false);
         // Success! Redirect
         Alert.alert('Success', loginData?.meta?.message || 'OTP sent!');
         router.replace(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=false`);
@@ -98,7 +99,6 @@ const SignUpScreen = () => {
           'Failed to request OTP. Please try again.';
         setError(loginErrMsg);
         Alert.alert('OTP Error', loginErrMsg);
-        setIsLoading(false);
       }
     } catch (err: any) {
       // Safe error handling
@@ -108,7 +108,8 @@ const SignUpScreen = () => {
         'Network error: Unable to verify OTP. Please check your connection.';
       setError(errMsg);
       Alert.alert('Error', errMsg);
-      setIsLoading(false);
+    } finally {
+      setIsLoading(false); // Always stop loading!
     }
   }, [fullName, phoneNumber, validateForm]);
 
@@ -165,6 +166,7 @@ const SignUpScreen = () => {
         <TouchableOpacity
           onPress={() => handleOAuthSignUp('google')}
           style={styles.oauthButton}
+          disabled={isLoading} // disable while loading
         >
           <Image
             source={require('../assets/images/Google.png')}
@@ -174,6 +176,7 @@ const SignUpScreen = () => {
         <TouchableOpacity
           onPress={() => handleOAuthSignUp('twitter')}
           style={styles.oauthButton}
+          disabled={isLoading}
         >
           <Image
             source={require('../assets/images/Twitter.png')}
@@ -183,6 +186,7 @@ const SignUpScreen = () => {
         <TouchableOpacity
           onPress={() => handleOAuthSignUp('facebook')}
           style={styles.oauthButton}
+          disabled={isLoading}
         >
           <Image
             source={require('../assets/images/Facebook.png')}
@@ -206,6 +210,7 @@ const SignUpScreen = () => {
           onChangeText={onChangeFullName}
           value={fullName}
           autoCapitalize="words"
+          editable={!isLoading} // disable input during loading
         />
       </View>
       <Text style={styles.label}>Phone Number</Text>
@@ -222,6 +227,7 @@ const SignUpScreen = () => {
           keyboardType="phone-pad"
           onChangeText={onChangePhone}
           value={phoneNumber}
+          editable={!isLoading}
         />
       </View>
       <Text style={styles.label}>Email (optional)</Text>
@@ -239,18 +245,31 @@ const SignUpScreen = () => {
           onChangeText={onChangeEmail}
           value={email}
           autoCapitalize="none"
+          editable={!isLoading}
         />
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <C_Button
-        title={`${isLoading ? 'Please wait...' : 'Sign Up'}`}
+        title={isLoading ? 'Please wait...' : 'Sign Up'}
         onPress={handleSignUp}
         buttonStyle={styles.signupButton}
+        disabled={isLoading} // disable while loading!
+        // if C_Button doesn't support 'disabled', wrap with TouchableOpacity or adjust accordingly
       />
+
+      {isLoading && (
+        <ActivityIndicator
+          size="large"
+          color={Colors.primary}
+          style={{ marginTop: 10 }}
+        />
+      )}
+
       <TouchableOpacity
         onPress={() => router.push('/signin')}
         style={styles.loginLink}
+        disabled={isLoading}
       >
         <Text style={styles.loginText}>
           Already have an account?{' '}
