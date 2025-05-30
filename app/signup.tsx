@@ -28,6 +28,7 @@ const OAUTH_ENDPOINTS = {
 const SignUpScreen = () => {
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
 
@@ -44,7 +45,7 @@ const SignUpScreen = () => {
 
   const handleSignUp = useCallback(async () => {
     setError(''); // Clear error before new submit
-
+    setIsLoading(true);
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
@@ -86,6 +87,7 @@ const SignUpScreen = () => {
       });
       const loginData = await loginResponse.json().catch(() => ({}));
       if (loginResponse.ok) {
+        setIsLoading(false);
         // Success! Redirect
         Alert.alert('Success', loginData?.meta?.message || 'OTP sent!');
         router.replace(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=false`);
@@ -96,6 +98,7 @@ const SignUpScreen = () => {
           'Failed to request OTP. Please try again.';
         setError(loginErrMsg);
         Alert.alert('OTP Error', loginErrMsg);
+        setIsLoading(false);
       }
     } catch (err: any) {
       // Safe error handling
@@ -105,7 +108,7 @@ const SignUpScreen = () => {
         'Network error: Unable to verify OTP. Please check your connection.';
       setError(errMsg);
       Alert.alert('Error', errMsg);
-      console.error('Signup error:', err);
+      setIsLoading(false);
     }
   }, [fullName, phoneNumber, validateForm]);
 
@@ -241,7 +244,7 @@ const SignUpScreen = () => {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <C_Button
-        title="Sign up"
+        title={`${isLoading ? 'Please wait...' : 'Sign Up'}`}
         onPress={handleSignUp}
         buttonStyle={styles.signupButton}
       />
