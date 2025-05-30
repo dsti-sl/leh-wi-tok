@@ -254,44 +254,40 @@ const Level = () => {
 
       {/* Lesson List */}
       <ScrollView>
-        {lessonTags
-          ?.sort((a, b) => a.priority - b.priority)
-          .map((lesson, index, array) => {
-            const locked = isLessonLocked(lesson, index, array);
-            return (
-              <TouchableOpacity
-                key={lesson.id}
-                style={[
-                  styles.lessonItem,
-                  activeLesson?.id === lesson.id && styles.activeLesson,
-                  locked && styles.lockedLesson,
-                ]}
-                onPress={() => !locked && handleLessonClick(lesson)}
-                disabled={locked}
-              >
-                <View style={styles.iconContainer}>
-                  <FontAwesome5
-                    name={locked ? 'lock' : 'play-circle'}
-                    size={24}
-                    color={locked ? '#999' : '#4682B4'}
-                  />
-                </View>
-                <View style={styles.lessonDetails}>
-                  <Text
-                    style={[styles.lessonTitle, locked && { color: '#999' }]}
-                  >
-                    {lesson.title}
-                    {locked && ' (Locked)'}
-                  </Text>
-                  <Text
-                    style={[styles.lessonDuration, locked && { color: '#999' }]}
-                  >
-                    {lesson.duration || lesson.lesson?.title || ''}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+        {lessonTags?.map((lesson, index, array) => {
+          const locked = isLessonLocked(lesson, index, array);
+          return (
+            <TouchableOpacity
+              key={lesson.id}
+              style={[
+                styles.lessonItem,
+                activeLesson?.id === lesson.id && styles.activeLesson,
+                locked && styles.lockedLesson,
+              ]}
+              onPress={() => !locked && handleLessonClick(lesson)}
+              disabled={locked}
+            >
+              <View style={styles.iconContainer}>
+                <FontAwesome5
+                  name={locked ? 'lock' : 'play-circle'}
+                  size={24}
+                  color={locked ? '#999' : '#4682B4'}
+                />
+              </View>
+              <View style={styles.lessonDetails}>
+                <Text style={[styles.lessonTitle, locked && { color: '#999' }]}>
+                  {lesson.title}
+                  {locked && ' (Locked)'}
+                </Text>
+                <Text
+                  style={[styles.lessonDuration, locked && { color: '#999' }]}
+                >
+                  {lesson.duration || lesson.lesson?.title || ''}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );

@@ -1,7 +1,7 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Image,
   Alert,
   Linking,
+  ActivityIndicator, // <== for spinner
 } from 'react-native';
 
 import C_Button from '@/components/common/Button';
@@ -28,11 +29,11 @@ const OAUTH_ENDPOINTS = {
 const SignUpScreen = () => {
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
 
-  // Validation form function
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     if (!fullName) return 'Full name is required';
     if (!/^[A-Za-z\s]+$/.test(fullName))
       return 'Full name can only contain letters and spaces';
@@ -41,80 +42,105 @@ const SignUpScreen = () => {
       return 'Phone number can only contain digits';
     if (email && !/^\S+@\S+\.\S+$/.test(email)) return 'Invalid email format';
     return '';
-  };
+  }, [fullName, phoneNumber, email]);
 
-  const handleSignUp = async () => {
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    const userData = {
-      name: fullName,
-      phone: phoneNumber,
-      user: phoneNumber,
-    };
+  const handleSignUp = useCallback(async () => {
+    setError('');
+    setIsLoading(true); // Start loading
 
     try {
+      const validationError = validateForm();
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+
+      const userData = {
+        name: fullName,
+        phone: phoneNumber,
+        user: phoneNumber,
+      };
+
+      // Register user
       const registerResponse = await fetch(
         `${EXPO_PUBLIC_BASE_URL}/user/register`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(userData),
         },
       );
 
-      await registerResponse.json();
+      const registerData = await registerResponse.json().catch(() => ({}));
+      if (!registerResponse.ok) {
+        const regErrMsg =
+          registerData?.errors?.[0]?.detail ||
+          'Failed to register. Please try again.';
+        Alert.alert('Registration Error', regErrMsg);
+        setError(regErrMsg);
+        return;
+      }
 
-      if (registerResponse.ok) {
-        const loginResponse = await fetch(
-          `${EXPO_PUBLIC_BASE_URL}/user/login`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ user: phoneNumber }),
-          },
-        );
-
-        const loginData = await loginResponse.json();
-
-        if (loginResponse.ok) {
-          Alert.alert('Success', loginData.meta.message);
-          router.push(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=false`);
-        } else {
-          setError(
-            loginData.meta.message ||
-              'Failed to request OTP. Please try again.',
-          );
-        }
+      // Auto-login (get OTP)
+      const loginResponse = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: phoneNumber }),
+      });
+      const loginData = await loginResponse.json().catch(() => ({}));
+      if (loginResponse.ok) {
+        // Success! Redirect
+        Alert.alert('Success', loginData?.meta?.message || 'OTP sent!');
+        router.replace(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=false`);
       } else {
+        const loginErrMsg =
+          loginData?.meta?.message ||
+          loginData?.errors?.[0]?.detail ||
+          'Failed to request OTP. Please try again.';
+        setError(loginErrMsg);
+        Alert.alert('OTP Error', loginErrMsg);
+      }
+    } catch (err: any) {
+      // Safe error handling
+      const errMsg =
+        (err?.errors && err.errors[0]?.detail) ||
+        err?.message ||
+        'Network error: Unable to verify OTP. Please check your connection.';
+      setError(errMsg);
+      Alert.alert('Error', errMsg);
+    } finally {
+      setIsLoading(false); // Always stop loading!
+    }
+  }, [fullName, phoneNumber, validateForm]);
+
+  // OAuth Sign Up
+  const handleOAuthSignUp = useCallback(
+    async (provider: keyof typeof OAUTH_ENDPOINTS) => {
+      const url = OAUTH_ENDPOINTS[provider];
+      try {
+        await Linking.openURL(url);
+      } catch {
         Alert.alert(
-          'Registration Error',
-          error.errors[0].detail || 'Failed to register. Please try again.',
+          'OAuth Error',
+          'Failed to open OAuth URL. Please try again.',
         );
       }
-    } catch (error: any) {
-      console.log('Error', error);
-      setError(
-        error.errors[0].detail ||
-          'Network error: Unable to verify OTP. Please check your connection.',
-      );
-    }
-  };
+    },
+    [],
+  );
 
-  const handleOAuthSignUp = async (provider: keyof typeof OAUTH_ENDPOINTS) => {
-    const url = OAUTH_ENDPOINTS[provider];
-    try {
-      await Linking.openURL(url);
-    } catch (error) {
-      Alert.alert('OAuth Error', 'Failed to open OAuth URL. Please try again.');
-    }
+  // Input handlers: clear error on change for better UX
+  const onChangeFullName = (text: string) => {
+    setFullName(text);
+    if (error) setError('');
+  };
+  const onChangePhone = (text: string) => {
+    setPhoneNumber(text);
+    if (error) setError('');
+  };
+  const onChangeEmail = (text: string) => {
+    setEmail(text);
+    if (error) setError('');
   };
 
   return (
@@ -123,7 +149,6 @@ const SignUpScreen = () => {
       style={styles.container}
     >
       <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
-
       <Image
         source={require('../assets/images/Auth_logo.png')}
         style={styles.logo}
@@ -141,6 +166,7 @@ const SignUpScreen = () => {
         <TouchableOpacity
           onPress={() => handleOAuthSignUp('google')}
           style={styles.oauthButton}
+          disabled={isLoading} // disable while loading
         >
           <Image
             source={require('../assets/images/Google.png')}
@@ -150,6 +176,7 @@ const SignUpScreen = () => {
         <TouchableOpacity
           onPress={() => handleOAuthSignUp('twitter')}
           style={styles.oauthButton}
+          disabled={isLoading}
         >
           <Image
             source={require('../assets/images/Twitter.png')}
@@ -159,6 +186,7 @@ const SignUpScreen = () => {
         <TouchableOpacity
           onPress={() => handleOAuthSignUp('facebook')}
           style={styles.oauthButton}
+          disabled={isLoading}
         >
           <Image
             source={require('../assets/images/Facebook.png')}
@@ -179,8 +207,10 @@ const SignUpScreen = () => {
         <TextInput
           style={styles.input}
           placeholder="Enter your Full Name"
-          onChangeText={setFullName}
+          onChangeText={onChangeFullName}
           value={fullName}
+          autoCapitalize="words"
+          editable={!isLoading} // disable input during loading
         />
       </View>
       <Text style={styles.label}>Phone Number</Text>
@@ -195,8 +225,9 @@ const SignUpScreen = () => {
           style={styles.input}
           placeholder="Enter your Phone Number"
           keyboardType="phone-pad"
-          onChangeText={setPhoneNumber}
+          onChangeText={onChangePhone}
           value={phoneNumber}
+          editable={!isLoading}
         />
       </View>
       <Text style={styles.label}>Email (optional)</Text>
@@ -211,20 +242,34 @@ const SignUpScreen = () => {
           style={styles.input}
           placeholder="Enter your email"
           keyboardType="email-address"
-          onChangeText={setEmail}
+          onChangeText={onChangeEmail}
           value={email}
+          autoCapitalize="none"
+          editable={!isLoading}
         />
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <C_Button
-        title="Sign up"
+        title={isLoading ? 'Please wait...' : 'Sign Up'}
         onPress={handleSignUp}
         buttonStyle={styles.signupButton}
+        disabled={isLoading} // disable while loading!
+        // if C_Button doesn't support 'disabled', wrap with TouchableOpacity or adjust accordingly
       />
+
+      {isLoading && (
+        <ActivityIndicator
+          size="large"
+          color={Colors.primary}
+          style={{ marginTop: 10 }}
+        />
+      )}
+
       <TouchableOpacity
         onPress={() => router.push('/signin')}
         style={styles.loginLink}
+        disabled={isLoading}
       >
         <Text style={styles.loginText}>
           Already have an account?{' '}
