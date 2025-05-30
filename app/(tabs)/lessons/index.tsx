@@ -1,7 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState, useRef } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  View,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 
 import CurrentLevelProgressCard from '@/components/lessons/CurrentLevelProgressCard';
@@ -23,6 +29,7 @@ const getStoredUserId = async (): Promise<string | null> => {
   const user = await AsyncStorage.getItem('user');
   return user ? JSON.parse(user).id : null;
 };
+
 const fetchLessonProgress = async (baseUrl: string, userId: string) => {
   const url = `${baseUrl}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`;
   const response = await fetch(url);
@@ -42,6 +49,7 @@ const calculateOverallData = (lessons: LessonData[]): OverallData => {
   );
   return { accumulatedLessons, accumulatedCompletedLessons };
 };
+
 const fetchLessonCountForLevel = async (
   baseUrl: string,
   level: LessonLevel,
@@ -56,6 +64,7 @@ const fetchLessonCountForLevel = async (
 const IndexScreen: React.FC = () => {
   const { progressSummary } = useLessons();
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [lessonCount, setLessonCount] = useState<any>({
     Beginner: 0,
     'Basic Elementary': 0,
@@ -74,9 +83,10 @@ const IndexScreen: React.FC = () => {
   // To avoid double loading on rapid focus/blur, use a ref.
   const isMountedRef = useRef(false);
 
-  // Optimized data fetching on focus
+  // Unified data loading for focus and refresh
   const loadDataOnFocus = useCallback(async () => {
     setIsLoading(true);
+    setRefreshing(true);
     try {
       // Try to fetch fresh user data
       const userId = await getStoredUserId();
@@ -89,7 +99,6 @@ const IndexScreen: React.FC = () => {
             await storeCompletedLessons(fetchedLessons);
           }
         } catch (err) {
-          // fetch failed; fallback to local below
           fetchedLessons = undefined;
         }
       }
@@ -119,8 +128,9 @@ const IndexScreen: React.FC = () => {
       setLessonCount(counts as LessonCount);
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
-  }, [BASE_URL]);
+  }, []);
 
   // Use focus effect for per-page load
   useFocusEffect(
@@ -135,31 +145,38 @@ const IndexScreen: React.FC = () => {
     }, [loadDataOnFocus]),
   );
 
-  // Render loading state
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
-
-  // Render main content
   return (
-    <View style={styles.container}>
-      <LessonsBanner />
-
-      <CurrentLevelProgressCard
-        lessonCount={lessonCount}
-        accumulatedData={overallData}
-      />
-      {progressSummary && (
-        <LessonsCategory
-          lessonCount={lessonCount}
-          progressSummary={progressSummary}
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={loadDataOnFocus}
+          colors={[Colors.primary]}
+          tintColor={Colors.primary}
         />
+      }
+    >
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      ) : (
+        <>
+          <LessonsBanner />
+          <CurrentLevelProgressCard
+            lessonCount={lessonCount}
+            accumulatedData={overallData}
+          />
+          {progressSummary && (
+            <LessonsCategory
+              lessonCount={lessonCount}
+              progressSummary={progressSummary}
+            />
+          )}
+        </>
       )}
-    </View>
+    </ScrollView>
   );
 };
 
