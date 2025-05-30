@@ -130,7 +130,7 @@ const IndexScreen: React.FC = () => {
       setIsLoading(false);
       setRefreshing(false);
     }
-  }, [BASE_URL]);
+  }, []);
 
   // Use focus effect for per-page load
   useFocusEffect(
