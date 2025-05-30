@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,9 +7,13 @@ import {
   FlatList,
   TouchableOpacity,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { fetchDictionaryData } from '@/db/retrivedata';
+import {
+  fetchDictionaryData,
+  fetchAndInsertTranslations,
+} from '@/data/dictionary';
 import useSearch from '@/hooks/useSearch';
 import CategoryCard from '@/components/dictionary/CategoryCard';
 
@@ -34,7 +38,7 @@ const extractCategories = (data: DictionaryEntry[]) => {
   return Array.from(categoryMap.entries()).map(([category, count]) => ({
     categoryName: category,
     wordCount: count,
-    imageSource: `https://example.com/images/${category.toLowerCase()}.png`, // Placeholder dynamic image URL
+    imageSource: `https://example.com/images/${category.toLowerCase()}.png`,
   }));
 };
 
@@ -42,21 +46,35 @@ const index = () => {
   const router = useRouter();
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = async () => {
+    try {
+      // First fetch new translations from API and update local DB
+      await fetchAndInsertTranslations();
+      // Then fetch updated data from local DB
+      const data = await fetchDictionaryData();
+      const sortedData = data.sort((a, b) => a.word.localeCompare(b.word));
+      setDictionaryData(sortedData);
+    } catch (error) {
+      console.error('Error refreshing dictionary data:', error);
+    }
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await fetchDictionaryData();
-        const sortedData = data.sort((a, b) => a.word.localeCompare(b.word));
-        setDictionaryData(sortedData);
-      } catch (error) {
-        console.error('Error fetching dictionary data:', error);
-      } finally {
-        setLoading(false);
-      }
+    const initializeData = async () => {
+      setLoading(true);
+      await loadData();
+      setLoading(false);
     };
 
-    fetchData();
+    initializeData();
   }, []);
 
   const categories = useMemo(
@@ -99,6 +117,9 @@ const index = () => {
           <FlatList
             data={filteredData}
             keyExtractor={(item) => item.word}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
             renderItem={({ item }) => (
               <TouchableOpacity
                 onPress={() =>
@@ -120,6 +141,9 @@ const index = () => {
           <FlatList
             data={categories}
             keyExtractor={(item) => item.categoryName}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
             renderItem={({ item }) => (
               <CategoryCard
                 imageSource={item.imageSource}
