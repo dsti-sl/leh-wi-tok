@@ -18,6 +18,7 @@ import useSearch from '@/hooks/useSearch';
 import CategoryCard from '@/components/dictionary/CategoryCard';
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import AlphabetBar from '@/components/dictionary/AlphabetBar';
 
 interface DictionaryEntry {
   word: string;
@@ -63,6 +64,7 @@ const index = () => {
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeLetter, setActiveLetter] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -101,6 +103,14 @@ const index = () => {
     searchKey: 'word',
   });
 
+  const handleAlphabetletterPress = useCallback(
+    (letter: string) => {
+      console.log(`Sign language letter pressed: ${letter}`);
+      setActiveLetter(letter);
+    },
+    [setQuery],
+  );
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -118,7 +128,11 @@ const index = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.outerContainer}>
+      <AlphabetBar
+        onPressLetter={handleAlphabetletterPress}
+        activeLetter={activeLetter ?? undefined}
+      />
       <View style={styles.viewContainer}>
         <View style={styles.searchBarContainer}>
           <Ionicons
@@ -189,12 +203,20 @@ const index = () => {
 export default index;
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'ios' ? 30 : 30,
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
     padding: Platform.OS === 'ios' ? 30 : 30,
   },
   viewContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
     paddingVertical: 20,
     paddingBottom: 40,
   },
