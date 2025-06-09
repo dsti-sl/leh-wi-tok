@@ -19,6 +19,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 3. Create Development Builds
 
    ### Local Development Build
+
    ```bash
    # Install the dev client
    npx expo install expo-dev-client
@@ -32,6 +33,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```
 
    ### EAS Development Build
+
    ```bash
    # Install EAS CLI (if not already done)
    npm install -g eas-cli
@@ -52,6 +54,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```
 
    ### EAS Preview Build (Staging)
+
    ```bash
    # Create a preview (staging) build for internal testing
    eas build --profile preview --platform android # For Android
@@ -59,6 +62,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```
 
    ### EAS Production Build
+
    ```bash
    # Create a production build
    eas build --profile production --platform android # For Android

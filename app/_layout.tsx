@@ -7,7 +7,6 @@ import { StatusBar } from 'react-native';
 import { initializeDatabase } from '@/db/schema';
 import { getDatabase } from '@/db/schema';
 
-
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 

@@ -16,9 +16,15 @@ import {
 } from '@/data/dictionary';
 import useSearch from '@/hooks/useSearch';
 import CategoryCard from '@/components/dictionary/CategoryCard';
+import { Colors } from '@/constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
 
 interface DictionaryEntry {
   word: string;
+  definition: string;
+  illustration: string | null;
+  image: string | null;
+  partOfSpeech: string | null;
   categories: string[];
 }
 
@@ -28,17 +34,27 @@ const extractCategories = (data: DictionaryEntry[]) => {
   data.forEach((entry) => {
     entry.categories.forEach((category) => {
       if (categoryMap.has(category)) {
-        categoryMap.set(category, categoryMap.get(category) + 1);
+        const existing = categoryMap.get(category);
+        categoryMap.set(category, {
+          count: existing.count + 1,
+          // Keep the first found image unless it was null
+          imageSource:
+            existing.imageSource || entry.image || entry.illustration,
+        });
       } else {
-        categoryMap.set(category, 1);
+        categoryMap.set(category, {
+          count: 1,
+          imageSource: entry.image || entry.illustration,
+        });
       }
     });
   });
 
-  return Array.from(categoryMap.entries()).map(([category, count]) => ({
+  return Array.from(categoryMap.entries()).map(([category, data]) => ({
     categoryName: category,
-    wordCount: count,
-    imageSource: `https://example.com/images/${category.toLowerCase()}.png`,
+    wordCount: data.count,
+    imageSource:
+      data.imageSource || require('@/assets/images/adaptive-icon.png'),
   }));
 };
 
@@ -50,9 +66,7 @@ const index = () => {
 
   const loadData = async () => {
     try {
-      // First fetch new translations from API and update local DB
       await fetchAndInsertTranslations();
-      // Then fetch updated data from local DB
       const data = await fetchDictionaryData();
       const sortedData = data.sort((a, b) => a.word.localeCompare(b.word));
       setDictionaryData(sortedData);
@@ -106,12 +120,20 @@ const index = () => {
   return (
     <View style={styles.container}>
       <View style={styles.viewContainer}>
-        <TextInput
-          style={styles.searchBar}
-          placeholder="Search..."
-          value={query}
-          onChangeText={setQuery}
-        />
+        <View style={styles.searchBarContainer}>
+          <Ionicons
+            name="search"
+            size={20}
+            color={Colors.secondary}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchBarInput}
+            placeholder="Search..."
+            value={query}
+            onChangeText={setQuery}
+          />
+        </View>
 
         {query ? (
           <FlatList
@@ -170,19 +192,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: Platform.OS === 'ios' ? 20 : 20,
+    padding: Platform.OS === 'ios' ? 30 : 30,
   },
   viewContainer: {
     paddingVertical: 20,
     paddingBottom: 40,
   },
-  searchBar: {
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     height: 50,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: Colors.primary,
     borderRadius: 8,
     paddingHorizontal: 10,
     marginBottom: 16,
+    marginTop: 16,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchBarInput: {
+    flex: 1,
+    fontSize: 16,
+  },
+  searchBar: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    marginTop: 16,
     fontSize: 16,
   },
   searchResultItem: {
