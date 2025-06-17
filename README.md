@@ -22,6 +22,7 @@
 ---
 
 ## Overview
+Le Wi Tok is an educational app that helps users learn sign language through beginner-friendly courses and an easy-to-use dictionary with visual aids.
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ---
