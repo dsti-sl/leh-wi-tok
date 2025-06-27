@@ -62,7 +62,7 @@ const SignUpScreen = () => {
         phone: phoneNumber,
         user: phoneNumber,
       };
-      console.log('userData :', userData);
+
       // Register user
       const registerResponse = await fetch(
         `${EXPO_PUBLIC_BASE_URL}/user/register`,
@@ -82,7 +82,7 @@ const SignUpScreen = () => {
         setError(regErrMsg);
         return;
       }
-      console.log('registerData:', registerData);
+
       // Auto-login (get OTP)
       const loginResponse = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
         method: 'POST',

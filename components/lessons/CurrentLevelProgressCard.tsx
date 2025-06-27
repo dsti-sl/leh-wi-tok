@@ -14,7 +14,6 @@ const CurrentLevelProgressCard: React.FC<CurrentLevelProgressCardProps> = ({
   accumulatedData,
   lessonCount,
 }: any) => {
-  console.log('accumulatedData', accumulatedData);
   const completedLessons =
     accumulateLessonCounts(lessonCount) || accumulatedData?.accumulatedLessons;
 
