@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
@@ -18,13 +19,14 @@ const welcomeScreen = () => {
   const router = useRouter();
   const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${BASE_URL}/user/me`);
+        const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/me`);
         const data = await response.json();
         if (response.ok) {
           setUser(data.data[0]);
@@ -38,10 +40,6 @@ const welcomeScreen = () => {
 
     fetchUserDetails();
   }, []);
-
-  const handleGetStarted = () => {
-    router.push('/preferences');
-  };
 
   if (isLoading) {
     return (

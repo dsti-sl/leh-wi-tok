@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -19,7 +20,8 @@ const roles = [
   // { id: 'parent', label: 'Parent' },
   // { id: 'generalUser', label: 'General User' },
 ];
-const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
 const RoleSelection = () => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
@@ -35,13 +37,16 @@ const RoleSelection = () => {
     const roleUpdate =
       role === 'student' ? { student: true } : { teacher: true };
     try {
-      const response = await fetch(`${BASE_URL}/user?id=${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${EXPO_PUBLIC_BASE_URL}/user?id=${userId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(roleUpdate),
         },
-        body: JSON.stringify(roleUpdate),
-      });
+      );
 
       const data = await response.json();
 
