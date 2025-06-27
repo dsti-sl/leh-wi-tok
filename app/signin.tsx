@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
@@ -38,7 +39,7 @@ const SignInScreen = () => {
       return 'Phone number must be between 9 and 12 digits';
     return '';
   };
-  const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
   useEffect(() => {
     const checkUser = async () => {

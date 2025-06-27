@@ -1,4 +1,5 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useCallback } from 'react';
@@ -17,7 +18,6 @@ import {
 } from 'react-native';
 
 import C_Button from '@/components/common/Button';
-import { EXPO_PUBLIC_BASE_URL } from '@/config/env';
 import { Colors } from '@/constants/Colors';
 
 const OAUTH_ENDPOINTS = {
@@ -44,6 +44,8 @@ const SignUpScreen = () => {
     return '';
   }, [fullName, phoneNumber, email]);
 
+  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
+
   const handleSignUp = useCallback(async () => {
     setError('');
     setIsLoading(true); // Start loading
@@ -60,7 +62,7 @@ const SignUpScreen = () => {
         phone: phoneNumber,
         user: phoneNumber,
       };
-
+      console.log('userData :', userData);
       // Register user
       const registerResponse = await fetch(
         `${EXPO_PUBLIC_BASE_URL}/user/register`,
@@ -80,7 +82,7 @@ const SignUpScreen = () => {
         setError(regErrMsg);
         return;
       }
-
+      console.log('registerData:', registerData);
       // Auto-login (get OTP)
       const loginResponse = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
         method: 'POST',
