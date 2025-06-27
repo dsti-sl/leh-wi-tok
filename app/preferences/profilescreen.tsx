@@ -51,7 +51,7 @@ const ProfileDetailsScreen = () => {
         }
         setIsLoading2(false);
       } catch (error) {
-        Alert.alert('Error fetching user details:');
+        
         setIsLoading2(false);
       }
     };
@@ -72,7 +72,7 @@ const ProfileDetailsScreen = () => {
         }
         setIsLoading2(false);
       } catch (error) {
-        Alert.alert('Error fetching user details:');
+        
         setIsLoading2(false);
       }
     };
