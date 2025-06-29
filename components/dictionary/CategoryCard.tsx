@@ -18,7 +18,12 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   return (
     <TouchableOpacity style={styles.cardContainer} onPress={onPress}>
       <View style={styles.imageContainer}>
-        <Image source={{ uri: imageSource }} style={styles.image} />
+        <Image
+          source={
+            typeof imageSource === 'string' ? { uri: imageSource } : imageSource
+          }
+          style={styles.image}
+        />
       </View>
       <View style={styles.contentContainer}>
         <Text style={styles.categoryName}>{categoryName}</Text>

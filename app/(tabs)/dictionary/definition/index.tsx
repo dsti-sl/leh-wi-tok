@@ -119,72 +119,107 @@ const index = () => {
     }
   };
 
-  const renderImage = (uri: string | null, type: 'illustration' | 'image') => {
-    if (!uri) {
-      console.warn(`[renderImage] No URI provided for ${type}.`);
-      return null;
-    }
+const renderImage = (
+  uri: string | number | null,
+  type: 'illustration' | 'image',
+) => {
+  if (!uri) {
+    console.warn(`[renderImage] No URI provided for ${type}.`);
+    return null;
+  }
 
-    if (!uri.startsWith('file://')) {
-      console.error(
-        `[renderImage] Invalid URI format for ${type}: ${uri}. Expected file://`,
-      );
-      return (
-        <View style={styles.mediaContainer}>
-          <Text style={styles.errorText}>Invalid image URI format</Text>
-        </View>
-      );
-    }
-
+  // If it's a local image (require), just use it
+  if (typeof uri === 'number') {
     return (
       <View style={styles.mediaContainer}>
         <Image
-          source={{ uri }}
+          source={uri}
           style={[
             type === 'illustration' ? styles.illustration : styles.image,
             imageStatus[type].loading && styles.imageLoading,
             { width: '100%', height: undefined, aspectRatio: 1 },
           ]}
           resizeMode="cover"
-          onLoadStart={() =>
-            setImageStatus((s) => ({
-              ...s,
-              [type]: { loading: true, error: false },
-            }))
-          }
-          onLoad={() =>
-            setImageStatus((s) => ({
-              ...s,
-              [type]: { loading: false, error: false },
-            }))
-          }
-          onError={(e) => {
-            console.warn(
-              `Image load error [${type}] at URI:`,
-              uri,
-              e.nativeEvent,
-            );
-            setImageStatus((s) => ({
-              ...s,
-              [type]: { loading: false, error: true },
-            }));
-          }}
         />
-
-        {imageStatus[type].loading && (
-          <ActivityIndicator
-            size="large"
-            color="#007AFF"
-            style={styles.imageLoader}
-          />
-        )}
-
-        {imageStatus[type].error && (
-          <Text style={styles.errorText}>Image load failed</Text>
-        )}
       </View>
     );
-  };
+  }
+
+  // If it's a string, check for valid URI
+  if (typeof uri === 'string') {
+    console.log(`[renderImage] Attempting to render image for ${type}:`, uri);
+    if (
+      !uri.startsWith('file://') &&
+      !uri.startsWith('content://') &&
+      !uri.startsWith('http')
+    ) {
+      console.error(
+        `[renderImage] Invalid URI format for ${type}: ${uri}. Expected file://, content://, or http(s)://`,
+      );
+      return (
+        <View style={styles.mediaContainer}>
+          <Text style={styles.errorText}>Invalid image URI format</Text>
+        </View>
+      );
+  }
+
+  return (
+    <View style={styles.mediaContainer}>
+      <Image
+        source={{ uri }}
+        style={[
+          type === 'illustration' ? styles.illustration : styles.image,
+          imageStatus[type].loading && styles.imageLoading,
+          { width: '100%', height: undefined, aspectRatio: 1 },
+        ]}
+        resizeMode="cover"
+        onLoadStart={() =>
+          setImageStatus((s) => ({
+            ...s,
+            [type]: { loading: true, error: false },
+          }))
+        }
+        onLoad={() =>
+          setImageStatus((s) => ({
+            ...s,
+            [type]: { loading: false, error: false },
+          }))
+        }
+        onError={(e) => {
+          console.warn(
+            `Image load error [${type}] at URI:`,
+            uri,
+            e.nativeEvent,
+          );
+          setImageStatus((s) => ({
+            ...s,
+            [type]: { loading: false, error: true },
+          }));
+        }}
+      />
+
+      {imageStatus[type].loading && (
+        <ActivityIndicator
+          size="large"
+          color="#007AFF"
+          style={styles.imageLoader}
+        />
+      )}
+
+      {imageStatus[type].error && (
+        <Text style={styles.errorText}>Image load failed</Text>
+      )}
+    </View>
+  );
+}
+
+// Fallback for unexpected types
+return (
+  <View style={styles.mediaContainer}>
+    <Text style={styles.errorText}>Invalid image source</Text>
+  </View>
+);
+};
 
   if (urlSearchQuery) {
     return (

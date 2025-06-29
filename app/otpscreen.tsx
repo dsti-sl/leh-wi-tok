@@ -60,6 +60,7 @@ const OtpScreen = () => {
         },
         body: JSON.stringify(verifiedData),
       });
+      console.log('Response', response);
 
       const data = await response.json();
 
@@ -74,7 +75,7 @@ const OtpScreen = () => {
           'Network error: Unable to verify OTP. Please check your connection.',
       );
     } finally {
-      setIsVerifying(false);
+      setIsVerifying(true);
     }
   };
 
@@ -99,11 +100,18 @@ const OtpScreen = () => {
       } else {
         setError(data.message || 'Failed to resend OTP. Please try again.');
       }
-    } catch {
-      Alert.alert(
-        'Registration Error',
-        error.errors[0].detail || 'Please try again.',
-      );
+    } catch (error: any) {
+      let errorMessage = 'Please try again.';
+      if (
+        error &&
+        typeof error === 'object' &&
+        error.errors &&
+        Array.isArray(error.errors) &&
+        error.errors[0]?.detail
+      ) {
+        errorMessage = error.errors[0].detail;
+      }
+      Alert.alert('Registration Error', errorMessage);
     } finally {
       setIsResending(false);
     }

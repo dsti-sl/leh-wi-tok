@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import {
   fetchDictionaryData,
   fetchAndInsertTranslations,
+  checkAndUpdateTranslations,
 } from '@/data/dictionary';
 import useSearch from '@/hooks/useSearch';
 import CategoryCard from '@/components/dictionary/CategoryCard';
@@ -68,7 +69,7 @@ const index = () => {
 
   const loadData = async () => {
     try {
-      await fetchAndInsertTranslations();
+      await checkAndUpdateTranslations();
       const data = await fetchDictionaryData();
       const sortedData = data.sort((a, b) => a.word.localeCompare(b.word));
       setDictionaryData(sortedData);
@@ -113,7 +114,7 @@ const index = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.viewContainer}>
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
@@ -267,6 +268,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#333',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: '50%'
   },
 });
