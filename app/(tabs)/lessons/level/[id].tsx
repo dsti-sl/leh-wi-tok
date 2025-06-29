@@ -1,5 +1,4 @@
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -18,6 +17,7 @@ import MediaPlayer from '@/components/common/MediaPlayer';
 import { Colors } from '@/constants/Colors';
 import useLessonLevel from '@/hooks/useLessonLevel';
 import {
+  getBaseUrl,
   getStoredCompletedLessons,
   getStoredUserId,
   LessonData,
@@ -48,7 +48,7 @@ const Level = () => {
     null,
   );
 
-  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   // --- Fetch lesson progress ---
   const fetchLessonProgress = useCallback(

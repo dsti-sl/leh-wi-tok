@@ -16,6 +16,7 @@ import {
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
+import { getBaseUrl } from '@/utils';
 
 const OtpScreen = () => {
   const { isSignIn = true, phoneNumber = '' } = useLocalSearchParams();
@@ -24,8 +25,8 @@ const OtpScreen = () => {
   const [error, setError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
+  const BASE_URL = getBaseUrl();
   // Refs for each input field
   const inputRefs = useRef<(TextInput | null)[]>(
     Array.from({ length: 6 }, () => null),

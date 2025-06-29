@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
@@ -19,7 +18,7 @@ import {
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
-import { getStoredUserId } from '@/utils';
+import { getBaseUrl, getStoredUserId } from '@/utils';
 
 const OAUTH_ENDPOINTS = {
   google: 'https://example.com/oauth/google',
@@ -39,8 +38,8 @@ const SignInScreen = () => {
       return 'Phone number must be between 9 and 12 digits';
     return '';
   };
-  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
   useEffect(() => {
     const checkUser = async () => {
       const user = await getStoredUserId();

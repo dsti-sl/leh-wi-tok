@@ -1,8 +1,10 @@
-import { getDatabase } from '@/db/schema';
-import { fileDownloads } from '@/utils/filedownloads';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+import { getDatabase } from '@/db/schema';
+import { getBaseUrl } from '@/utils';
+import { fileDownloads } from '@/utils/filedownloads';
+
+const BASE_URL = getBaseUrl();
 
 interface ApiTranslationItem {
   id: string;

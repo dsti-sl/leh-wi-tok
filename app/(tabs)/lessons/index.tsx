@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState, useRef } from 'react';
 import {
@@ -17,6 +16,7 @@ import LessonsCategory from '@/components/lessons/LessonsCategory';
 import useLessons from '@/hooks/useLessons';
 import {
   CompletedLessonData,
+  getBaseUrl,
   getStoredCompletedLessons,
   LessonCount,
   LessonData,
@@ -80,7 +80,7 @@ const IndexScreen: React.FC = () => {
     lessons: [],
   });
 
-  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   // To avoid double loading on rapid focus/blur, use a ref.
   const isMountedRef = useRef(false);

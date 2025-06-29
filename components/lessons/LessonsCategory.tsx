@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import { useFocusEffect, router } from 'expo-router';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -8,6 +7,7 @@ import LessonCard from './LessonCard';
 
 import { Record } from '@/lib/types';
 import {
+  getBaseUrl,
   LessonCompletionData,
   LessonLevel,
   LessonProgress,
@@ -48,7 +48,8 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
 }) => {
   const [userCompletionRate, setUserCompletionRate] =
     useState<LessonCompletionData>({ lessons: [] });
-  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
+
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   // Fetch latest server data and cache it locally on mount only
   useEffect(() => {

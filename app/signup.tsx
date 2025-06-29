@@ -1,5 +1,4 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useCallback } from 'react';
@@ -19,6 +18,7 @@ import {
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
+import { getBaseUrl } from '@/utils';
 
 const OAUTH_ENDPOINTS = {
   google: 'https://example.com/oauth/google',
@@ -44,7 +44,7 @@ const SignUpScreen = () => {
     return '';
   }, [fullName, phoneNumber, email]);
 
-  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   const handleSignUp = useCallback(async () => {
     setError('');

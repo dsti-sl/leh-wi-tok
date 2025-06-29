@@ -1,6 +1,7 @@
 // UTILITIES METHODS
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 import { Record } from '@/lib/types';
 
@@ -106,4 +107,22 @@ export interface LessonProgress {
 
 export interface LessonCompletionData {
   lessons: LessonProgress[];
+}
+
+/**
+ * Returns the base API URL from the Expo config.
+ * Throws an error if the URL is not set.
+ */
+export function getBaseUrl(): string {
+  // You can adjust the property if your config structure changes
+  const url =
+    Constants.expoConfig?.extra?.API_URL || process.env.EXPO_PUBLIC_BASE_URL;
+
+  if (!url) {
+    throw new Error(
+      '[getBaseUrl] No API URL found. Please check your Expo config or environment variables.',
+    );
+  }
+
+  return url;
 }

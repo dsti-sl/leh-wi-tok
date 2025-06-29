@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
@@ -14,13 +13,14 @@ import {
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
+import { getBaseUrl } from '@/utils';
 
 const welcomeScreen = () => {
   const router = useRouter();
   const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   useEffect(() => {
     const fetchUserDetails = async () => {

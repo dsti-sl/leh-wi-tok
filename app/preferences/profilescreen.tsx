@@ -21,6 +21,7 @@ import CModal from '@/components/common/CModal';
 import Select from '@/components/common/Select';
 import { Colors } from '@/constants/Colors';
 import useLocationGrades from '@/hooks/useLocationGrades';
+import { getBaseUrl } from '@/utils';
 
 const ProfileDetailsScreen = () => {
   const { grades, locations, isLoading, error } = useLocationGrades();
@@ -36,7 +37,7 @@ const ProfileDetailsScreen = () => {
   const router = useRouter();
   const { userId, name } = useLocalSearchParams();
 
-  const EXPO_PUBLIC_BASE_URL = Constants.expoConfig?.extra?.API_URL;
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -51,7 +52,6 @@ const ProfileDetailsScreen = () => {
         }
         setIsLoading2(false);
       } catch (error) {
-        
         setIsLoading2(false);
       }
     };
@@ -72,7 +72,6 @@ const ProfileDetailsScreen = () => {
         }
         setIsLoading2(false);
       } catch (error) {
-        
         setIsLoading2(false);
       }
     };
