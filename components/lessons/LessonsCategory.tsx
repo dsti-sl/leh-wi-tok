@@ -7,6 +7,7 @@ import LessonCard from './LessonCard';
 
 import { Record } from '@/lib/types';
 import {
+  getBaseUrl,
   LessonCompletionData,
   LessonLevel,
   LessonProgress,
@@ -47,16 +48,21 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
 }) => {
   const [userCompletionRate, setUserCompletionRate] =
     useState<LessonCompletionData>({ lessons: [] });
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   // Fetch latest server data and cache it locally on mount only
   useEffect(() => {
     const fetchAndStoreLessonProgress = async () => {
       try {
         const userId = await getStoredUserId();
-        if (!userId || !BASE_URL) return;
-        const serverLessons = await fetchLessonProgress(BASE_URL, userId);
+        if (!userId || !EXPO_PUBLIC_BASE_URL) return;
+        const serverLessons = await fetchLessonProgress(
+          EXPO_PUBLIC_BASE_URL,
+          userId,
+        );
         if (serverLessons) {
+          setUserCompletionRate({ lessons: serverLessons });
           await storeCompletedLessons(serverLessons);
         }
       } catch (error) {
@@ -67,7 +73,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
       }
     };
     fetchAndStoreLessonProgress();
-  }, [getStoredUserId]);
+  }, []);
 
   // Local (possibly stale) state update
   const updateCompletionFromStorage = useCallback(async () => {
@@ -105,7 +111,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   const lessonData = useMemo(
     () => ({
       Beginner: getLessonData('Beginner'),
-      BasicElementary: getLessonData('Basic Elementary'),
+      'Basic Elementary': getLessonData('Basic Elementary'),
       Intermediate: getLessonData('Intermediate'),
       Advanced: getLessonData('Advanced'),
     }),
@@ -143,14 +149,8 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
           <LessonCard
             key={key}
             title={(progressSummary[key] as Record).title as string}
-            completed={
-              lessonData[key.replace(' ', '') as keyof typeof lessonData]
-                .totalCompleted
-            }
-            totalLesson={
-              lessonData[key.replace(' ', '') as keyof typeof lessonData]
-                .totalLessons
-            }
+            completed={lessonData[key]?.totalCompleted}
+            totalLesson={lessonCount[key] ?? lessonData[key]?.totalLessons}
             onPress={() =>
               router.push(
                 `/(tabs)/lessons/level/${(progressSummary[key] as Record).title}?assessment=${assessment}`,
@@ -165,14 +165,16 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
           <LessonCard
             key={key}
             title={(progressSummary[key] as Record).title as string}
-            completed={
-              lessonData[key.replace(' ', '') as keyof typeof lessonData]
-                .totalCompleted
-            }
-            totalLesson={
-              lessonData[key.replace(' ', '') as keyof typeof lessonData]
-                .totalLessons
-            }
+            // completed={
+            //   lessonData[key.replace(' ', '') as keyof typeof lessonData]
+            //     .totalCompleted
+            // }
+            // totalLesson={
+            //   lessonData[key.replace(' ', '') as keyof typeof lessonData]
+            //     .totalLessons
+            // }
+            completed={lessonData[key]?.totalCompleted}
+            totalLesson={lessonCount[key] ?? lessonData[key]?.totalLessons}
             onPress={() =>
               router.push(
                 `/(tabs)/lessons/level/${(progressSummary[key] as Record).title}?assessment=${assessment}`,

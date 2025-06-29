@@ -3,6 +3,8 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 
+import { getBaseUrl } from '@/utils';
+
 interface GestureInfo {
   contentType: string;
   [key: string]: any;
@@ -17,7 +19,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   gestureId,
   gestureInfo,
 }) => {
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+  const BASE_URL = getBaseUrl();
+
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
 
   console.log('MediaPlayer fileUrl:', gestureInfo);

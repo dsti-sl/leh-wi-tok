@@ -20,12 +20,14 @@ import HomeItem from '@/components/home/HomeItem';
 import InitialVideoCard from '@/components/home/InitialVideoCard';
 import useTutorials from '@/hooks/useTutorials';
 import { Record } from '@/lib/types';
+import { getBaseUrl } from '@/utils';
 
 const HomeScreen = () => {
   const { defaultTutorial } = useTutorials();
   const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+  const BASE_URL = getBaseUrl();
 
   useEffect(() => {
     const fetchUserDetails = async () => {

@@ -1,4 +1,5 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -20,6 +21,7 @@ import CModal from '@/components/common/CModal';
 import Select from '@/components/common/Select';
 import { Colors } from '@/constants/Colors';
 import useLocationGrades from '@/hooks/useLocationGrades';
+import { getBaseUrl } from '@/utils';
 
 const ProfileDetailsScreen = () => {
   const { grades, locations, isLoading, error } = useLocationGrades();
@@ -34,14 +36,15 @@ const ProfileDetailsScreen = () => {
   const [gradeID, setGradeID] = useState('');
   const router = useRouter();
   const { userId, name } = useLocalSearchParams();
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
         setIsLoading2(true);
         const response = await fetch(
-          `${BASE_URL}/location?name=eq.${selectedLocation}`,
+          `${EXPO_PUBLIC_BASE_URL}/location?name=eq.${selectedLocation}`,
         );
         const data = await response.json();
         if (response.ok) {
@@ -49,7 +52,6 @@ const ProfileDetailsScreen = () => {
         }
         setIsLoading2(false);
       } catch (error) {
-        Alert.alert('Error fetching user details:');
         setIsLoading2(false);
       }
     };
@@ -62,7 +64,7 @@ const ProfileDetailsScreen = () => {
       try {
         setIsLoading2(true);
         const response = await fetch(
-          `${BASE_URL}/tag?title=eq.${selectedGrade}`,
+          `${EXPO_PUBLIC_BASE_URL}/tag?title=eq.${selectedGrade}`,
         );
         const data = await response.json();
         if (response.ok) {
@@ -70,7 +72,6 @@ const ProfileDetailsScreen = () => {
         }
         setIsLoading2(false);
       } catch (error) {
-        Alert.alert('Error fetching user details:');
         setIsLoading2(false);
       }
     };
@@ -139,7 +140,7 @@ const ProfileDetailsScreen = () => {
 
   // API Helper Functions
   const uploadProfileImage = async (profileImageData: unknown) => {
-    const response = await fetch(`${BASE_URL}/file`, {
+    const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/file`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(profileImageData),
@@ -152,7 +153,7 @@ const ProfileDetailsScreen = () => {
   };
 
   const updateUserProfile = async (profileInfo: unknown) => {
-    const response = await fetch(`${BASE_URL}/user?id=${userId}`, {
+    const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user?id=${userId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(profileInfo),

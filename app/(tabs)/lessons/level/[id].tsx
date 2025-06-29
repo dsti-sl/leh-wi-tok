@@ -5,23 +5,25 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   Platform,
   TouchableOpacity,
+  ToastAndroid,
+  ActivityIndicator,
+  FlatList,
 } from 'react-native';
 
 import MediaPlayer from '@/components/common/MediaPlayer';
 import { Colors } from '@/constants/Colors';
 import useLessonLevel from '@/hooks/useLessonLevel';
 import {
+  getBaseUrl,
   getStoredCompletedLessons,
   getStoredUserId,
   LessonData,
   storeCompletedLessons,
 } from '@/utils';
 
-// ----- Main Component -----
 const Level = () => {
   const {
     levelLessons,
@@ -42,35 +44,35 @@ const Level = () => {
     new Set(),
   );
   const [serverProgress, setServerProgress] = useState<LessonData[]>([]);
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
   const [selectedGestureId, setSelectedGestureId] = useState<string | null>(
     null,
   );
 
-  // Fetch lesson progress from server or fallback to storage
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
+
+  // --- Fetch lesson progress ---
   const fetchLessonProgress = useCallback(
     async (userId: string) => {
       try {
-        const progressRes = await fetch(
-          `${BASE_URL}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`,
+        const res = await fetch(
+          `${EXPO_PUBLIC_BASE_URL}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`,
         );
-        if (!progressRes.ok) throw new Error('API error');
-        const { data } = await progressRes.json();
+        if (!res.ok) throw new Error('API error');
+        const { data } = await res.json();
         if (data) {
           await storeCompletedLessons(data);
           setServerProgress(data);
           return data;
         }
         return null;
-      } catch (apiError) {
-        console.warn('Lesson progress API failed, trying local fallback.');
+      } catch {
         return null;
       }
     },
-    [BASE_URL],
+    [EXPO_PUBLIC_BASE_URL],
   );
 
-  // Fetch lesson tags for category
+  // --- Fetch lessons and progress, optimized ---
   const fetchLessonCategory = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -78,44 +80,57 @@ const Level = () => {
       if (!userId) throw new Error('No user ID found');
 
       // 1. Fetch lesson tags
-      const response = await fetch(
-        `${BASE_URL}/nugget?and=(lesson.tags.title.eq.${assessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active`,
+      const res = await fetch(
+        `${EXPO_PUBLIC_BASE_URL}/nugget?and=(lesson.tags.title.eq.${assessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active`,
       );
-      if (!response.ok) throw new Error('Failed to fetch lesson category');
-      const data = await response.json();
-      const sortedTags = data.data.sort(
-        (a: { priority: number }, b: { priority: number }) =>
-          a.priority - b.priority,
-      );
+      if (!res.ok) throw new Error('Failed to fetch lesson category');
+      const data = await res.json();
+      const sortedTags = data.data.sort((a, b) => a.priority - b.priority);
       setLessonTags(sortedTags);
       setLessonCount(data.meta.count);
 
-      // 2. Fetch progress (prefer server, fallback to local)
+      // 2. Fetch progress
       let progressData: LessonData[] =
         (await fetchLessonProgress(userId)) ?? [];
       if (!progressData.length) {
         const stored = await getStoredCompletedLessons();
         progressData = stored.lessons ?? [];
       }
-
-      // 3. Set completed lessons for this assessment/level
+      // 3. Filter completed lessons
       const currentLevel = progressData.find((l) => l.level === assessment);
-      setCompletedLessons(
-        new Set(
-          currentLevel?.lessonsCompleted ||
-            currentLevel?.lessonsCompleted ||
-            [],
-        ),
+      const completedIds = currentLevel?.lessonsCompleted || [];
+      const filteredCompleted = completedIds.filter((id: string) =>
+        sortedTags.some((lesson: any) => lesson.id === id),
       );
+      setCompletedLessons(new Set(filteredCompleted));
+
+      // Repair local progress if needed
+      if (filteredCompleted.length !== completedIds.length) {
+        const updatedProgress = progressData.map((p) =>
+          p.level === assessment
+            ? {
+                ...p,
+                lessonsCompleted: filteredCompleted,
+                totalCompleted: filteredCompleted.length,
+              }
+            : p,
+        );
+        await storeCompletedLessons(updatedProgress);
+        if (Platform.OS === 'android' && completedIds.length > 0) {
+          ToastAndroid.show(
+            'Some completed lessons have been removed.',
+            ToastAndroid.SHORT,
+          );
+        }
+      }
     } catch (error) {
-      console.error('Error fetching category or progress:', error);
       setLessonTags([]);
       setCompletedLessons(new Set());
       setLessonCount(0);
     } finally {
       setIsLoading(false);
     }
-  }, [BASE_URL, assessment, fetchLessonProgress]);
+  }, [EXPO_PUBLIC_BASE_URL, assessment, fetchLessonProgress]);
 
   useEffect(() => {
     fetchLessonCategory();
@@ -130,13 +145,16 @@ const Level = () => {
       const userId = await getStoredUserId();
       if (!userId) return;
 
-      // Load progress data from storage (always use storage for updating)
-      const storedCompleted = await getStoredCompletedLessons();
-      const newCompleted = new Set(completedLessons);
+      // Always start with filtered completed lessons
+      const previousCompleted = Array.from(completedLessons).filter((id) =>
+        lessonTags.some((l) => l.id === id),
+      );
+      const newCompleted = new Set(previousCompleted);
       newCompleted.add(lesson.id);
 
       // Update or add lesson progress for this level
-      const updatedLessons = storedCompleted.lessons.filter(
+      const storedCompleted = await getStoredCompletedLessons();
+      const updatedLessons = (storedCompleted.lessons ?? []).filter(
         (l) => l.level !== assessment,
       );
       updatedLessons.push({
@@ -147,19 +165,15 @@ const Level = () => {
         lessonsCompleted: Array.from(newCompleted),
       });
 
-      // Prepare to sync to server
+      // Sync to server (PATCH or POST)
       const matchedProgress = serverProgress.find(
         (p) => p.level === assessment,
       );
       const levelExists = !!matchedProgress;
-
-      // Optimistically update local storage
       await storeCompletedLessons(updatedLessons);
-
-      // Try to sync with server
       try {
-        const response = await fetch(
-          `${BASE_URL}/lesson-progress${levelExists ? `/?id=${matchedProgress.id}` : ''}`,
+        await fetch(
+          `${EXPO_PUBLIC_BASE_URL}/lesson-progress${levelExists ? `/?id=${matchedProgress.id}` : ''}`,
           {
             method: levelExists ? 'PATCH' : 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -172,11 +186,7 @@ const Level = () => {
             }),
           },
         );
-        if (!response.ok) throw new Error('Lesson progress API failed');
-        // Optionally refetch or update UI based on response
-      } catch (err) {
-        console.warn('Falling back to AsyncStorage due to error:', err);
-      }
+      } catch {}
 
       setCompletedLessons(newCompleted);
       fetchLessonCategory();
@@ -186,31 +196,59 @@ const Level = () => {
       completedLessons,
       lessonCount,
       serverProgress,
-      BASE_URL,
+      EXPO_PUBLIC_BASE_URL,
       handleLessonSelect,
       fetchLessonCategory,
+      lessonTags,
     ],
   );
 
   // --- Lesson locked logic ---
-  const isLessonLocked = (
-    currentLesson: any,
-    index: number,
-    lessons: any[],
-  ) => {
-    if (index === 0) return false;
-    const previousLesson = lessons[index - 1];
-    return !completedLessons.has(previousLesson.id);
-  };
+  const isLessonLocked = useCallback(
+    (currentLesson: any, index: number, lessons: any[]) => {
+      if (index === 0) return false;
+      const previousLesson = lessons[index - 1];
+      return !completedLessons.has(previousLesson.id);
+    },
+    [completedLessons],
+  );
 
-  // --- Render ---
-  if (loading || isLoading) {
-    return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
+  // --- Render item (Memoized) ---
+  const renderLessonItem = useCallback(
+    ({ item, index }: { item: any; index: number }) => {
+      const locked = isLessonLocked(item, index, lessonTags);
+      return (
+        <TouchableOpacity
+          key={item.id}
+          style={[
+            styles.lessonItem,
+            activeLesson?.id === item.id && styles.activeLesson,
+            locked && styles.lockedLesson,
+          ]}
+          onPress={() => !locked && handleLessonClick(item)}
+          disabled={locked}
+        >
+          <View style={styles.iconContainer}>
+            <FontAwesome5
+              name={locked ? 'lock' : 'play-circle'}
+              size={24}
+              color={locked ? '#999' : '#4682B4'}
+            />
+          </View>
+          <View style={styles.lessonDetails}>
+            <Text style={[styles.lessonTitle, locked && { color: '#999' }]}>
+              {item.title}
+              {locked && ' (Locked)'}
+            </Text>
+            <Text style={[styles.lessonDuration, locked && { color: '#999' }]}>
+              {item.duration || item.lesson?.title || ''}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [lessonTags, activeLesson, handleLessonClick, isLessonLocked],
+  );
 
   return (
     <View style={styles.container}>
@@ -219,88 +257,73 @@ const Level = () => {
       ) : (
         <StatusBar style="light" backgroundColor={Colors.primary} />
       )}
-      {/* Top Section with GIF */}
-      <View className="px-10" style={styles.videoContainer}>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            backgroundColor: Colors.primary,
-          }}
-        >
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color="#fff" />
-          </TouchableOpacity>
+      {loading || isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
         </View>
-        {selectedGestureId && (
-          <MediaPlayer
-            gestureInfo={lessonGestureInfo}
-            gestureId={selectedGestureId as string}
-          />
-        )}
-      </View>
-
-      {/* Lesson Details */}
-      <View style={styles.lessonInfo}>
-        <View style={styles.lessonHeader}>
-          <View>
-            <Text style={styles.title}>{assessment}</Text>
-            <Text style={styles.subtitle}>
-              {completedLessons.size} of {lessonCount} Lessons Completed
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Lesson List */}
-      <ScrollView>
-        {lessonTags?.map((lesson, index, array) => {
-          const locked = isLessonLocked(lesson, index, array);
-          return (
-            <TouchableOpacity
-              key={lesson.id}
-              style={[
-                styles.lessonItem,
-                activeLesson?.id === lesson.id && styles.activeLesson,
-                locked && styles.lockedLesson,
-              ]}
-              onPress={() => !locked && handleLessonClick(lesson)}
-              disabled={locked}
+      ) : (
+        <>
+          <View className="px-10" style={styles.videoContainer}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                backgroundColor: Colors.primary,
+              }}
             >
-              <View style={styles.iconContainer}>
-                <FontAwesome5
-                  name={locked ? 'lock' : 'play-circle'}
-                  size={24}
-                  color={locked ? '#999' : '#4682B4'}
-                />
-              </View>
-              <View style={styles.lessonDetails}>
-                <Text style={[styles.lessonTitle, locked && { color: '#999' }]}>
-                  {lesson.title}
-                  {locked && ' (Locked)'}
+              <TouchableOpacity onPress={() => router.back()}>
+                <Ionicons name="chevron-back" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            {selectedGestureId && (
+              <MediaPlayer
+                gestureInfo={lessonGestureInfo}
+                gestureId={selectedGestureId as string}
+              />
+            )}
+          </View>
+
+          <View style={styles.lessonInfo}>
+            <View style={styles.lessonHeader}>
+              <View>
+                <Text style={styles.title}>{assessment}</Text>
+                <Text style={styles.subtitle}>
+                  {completedLessons.size < lessonCount
+                    ? completedLessons.size
+                    : lessonCount}{' '}
+                  of {lessonCount} Lessons Completed
                 </Text>
-                <Text
-                  style={[styles.lessonDuration, locked && { color: '#999' }]}
-                >
-                  {lesson.duration || lesson.lesson?.title || ''}
-                </Text>
               </View>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+            </View>
+          </View>
+
+          <FlatList
+            data={lessonTags}
+            keyExtractor={(item) => item.id}
+            renderItem={renderLessonItem}
+            initialNumToRender={20}
+            maxToRenderPerBatch={40}
+            windowSize={21}
+            removeClippedSubviews
+          />
+        </>
+      )}
     </View>
   );
 };
 
-export default Level;
+export default React.memo(Level);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
-
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   videoContainer: {
     height: 300,
     backgroundColor: '#2d2d2d',

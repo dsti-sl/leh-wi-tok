@@ -59,7 +59,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     typedRoutes: true,
   },
   extra: {
-    API_URL: process.env.API_URL || 'http://localhost:5173/api',
+    API_URL: process.env.EXPO_PUBLIC_BASE_URL,
     router: {
       origin: false,
     },
