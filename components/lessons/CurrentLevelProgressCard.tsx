@@ -29,7 +29,7 @@ const CurrentLevelProgressCard: React.FC<CurrentLevelProgressCardProps> = ({
       </View>
       {/* <ProgressBar progress={0} /> */}
       <ProgressBar progress={progress} />
-      <Text>{`${progress}% Completed`}</Text>
+      <Text>{`${progress}% Complete`}</Text>
     </View>
   );
 };

@@ -23,7 +23,9 @@ const LessonCard: React.FC<LessonCardProps> = ({
   onPress,
   backgroundColor,
 }) => {
-  const progress = Math.round((completed / totalLesson) * 100) || 0;
+  const progress =
+    totalLesson === 0 ? 0 : Math.round((completed / totalLesson) * 100);
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -42,7 +44,9 @@ const LessonCard: React.FC<LessonCardProps> = ({
                   ? 'In-Progress'
                   : 'Completed'}
           </Text>
-          <Text style={styles.txtBold}>{`${completed}/${totalLesson}`}</Text>
+          <Text
+            style={styles.txtBold}
+          >{`${completed < totalLesson ? completed : totalLesson}/${totalLesson}`}</Text>
         </View>
       </View>
     </TouchableOpacity>

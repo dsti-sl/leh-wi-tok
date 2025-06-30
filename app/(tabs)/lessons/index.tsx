@@ -16,6 +16,7 @@ import LessonsCategory from '@/components/lessons/LessonsCategory';
 import useLessons from '@/hooks/useLessons';
 import {
   CompletedLessonData,
+  getBaseUrl,
   getStoredCompletedLessons,
   LessonCount,
   LessonData,
@@ -78,7 +79,8 @@ const IndexScreen: React.FC = () => {
   const [_, setAllTrackingLessons] = useState<CompletedLessonData>({
     lessons: [],
   });
-  const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL as string;
+
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   // To avoid double loading on rapid focus/blur, use a ref.
   const isMountedRef = useRef(false);
@@ -92,9 +94,12 @@ const IndexScreen: React.FC = () => {
       const userId = await getStoredUserId();
       let fetchedLessons: LessonData[] | undefined;
 
-      if (userId && BASE_URL) {
+      if (userId && EXPO_PUBLIC_BASE_URL) {
         try {
-          fetchedLessons = await fetchLessonProgress(BASE_URL, userId);
+          fetchedLessons = await fetchLessonProgress(
+            EXPO_PUBLIC_BASE_URL,
+            userId,
+          );
           if (fetchedLessons) {
             await storeCompletedLessons(fetchedLessons);
           }
@@ -119,7 +124,10 @@ const IndexScreen: React.FC = () => {
       await Promise.all(
         LEVELS.map(async (level: any) => {
           try {
-            counts[level] = await fetchLessonCountForLevel(BASE_URL, level);
+            counts[level] = await fetchLessonCountForLevel(
+              EXPO_PUBLIC_BASE_URL,
+              level,
+            );
           } catch {
             counts[level] = 0;
           }

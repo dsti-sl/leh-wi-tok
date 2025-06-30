@@ -18,7 +18,7 @@ import {
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
-import { getStoredUserId } from '@/utils';
+import { getBaseUrl, getStoredUserId } from '@/utils';
 
 const OAUTH_ENDPOINTS = {
   google: 'https://example.com/oauth/google',
@@ -38,8 +38,8 @@ const SignInScreen = () => {
       return 'Phone number must be between 9 and 12 digits';
     return '';
   };
-  const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
   useEffect(() => {
     const checkUser = async () => {
       const user = await getStoredUserId();

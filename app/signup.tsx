@@ -17,8 +17,8 @@ import {
 } from 'react-native';
 
 import C_Button from '@/components/common/Button';
-import { EXPO_PUBLIC_BASE_URL } from '@/config/env';
 import { Colors } from '@/constants/Colors';
+import { getBaseUrl } from '@/utils';
 
 const OAUTH_ENDPOINTS = {
   google: 'https://example.com/oauth/google',
@@ -43,6 +43,8 @@ const SignUpScreen = () => {
     if (email && !/^\S+@\S+\.\S+$/.test(email)) return 'Invalid email format';
     return '';
   }, [fullName, phoneNumber, email]);
+
+  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   const handleSignUp = useCallback(async () => {
     setError('');
