@@ -16,7 +16,7 @@ import {
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
-import { getBaseUrl } from '@/utils';
+import { getBaseUrl, setToken } from '@/utils';
 
 const OtpScreen = () => {
   const { isSignIn = true, phoneNumber = '' } = useLocalSearchParams();
