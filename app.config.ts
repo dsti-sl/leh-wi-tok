@@ -27,7 +27,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       foregroundImage: './assets/images/adaptive-icon.png',
       backgroundColor: '#0F4C5C',
     },
-    permissions: ['CAMERA', 'READ_EXTERNAL_STORAGE'],
+    permissions: ['CAMERA', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE'],
     package: 'com.dsti.lehwitok',
   },
   web: {

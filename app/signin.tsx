@@ -96,10 +96,7 @@ const SignInScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
 
       <Image
@@ -114,9 +111,7 @@ const SignInScreen = () => {
         />
       </View>
       <Text style={styles.subText}>Welcome back, you’ve been missed</Text>
-
-      {/* OAuth Buttons */}
-      <View style={styles.oauthContainer}>
+      {/*       <View style={styles.oauthContainer}>
         <TouchableOpacity
           onPress={() => handleOAuthLogin('google')}
           style={styles.oauthButton}
@@ -144,8 +139,8 @@ const SignInScreen = () => {
             style={styles.icon}
           />
         </TouchableOpacity>
-      </View>
-      <Text style={styles.orText}>Or</Text>
+      </View> 
+      <Text style={styles.orText}>Or</Text> */}
       <Text style={styles.label}>Phone Number</Text>
       <View style={styles.inputContainer}>
         <Feather
@@ -191,7 +186,7 @@ const SignInScreen = () => {
           <Text style={styles.signUpLink}>Sign Up</Text>
         </TouchableOpacity>
       </Text>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
