@@ -44,6 +44,14 @@ export const accumulateLessonCounts = (
   );
 };
 
+export const getToken = async (): Promise<string | null> => {
+  const token = await AsyncStorage.getItem('token');
+  return token;
+};
+
+export const setToken = async (token: string): Promise<void> => {
+  await AsyncStorage.setItem('token', token);
+};
 // ----- Helpers for AsyncStorage -----
 export type LessonData = {
   id?: string;

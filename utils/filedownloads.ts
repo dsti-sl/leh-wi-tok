@@ -1,5 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 
+import { getToken } from '.';
+
 /**
  * @param fileId gets the unique file ID
  * @param filename maintains the original filename
@@ -43,7 +45,7 @@ export async function fileDownloads(
       `[fileDownloads] Attempting to download from ${downloadUrl} to ${localPath}`,
     );
 
-    const token?: string = await getToken();
+    const token = await getToken();
 
     const { uri: downloadedFileUri } = await FileSystem.downloadAsync(
       downloadUrl,
@@ -52,7 +54,7 @@ export async function fileDownloads(
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          Authorization: token ? `Bearer ${token}` : '', 
+          Authorization: token ? `Bearer ${token}` : '',
         },
       },
     );

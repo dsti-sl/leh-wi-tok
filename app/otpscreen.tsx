@@ -16,7 +16,7 @@ import {
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
-import { getBaseUrl } from '@/utils';
+import { getBaseUrl, setToken } from '@/utils';
 
 const OtpScreen = () => {
   const { isSignIn = true, phoneNumber = '' } = useLocalSearchParams();
@@ -28,175 +28,171 @@ const OtpScreen = () => {
 
   const BASE_URL = getBaseUrl();
   // Refs for each input field
-const inputRefs = useRef<(TextInput | null)[]>([]);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
-const validateOtp = () => {
-  const otpValue = otp.join('');
-  if (otpValue.length !== 6) return 'Please enter a 6-digit OTP';
-  if (!/^\d+$/.test(otpValue)) return 'OTP can only contain digits';
-  return '';
-};
-const handleVerifyOtp = async () => {
-  const validationError = validateOtp();
-  if (validationError) {
-    setError(validationError);
-    return;
-  }
-
-  setError('');
-  setIsVerifying(true);
-
-  const verifiedData = {
-    user: phoneNumber,
-    verificationCode: otp.join(''),
+  const validateOtp = () => {
+    const otpValue = otp.join('');
+    if (otpValue.length !== 6) return 'Please enter a 6-digit OTP';
+    if (!/^\d+$/.test(otpValue)) return 'OTP can only contain digits';
+    return '';
   };
 
-  try {
-    const response = await fetch(`${BASE_URL}/user/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(verifiedData),
-    });
-    console.log('Response', response);
+  const handleVerifyOtp = async () => {
+    const validationError = validateOtp();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
-    const data = await response.json();
+    setError('');
+    setIsVerifying(true);
 
-    if (response.ok) {
-      isSignIn ? router.replace('/home') : router.replace('/preferences');
+    const verifiedData = { user: phoneNumber, verificationCode: otp.join('') };
+
+    try {
+      const response = await fetch(`${BASE_URL}/user/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(verifiedData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const token = data.data[0]?.token;
+        await setToken(token);
+        isSignIn ? router.replace('/home') : router.replace('/preferences');
+      } else {
+        setError(data.message || 'Invalid OTP. Please try again.');
+      }
+    } catch (error: any) {
+      setError(
+        error.errors[0].detail ||
+          'Network error: Unable to verify OTP. Please check your connection.',
+      );
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setIsResending(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${BASE_URL}/user/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Success', 'A new OTP has been sent to your phone.');
+        //localStorage.setItem('token', data[0].token);
+      } else {
+        setError(data.message || 'Failed to resend OTP. Please try again.');
+      }
+    } catch (error: any) {
+      let errorMessage = 'Please try again.';
+      if (
+        error &&
+        typeof error === 'object' &&
+        error.errors &&
+        Array.isArray(error.errors) &&
+        error.errors[0]?.detail
+      ) {
+        errorMessage = error.errors[0].detail;
+      }
+      Alert.alert('Registration Error', errorMessage);
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleOtpChange = (text: string, index: number) => {
+    const updatedOtp = [...otp];
+    if (text.length === 6) {
+      const otpArray = text.split('');
+      setOtp(otpArray);
+      setTimeout(() => inputRefs.current[5]?.focus(), 100);
     } else {
-      setError(data.message || 'Invalid OTP. Please try again.');
+      updatedOtp[index] = text;
+      setOtp(updatedOtp);
+      if (text && index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      } else if (!text && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
     }
-  } catch (error: any) {
-    setError(
-      error.errors[0].detail ||
-        'Network error: Unable to verify OTP. Please check your connection.',
-    );
-  } finally {
-    setIsVerifying(false);
-  }
-};
+  };
 
-const handleResendOtp = async () => {
-  setIsResending(true);
-  setError('');
-
-  try {
-    const response = await fetch(`${BASE_URL}/user/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ user: phoneNumber }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      Alert.alert('Success', 'A new OTP has been sent to your phone.');
-      //localStorage.setItem('token', data[0].token);
-    } else {
-      setError(data.message || 'Failed to resend OTP. Please try again.');
-    }
-  } catch (error: any) {
-    let errorMessage = 'Please try again.';
-    if (
-      error &&
-      typeof error === 'object' &&
-      error.errors &&
-      Array.isArray(error.errors) &&
-      error.errors[0]?.detail
-    ) {
-      errorMessage = error.errors[0].detail;
-    }
-    Alert.alert('Registration Error', errorMessage);
-  } finally {
-    setIsResending(false);
-  }
-};
-
-const handleOtpChange = (text: string, index: number) => {
-  const updatedOtp = [...otp];
-  if (text.length === 6) {
-    const otpArray = text.split('');
-    setOtp(otpArray);
-    setTimeout(() => inputRefs.current[5]?.focus(), 100);
-  } else {
-    updatedOtp[index] = text;
-    setOtp(updatedOtp);
-    if (text && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    } else if (!text && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  }
-};
-
-return (
-  <KeyboardAvoidingView
-    behavior={Platform.OS === 'android' ? 'padding' : 'height'}
-    style={styles.container}
-  >
-    <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
-
-    <Image
-      source={require('../assets/images/Auth_logo.png')}
-      style={styles.logo}
-    />
-
-    <Text style={styles.headerText}>Enter OTP</Text>
-    <Text style={styles.subText}>
-      Enter the OTP code we just sent{'\n'}to your registered Email/Phone number
-    </Text>
-
-    <View style={styles.otpContainer}>
-      {otp.map((value, index) => (
-        <TextInput
-          key={index}
-          ref={(ref) => (inputRefs.current[index] = ref)}
-          style={styles.otpInput}
-          keyboardType="numeric"
-          maxLength={1}
-          value={value}
-          onChangeText={(text) => handleOtpChange(text, index)}
-          onKeyPress={({ nativeEvent }) => {
-            if (nativeEvent.key === 'Backspace' && !value && index > 0) {
-              inputRefs.current[index - 1]?.focus();
-            }
-          }}
-        />
-      ))}
-    </View>
-
-    {error ? <Text style={styles.error}>{error}</Text> : null}
-
-    <View>
-      {isVerifying ? (
-        <ActivityIndicator size="small" color={Colors.primary} />
-      ) : (
-        <C_Button
-          title="Confirm OTP"
-          // onPress={() => router.push('/preferences')}
-          onPress={handleVerifyOtp}
-          buttonStyle={styles.verifyOtpButton}
-        />
-      )}
-    </View>
-
-    <TouchableOpacity
-      onPress={handleResendOtp}
-      style={[styles.resendButton, isResending && { opacity: 0.5 }]}
-      disabled={isResending}
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'android' ? 'padding' : 'height'}
+      style={styles.container}
     >
-      {isResending ? (
-        <ActivityIndicator size="small" color={Colors.primary} />
-      ) : (
-        <Text style={styles.resendText}>Didn’t get OTP? Resend OTP</Text>
-      )}
-    </TouchableOpacity>
-  </KeyboardAvoidingView>
-);
+      <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
+
+      <Image
+        source={require('../assets/images/Auth_logo.png')}
+        style={styles.logo}
+      />
+
+      <Text style={styles.headerText}>Enter OTP</Text>
+      <Text style={styles.subText}>
+        Enter the OTP code we just sent{'\n'}to your registered Email/Phone
+        number
+      </Text>
+
+      <View style={styles.otpContainer}>
+        {otp.map((value, index) => (
+          <TextInput
+            key={index}
+            ref={(ref) => (inputRefs.current[index] = ref)}
+            style={styles.otpInput}
+            keyboardType="numeric"
+            maxLength={1}
+            value={value}
+            onChangeText={(text) => handleOtpChange(text, index)}
+            onKeyPress={({ nativeEvent }) => {
+              if (nativeEvent.key === 'Backspace' && !value && index > 0) {
+                inputRefs.current[index - 1]?.focus();
+              }
+            }}
+          />
+        ))}
+      </View>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <View>
+        {isVerifying ? (
+          <ActivityIndicator size="small" color={Colors.primary} />
+        ) : (
+          <C_Button
+            title="Confirm OTP"
+            // onPress={() => router.push('/preferences')}
+            onPress={handleVerifyOtp}
+            buttonStyle={styles.verifyOtpButton}
+          />
+        )}
+      </View>
+
+      <TouchableOpacity
+        onPress={handleResendOtp}
+        style={[styles.resendButton, isResending && { opacity: 0.5 }]}
+        disabled={isResending}
+      >
+        {isResending ? (
+          <ActivityIndicator size="small" color={Colors.primary} />
+        ) : (
+          <Text style={styles.resendText}>Didn’t get OTP? Resend OTP</Text>
+        )}
+      </TouchableOpacity>
+    </KeyboardAvoidingView>
+  );
 };
 
 export default OtpScreen;
