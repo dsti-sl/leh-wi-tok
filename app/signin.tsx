@@ -8,7 +8,6 @@ import {
   TextInput,
   StyleSheet,
   Image,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Alert,
@@ -63,9 +62,7 @@ const SignInScreen = () => {
     try {
       const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user: phoneNumber }),
       });
       console.log('Response', response);
@@ -139,7 +136,7 @@ const SignInScreen = () => {
             style={styles.icon}
           />
         </TouchableOpacity>
-      </View> 
+      </View>
       <Text style={styles.orText}>Or</Text> */}
       <Text style={styles.label}>Phone Number</Text>
       <View style={styles.inputContainer}>
