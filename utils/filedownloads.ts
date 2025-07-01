@@ -42,9 +42,19 @@ export async function fileDownloads(
     console.log(
       `[fileDownloads] Attempting to download from ${downloadUrl} to ${localPath}`,
     );
+
+    const token?: string = await getToken();
+
     const { uri: downloadedFileUri } = await FileSystem.downloadAsync(
       downloadUrl,
       localPath,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: token ? `Bearer ${token}` : '', 
+        },
+      },
     );
     // FileSystem.downloadAsync returns the file:// URI directly if successful but dont't touch please.
 
