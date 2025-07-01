@@ -146,10 +146,7 @@ const SignUpScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
       <Image
         source={require('../assets/images/Auth_logo.png')}
@@ -164,7 +161,7 @@ const SignUpScreen = () => {
         />
       </Text>
       <Text style={styles.subText}>Let's go through a few simple steps</Text>
-      <View style={styles.oauthContainer}>
+      {/*       <View style={styles.oauthContainer}>
         <TouchableOpacity
           onPress={() => handleOAuthSignUp('google')}
           style={styles.oauthButton}
@@ -195,9 +192,8 @@ const SignUpScreen = () => {
             style={styles.oauthIcon}
           />
         </TouchableOpacity>
-      </View>
-
-      <Text style={styles.orText}>Or</Text>
+      </View> 
+      <Text style={styles.orText}>Or</Text> */}
       <Text style={styles.label}>Full Name</Text>
       <View style={styles.inputContainer}>
         <Ionicons
@@ -267,18 +263,19 @@ const SignUpScreen = () => {
           style={{ marginTop: 10 }}
         />
       )}
-
-      <TouchableOpacity
-        onPress={() => router.push('/signin')}
-        style={styles.loginLink}
-        disabled={isLoading}
-      >
-        <Text style={styles.loginText}>
-          Already have an account?{' '}
-          <Text style={styles.loginLinkText}>Log in</Text>
-        </Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+      <View>
+        <TouchableOpacity
+          onPress={() => router.push('/signin')}
+          style={styles.loginLink}
+          disabled={isLoading}
+        >
+          <Text style={styles.loginText}>
+            Already have an account?{' '}
+            <Text style={styles.loginLinkText}>Log in</Text>
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
