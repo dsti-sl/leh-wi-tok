@@ -68,6 +68,7 @@ const SignInScreen = () => {
         },
         body: JSON.stringify({ user: phoneNumber }),
       });
+      console.log('Response', response);
 
       const data = await response.json();
 

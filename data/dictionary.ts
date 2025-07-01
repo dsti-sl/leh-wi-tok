@@ -81,9 +81,7 @@ const updateWord = async (
     );
 
     console.log(`Word "${word}" updated successfully!`);
-  } catch (error) {
-    console.error(`Error updating word "${word}":`, error);
-  }
+  } catch (error) {}
 };
 
 /**
