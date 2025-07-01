@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 
-import { getBaseUrl } from '@/utils';
+import { getBaseUrl, getToken } from '@/utils';
 
 interface GestureInfo {
   contentType: string;
@@ -19,21 +19,30 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   gestureId,
   gestureInfo,
 }) => {
+  const [token, setToken] = React.useState<string | null>(null);
   const BASE_URL = getBaseUrl();
 
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
 
   console.log('MediaPlayer fileUrl:', gestureInfo);
   // Initialize the VideoPlayer using the useVideoPlayer hook
-  const player = useVideoPlayer(
-    {
-      uri: gestureInfo.path,
-    },
-    (playerInstance) => {
-      playerInstance.loop = true;
-      playerInstance.play();
-    },
-  );
+  const player = useVideoPlayer({ uri: gestureInfo.path }, (playerInstance) => {
+    playerInstance.loop = true;
+    playerInstance.play();
+  });
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const storedToken = await getToken();
+        setToken(storedToken);
+      } catch (error) {
+        console.error('Error fetching token:', error);
+      }
+    };
+
+    fetchToken();
+  }, []);
 
   // Conditional rendering based on content type
   let content = null;
@@ -51,7 +60,10 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   } else if (gestureInfo?.contentType === 'image/gif') {
     content = (
       <Image
-        source={{ uri: fileUrl }}
+        source={{
+          uri: fileUrl,
+          headers: { authorization: token ? `Token ${token}` : '' },
+        }}
         isTVSelectable={!!fileUrl}
         style={styles.media}
         contentFit="contain"
