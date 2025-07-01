@@ -63,20 +63,22 @@ const handleVerifyOtp = async () => {
 
     const data = await response.json();
 
-    if (response.ok) {
-      isSignIn ? router.replace('/home') : router.replace('/preferences');
-    } else {
-      setError(data.message || 'Invalid OTP. Please try again.');
+      if (response.ok) {
+        const token = data.data[0]?.token;
+        await setToken(token);
+        isSignIn ? router.replace('/home') : router.replace('/preferences');
+      } else {
+        setError(data.message || 'Invalid OTP. Please try again.');
+      }
+    } catch (error: any) {
+      setError(
+        error.errors[0].detail ||
+          'Network error: Unable to verify OTP. Please check your connection.',
+      );
+    } finally {
+      setIsVerifying(false);
     }
-  } catch (error: any) {
-    setError(
-      error.errors[0].detail ||
-        'Network error: Unable to verify OTP. Please check your connection.',
-    );
-  } finally {
-    setIsVerifying(false);
-  }
-};
+  };
 
 const handleResendOtp = async () => {
   setIsResending(true);
