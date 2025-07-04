@@ -20,25 +20,24 @@ import {
   getBaseUrl,
   getStoredCompletedLessons,
   getStoredUserId,
+  getToken,
   LessonData,
   storeCompletedLessons,
 } from '@/utils';
 
+interface GestureInfo {
+  contentType: string;
+  [key: string]: any;
+}
+
 const Level = () => {
-  const {
-    levelLessons,
-    loading,
-    lesson,
-    activeLesson,
-    handleLessonSelect,
-    player,
-    level,
-  } = useLessonLevel();
+  const { loading, activeLesson, handleLessonSelect } = useLessonLevel();
 
   const { assessment } = useLocalSearchParams<{ assessment: string }>();
   const [isLoading, setIsLoading] = useState(false);
   const [lessonTags, setLessonTags] = useState<any[]>([]);
-  const [lessonGestureInfo, setLessonGestureInfo] = useState({});
+  const [lessonGestureInfo, setLessonGestureInfo] =
+    useState<GestureInfo | null>(null);
   const [lessonCount, setLessonCount] = useState<number>(0);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
     new Set(),
@@ -47,6 +46,7 @@ const Level = () => {
   const [selectedGestureId, setSelectedGestureId] = useState<string | null>(
     null,
   );
+  const [token, setToken] = React.useState<string | null>(null);
 
   const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
@@ -81,7 +81,7 @@ const Level = () => {
 
       // 1. Fetch lesson tags
       const res = await fetch(
-        `${EXPO_PUBLIC_BASE_URL}/nugget?and=(lesson.tags.title.eq.${assessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active`,
+        `${EXPO_PUBLIC_BASE_URL}/nugget?and=(lesson.tags.title.eq.${assessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active,detail,illustration`,
       );
       if (!res.ok) throw new Error('Failed to fetch lesson category');
       const data = await res.json();
@@ -135,6 +135,19 @@ const Level = () => {
   useEffect(() => {
     fetchLessonCategory();
   }, [fetchLessonCategory]);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const storedToken = await getToken();
+        setToken(storedToken);
+      } catch (error) {
+        console.error('Error fetching token:', error);
+      }
+    };
+
+    fetchToken();
+  }, []);
 
   // --- Lesson completion handler ---
   const handleLessonClick = useCallback(
@@ -213,41 +226,130 @@ const Level = () => {
     [completedLessons],
   );
 
+  const parseWeziwikContent = useCallback((jsonString: string) => {
+    try {
+      const parsed = JSON.parse(jsonString);
+      return parsed
+        .map((block: { type: string; children?: { text: string }[] }) => {
+          if (block.type === 'paragraph' && block.children) {
+            return block.children.map((child) => child.text).join('');
+          }
+          return '';
+        })
+        .filter((text: string) => text.trim() !== '');
+    } catch (error) {
+      return [];
+    }
+  }, []);
+
+  const getIllustrationUrl = useCallback(
+    (illustration: any) => {
+      if (!illustration?.path) return null;
+      return `${EXPO_PUBLIC_BASE_URL}/file/download?id=${illustration.id}`;
+    },
+    [EXPO_PUBLIC_BASE_URL],
+  );
+
+  const isSupportedImageFormat = useCallback((contentType: string) => {
+    return contentType?.startsWith('image/');
+  }, []);
+
   // --- Render item (Memoized) ---
   const renderLessonItem = useCallback(
     ({ item, index }: { item: any; index: number }) => {
       const locked = isLessonLocked(item, index, lessonTags);
+      const isActive = activeLesson?.id === item.id;
+      const parsedDetails = parseWeziwikContent(item.detail || '[]');
+      const illustrationUrl = getIllustrationUrl(item.illustration);
+      const hasContent = parsedDetails.length > 0 || illustrationUrl;
+
       return (
-        <TouchableOpacity
-          key={item.id}
-          style={[
-            styles.lessonItem,
-            activeLesson?.id === item.id && styles.activeLesson,
-            locked && styles.lockedLesson,
-          ]}
-          onPress={() => !locked && handleLessonClick(item)}
-          disabled={locked}
-        >
-          <View style={styles.iconContainer}>
-            <FontAwesome5
-              name={locked ? 'lock' : 'play-circle'}
-              size={24}
-              color={locked ? '#999' : '#4682B4'}
-            />
-          </View>
-          <View style={styles.lessonDetails}>
-            <Text style={[styles.lessonTitle, locked && { color: '#999' }]}>
-              {item.title}
-              {locked && ' (Locked)'}
-            </Text>
-            <Text style={[styles.lessonDuration, locked && { color: '#999' }]}>
-              {item.duration || item.lesson?.title || ''}
-            </Text>
-          </View>
-        </TouchableOpacity>
+        <View key={item.id}>
+          <TouchableOpacity
+            style={[
+              styles.lessonItem,
+              isActive && styles.activeLesson,
+              locked && styles.lockedLesson,
+            ]}
+            onPress={() => !locked && handleLessonClick(item)}
+            disabled={locked}
+          >
+            <View style={styles.iconContainer}>
+              <FontAwesome5
+                name={locked ? 'lock' : 'play-circle'}
+                size={24}
+                color={locked ? '#999' : '#4682B4'}
+              />
+            </View>
+            <View style={styles.lessonDetails}>
+              <Text style={[styles.lessonTitle, locked && { color: '#999' }]}>
+                {item.title}
+                {locked && ' (Locked)'}
+              </Text>
+              <Text
+                style={[styles.lessonDuration, locked && { color: '#999' }]}
+              >
+                {item.duration || item.lesson?.title || ''}
+              </Text>
+            </View>
+            {!locked && hasContent && (
+              <View style={styles.accordionIcon}>
+                <FontAwesome5
+                  name={isActive ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color="#666"
+                />
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Accordion Details */}
+          {isActive && !locked && hasContent && (
+            <View style={styles.accordionContent}>
+              {/* Illustration */}
+              {illustrationUrl &&
+                item.illustration?.contentType &&
+                isSupportedImageFormat(item.illustration.contentType) && (
+                  <View style={styles.illustrationContainer}>
+                    <Image
+                      source={{
+                        uri: illustrationUrl,
+                        headers: {
+                          authorization: `Token ${token || ''}`,
+                        },
+                      }}
+                      style={styles.illustrationImage}
+                      contentFit="contain"
+                      transition={200}
+                    />
+                    {item.illustration.name && (
+                      <Text style={styles.illustrationCaption}>
+                        {item.illustration.name}
+                      </Text>
+                    )}
+                  </View>
+                )}
+
+              {/* Text Details */}
+              {parsedDetails.map((paragraph: string, pIndex: number) => (
+                <Text key={pIndex} style={styles.detailParagraph}>
+                  {paragraph}
+                </Text>
+              ))}
+            </View>
+          )}
+        </View>
       );
     },
-    [lessonTags, activeLesson, handleLessonClick, isLessonLocked],
+    [
+      lessonTags,
+      activeLesson,
+      handleLessonClick,
+      isLessonLocked,
+      parseWeziwikContent,
+      getIllustrationUrl,
+      isSupportedImageFormat,
+    ],
   );
 
   return (
@@ -275,12 +377,14 @@ const Level = () => {
                 <Ionicons name="chevron-back" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
-            {selectedGestureId && (
-              <MediaPlayer
-                gestureInfo={lessonGestureInfo}
-                gestureId={selectedGestureId as string}
-              />
-            )}
+            {selectedGestureId &&
+              lessonGestureInfo?.contentType &&
+              lessonGestureInfo && (
+                <MediaPlayer
+                  gestureInfo={lessonGestureInfo}
+                  gestureId={selectedGestureId as string}
+                />
+              )}
           </View>
 
           <View style={styles.lessonInfo}>
@@ -406,5 +510,38 @@ const styles = StyleSheet.create({
   },
   playAllTextActive: {
     color: '#fff',
+  },
+  accordionIcon: {
+    marginLeft: 8,
+  },
+  accordionContent: {
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  detailParagraph: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  illustrationContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  illustrationImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  illustrationCaption: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 6,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
 });
