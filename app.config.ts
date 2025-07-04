@@ -46,7 +46,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     'expo-font',
-    'expo-font',
     [
       'expo-sqlite',
       {
