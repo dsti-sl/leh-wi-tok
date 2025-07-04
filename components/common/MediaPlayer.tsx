@@ -26,10 +26,16 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   console.log('MediaPlayer fileUrl:', gestureInfo);
   // Initialize the VideoPlayer using the useVideoPlayer hook
-  const player = useVideoPlayer({ uri: gestureInfo.path }, (playerInstance) => {
-    playerInstance.loop = true;
-    playerInstance.play();
-  });
+  const player = useVideoPlayer(
+    {
+      uri: fileUrl,
+      headers: { authorization: token ? `Token ${token}` : '' },
+    },
+    (playerInstance) => {
+      playerInstance.loop = true;
+      playerInstance.play();
+    },
+  );
 
   useEffect(() => {
     const fetchToken = async () => {
