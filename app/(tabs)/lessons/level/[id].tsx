@@ -1,418 +1,272 @@
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useRef, memo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Platform,
   TouchableOpacity,
-  ToastAndroid,
   ActivityIndicator,
   FlatList,
+  Alert,
 } from 'react-native';
 
 import MediaPlayer from '@/components/common/MediaPlayer';
+import LessonItem from '@/components/lessons/LessonItem';
 import { Colors } from '@/constants/Colors';
-import useLessonLevel from '@/hooks/useLessonLevel';
-import {
-  getBaseUrl,
-  getStoredCompletedLessons,
-  getStoredUserId,
-  getToken,
-  LessonData,
-  storeCompletedLessons,
-} from '@/utils';
+import { useLessonData, GestureInfo, LessonTag } from '@/hooks/useLessonData';
+import { useLessonUtils } from '@/hooks/useLessonUtils';
 
-interface GestureInfo {
-  contentType: string;
-  [key: string]: any;
-}
+const ITEM_HEIGHT = 80;
 
-const Level = () => {
-  const { loading, activeLesson, handleLessonSelect } = useLessonLevel();
+const LessonHeader = memo(({ onBackPress }: { onBackPress: () => void }) => (
+  <View style={styles.headerContainer}>
+    <TouchableOpacity onPress={onBackPress}>
+      <Ionicons name="chevron-back" size={24} color="#fff" />
+    </TouchableOpacity>
+  </View>
+));
+LessonHeader.displayName = 'LessonHeader';
 
+const LessonInfo = memo(
+  ({
+    assessment,
+    completedLessons,
+    lessonCount,
+  }: {
+    assessment: string;
+    completedLessons: Set<string>;
+    lessonCount: number;
+  }) => (
+    <View style={styles.lessonInfo}>
+      <View style={styles.lessonHeader}>
+        <View>
+          <Text style={styles.title}>{assessment}</Text>
+          <Text style={styles.subtitle}>
+            {Math.min(completedLessons.size, lessonCount)} of {lessonCount}{' '}
+            Lessons Completed
+          </Text>
+        </View>
+      </View>
+    </View>
+  ),
+);
+LessonInfo.displayName = 'LessonInfo';
+
+const LoadingView = memo(() => (
+  <View style={styles.loadingContainer}>
+    <ActivityIndicator size="large" color={Colors.primary} />
+  </View>
+));
+LoadingView.displayName = 'LoadingView';
+
+const ErrorView = memo(
+  ({ error, onRetry }: { error: string; onRetry: () => void }) => (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorText}>Error: {error}</Text>
+      <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
+        <Text style={styles.retryText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  ),
+);
+ErrorView.displayName = 'ErrorView';
+
+const Level: React.FC = () => {
   const { assessment } = useLocalSearchParams<{ assessment: string }>();
-  const [isLoading, setIsLoading] = useState(false);
-  const [lessonTags, setLessonTags] = useState<any[]>([]);
-  const [lessonGestureInfo, setLessonGestureInfo] =
-    useState<GestureInfo | null>(null);
-  const [lessonCount, setLessonCount] = useState<number>(0);
-  const [completedLessons, setCompletedLessons] = useState<Set<string>>(
-    new Set(),
-  );
-  const [serverProgress, setServerProgress] = useState<LessonData[]>([]);
+
+  const {
+    lessonNuggets,
+    isLoading,
+    isLoadingMore,
+    lessonCount,
+    completedLessons,
+    token,
+    error,
+    loadMoreData,
+    markLessonCompleted,
+    refetch,
+  } = useLessonData(assessment || '');
+
+  const {
+    parseWysiwygContent,
+    getIllustrationUrl,
+    isSupportedImageFormat,
+    isLessonLocked,
+  } = useLessonUtils();
+
   const [selectedGestureId, setSelectedGestureId] = useState<string | null>(
     null,
   );
-  const [token, setToken] = React.useState<string | null>(null);
+  const [lessonGestureInfo, setLessonGestureInfo] =
+    useState<GestureInfo | null>(null);
+  const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
+  const flatListRef = useRef<FlatList>(null);
 
-  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
+  const handleBackPress = useCallback(() => {
+    router.back();
+  }, []);
 
-  // --- Fetch lesson progress ---
-  const fetchLessonProgress = useCallback(
-    async (userId: string) => {
+  const handleRetry = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const scrollToLesson = useCallback((index: number) => {
+    if (flatListRef.current) {
       try {
-        const res = await fetch(
-          `${EXPO_PUBLIC_BASE_URL}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`,
-        );
-        if (!res.ok) throw new Error('API error');
-        const { data } = await res.json();
-        if (data) {
-          await storeCompletedLessons(data);
-          setServerProgress(data);
-          return data;
-        }
-        return null;
-      } catch {
-        return null;
-      }
-    },
-    [EXPO_PUBLIC_BASE_URL],
-  );
-
-  // --- Fetch lessons and progress, optimized ---
-  const fetchLessonCategory = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const userId = await getStoredUserId();
-      if (!userId) throw new Error('No user ID found');
-
-      // 1. Fetch lesson tags
-      const res = await fetch(
-        `${EXPO_PUBLIC_BASE_URL}/nugget?and=(lesson.tags.title.eq.${assessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active,detail,illustration`,
-      );
-      if (!res.ok) throw new Error('Failed to fetch lesson category');
-      const data = await res.json();
-      const sortedTags = data.data.sort((a, b) => a.priority - b.priority);
-      setLessonTags(sortedTags);
-      setLessonCount(data.meta.count);
-
-      // 2. Fetch progress
-      let progressData: LessonData[] =
-        (await fetchLessonProgress(userId)) ?? [];
-      if (!progressData.length) {
-        const stored = await getStoredCompletedLessons();
-        progressData = stored.lessons ?? [];
-      }
-      // 3. Filter completed lessons
-      const currentLevel = progressData.find((l) => l.level === assessment);
-      const completedIds = currentLevel?.lessonsCompleted || [];
-      const filteredCompleted = completedIds.filter((id: string) =>
-        sortedTags.some((lesson: any) => lesson.id === id),
-      );
-      setCompletedLessons(new Set(filteredCompleted));
-
-      // Repair local progress if needed
-      if (filteredCompleted.length !== completedIds.length) {
-        const updatedProgress = progressData.map((p) =>
-          p.level === assessment
-            ? {
-                ...p,
-                lessonsCompleted: filteredCompleted,
-                totalCompleted: filteredCompleted.length,
-              }
-            : p,
-        );
-        await storeCompletedLessons(updatedProgress);
-        if (Platform.OS === 'android' && completedIds.length > 0) {
-          ToastAndroid.show(
-            'Some completed lessons have been removed.',
-            ToastAndroid.SHORT,
-          );
-        }
-      }
-    } catch (error) {
-      setLessonTags([]);
-      setCompletedLessons(new Set());
-      setLessonCount(0);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [EXPO_PUBLIC_BASE_URL, assessment, fetchLessonProgress]);
-
-  useEffect(() => {
-    fetchLessonCategory();
-  }, [fetchLessonCategory]);
-
-  useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        const storedToken = await getToken();
-        setToken(storedToken);
+        flatListRef.current.scrollToIndex({
+          index,
+          animated: true,
+          viewPosition: 0.5,
+        });
       } catch (error) {
-        console.error('Error fetching token:', error);
+        // Fallback to scrollToOffset
+        flatListRef.current.scrollToOffset({
+          offset: index * ITEM_HEIGHT,
+          animated: true,
+        });
       }
-    };
-
-    fetchToken();
-  }, []);
-
-  // --- Lesson completion handler ---
-  const handleLessonClick = useCallback(
-    async (lesson: any) => {
-      handleLessonSelect(lesson);
-      setSelectedGestureId(lesson?.gesture?.id);
-      setLessonGestureInfo(lesson?.gesture);
-      const userId = await getStoredUserId();
-      if (!userId) return;
-
-      // Always start with filtered completed lessons
-      const previousCompleted = Array.from(completedLessons).filter((id) =>
-        lessonTags.some((l) => l.id === id),
-      );
-      const newCompleted = new Set(previousCompleted);
-      newCompleted.add(lesson.id);
-
-      // Update or add lesson progress for this level
-      const storedCompleted = await getStoredCompletedLessons();
-      const updatedLessons = (storedCompleted.lessons ?? []).filter(
-        (l) => l.level !== assessment,
-      );
-      updatedLessons.push({
-        level: assessment,
-        totalCompleted: newCompleted.size,
-        totalLessons: lessonCount,
-        userId,
-        lessonsCompleted: Array.from(newCompleted),
-      });
-
-      // Sync to server (PATCH or POST)
-      const matchedProgress = serverProgress.find(
-        (p) => p.level === assessment,
-      );
-      const levelExists = !!matchedProgress;
-      await storeCompletedLessons(updatedLessons);
-      try {
-        await fetch(
-          `${EXPO_PUBLIC_BASE_URL}/lesson-progress${levelExists ? `/?id=${matchedProgress.id}` : ''}`,
-          {
-            method: levelExists ? 'PATCH' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId,
-              level: assessment,
-              totalCompleted: newCompleted.size,
-              totalLessons: lessonCount,
-              lessonsCompleted: Array.from(newCompleted),
-            }),
-          },
-        );
-      } catch {}
-
-      setCompletedLessons(newCompleted);
-      fetchLessonCategory();
-    },
-    [
-      assessment,
-      completedLessons,
-      lessonCount,
-      serverProgress,
-      EXPO_PUBLIC_BASE_URL,
-      handleLessonSelect,
-      fetchLessonCategory,
-      lessonTags,
-    ],
-  );
-
-  // --- Lesson locked logic ---
-  const isLessonLocked = useCallback(
-    (currentLesson: any, index: number, lessons: any[]) => {
-      if (index === 0) return false;
-      const previousLesson = lessons[index - 1];
-      return !completedLessons.has(previousLesson.id);
-    },
-    [completedLessons],
-  );
-
-  const parseWeziwikContent = useCallback((jsonString: string) => {
-    try {
-      const parsed = JSON.parse(jsonString);
-      return parsed
-        .map((block: { type: string; children?: { text: string }[] }) => {
-          if (block.type === 'paragraph' && block.children) {
-            return block.children.map((child) => child.text).join('');
-          }
-          return '';
-        })
-        .filter((text: string) => text.trim() !== '');
-    } catch (error) {
-      return [];
     }
   }, []);
 
-  const getIllustrationUrl = useCallback(
-    (illustration: any) => {
-      if (!illustration?.path) return null;
-      return `${EXPO_PUBLIC_BASE_URL}/file/download?id=${illustration.id}`;
+  const handleLessonClick = useCallback(
+    async (lesson: LessonTag) => {
+      try {
+        setExpandedLessonId((prev) => (prev === lesson.id ? null : lesson.id));
+
+        const lessonIndex = lessonNuggets.findIndex(
+          (item) => item.id === lesson.id,
+        );
+        if (lessonIndex !== -1) {
+          scrollToLesson(lessonIndex);
+        }
+
+        setSelectedGestureId(lesson?.gesture?.id || null);
+        setLessonGestureInfo(lesson?.gesture || null);
+
+        await markLessonCompleted(lesson.id);
+      } catch (error) {
+        console.error('Error handling lesson click:', error);
+        Alert.alert('Error', 'Failed to process lesson selection');
+      }
     },
-    [EXPO_PUBLIC_BASE_URL],
+    [lessonNuggets, scrollToLesson, markLessonCompleted],
   );
 
-  const isSupportedImageFormat = useCallback((contentType: string) => {
-    return contentType?.startsWith('image/');
-  }, []);
-
-  // --- Render item (Memoized) ---
   const renderLessonItem = useCallback(
-    ({ item, index }: { item: any; index: number }) => {
-      const locked = isLessonLocked(item, index, lessonTags);
-      const isActive = activeLesson?.id === item.id;
-      const parsedDetails = parseWeziwikContent(item.detail || '[]');
+    ({ item, index }: { item: LessonTag; index: number }) => {
+      const locked = isLessonLocked(
+        item,
+        index,
+        lessonNuggets,
+        completedLessons,
+      );
+      const isActive = expandedLessonId === item.id;
+      const parsedDetails = parseWysiwygContent(item.detail || '[]');
       const illustrationUrl = getIllustrationUrl(item.illustration);
-      const hasContent = parsedDetails.length > 0 || illustrationUrl;
 
       return (
-        <View key={item.id}>
-          <TouchableOpacity
-            style={[
-              styles.lessonItem,
-              isActive && styles.activeLesson,
-              locked && styles.lockedLesson,
-            ]}
-            onPress={() => !locked && handleLessonClick(item)}
-            disabled={locked}
-          >
-            <View style={styles.iconContainer}>
-              <FontAwesome5
-                name={locked ? 'lock' : 'play-circle'}
-                size={24}
-                color={locked ? '#999' : '#4682B4'}
-              />
-            </View>
-            <View style={styles.lessonDetails}>
-              <Text style={[styles.lessonTitle, locked && { color: '#999' }]}>
-                {item.title}
-                {locked && ' (Locked)'}
-              </Text>
-              <Text
-                style={[styles.lessonDuration, locked && { color: '#999' }]}
-              >
-                {item.duration || item.lesson?.title || ''}
-              </Text>
-            </View>
-            {!locked && hasContent && (
-              <View style={styles.accordionIcon}>
-                <FontAwesome5
-                  name={isActive ? 'chevron-up' : 'chevron-down'}
-                  size={16}
-                  color="#666"
-                />
-              </View>
-            )}
-          </TouchableOpacity>
-
-          {/* Accordion Details */}
-          {isActive && !locked && hasContent && (
-            <View style={styles.accordionContent}>
-              {/* Illustration */}
-              {illustrationUrl &&
-                item.illustration?.contentType &&
-                isSupportedImageFormat(item.illustration.contentType) && (
-                  <View style={styles.illustrationContainer}>
-                    <Image
-                      source={{
-                        uri: illustrationUrl,
-                        headers: {
-                          authorization: `Token ${token || ''}`,
-                        },
-                      }}
-                      style={styles.illustrationImage}
-                      contentFit="contain"
-                      transition={200}
-                    />
-                    {item.illustration.name && (
-                      <Text style={styles.illustrationCaption}>
-                        {item.illustration.name}
-                      </Text>
-                    )}
-                  </View>
-                )}
-
-              {/* Text Details */}
-              {parsedDetails.map((paragraph: string, pIndex: number) => (
-                <Text key={pIndex} style={styles.detailParagraph}>
-                  {paragraph}
-                </Text>
-              ))}
-            </View>
-          )}
-        </View>
+        <LessonItem
+          item={item}
+          index={index}
+          isLocked={locked}
+          isActive={isActive}
+          onPress={() => handleLessonClick(item)}
+          parsedDetails={parsedDetails}
+          illustrationUrl={illustrationUrl}
+          isSupportedImageFormat={isSupportedImageFormat}
+          token={token}
+        />
       );
     },
     [
-      lessonTags,
-      activeLesson,
+      lessonNuggets,
+      completedLessons,
+      expandedLessonId,
       handleLessonClick,
       isLessonLocked,
-      parseWeziwikContent,
+      parseWysiwygContent,
       getIllustrationUrl,
       isSupportedImageFormat,
+      token,
     ],
   );
+
+  const getItemLayout = useCallback(
+    (_data: unknown, index: number) => ({
+      length: ITEM_HEIGHT,
+      offset: ITEM_HEIGHT * index,
+      index,
+    }),
+    [],
+  );
+
+  const ListFooterComponent = useCallback(
+    () =>
+      isLoadingMore ? (
+        <View style={styles.loadingFooter}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+        </View>
+      ) : null,
+    [isLoadingMore],
+  );
+
+  const keyExtractor = useCallback((item: LessonTag) => item.id, []);
+
+  if (error && !lessonNuggets.length) {
+    return <ErrorView error={error} onRetry={handleRetry} />;
+  }
+
+  if (isLoading) {
+    return <LoadingView />;
+  }
 
   return (
     <View style={styles.container}>
       {Platform.OS === 'ios' ? (
-        <View style={{ height: 50, backgroundColor: Colors.primary }} />
+        <View style={styles.iosStatusBar} />
       ) : (
         <StatusBar style="light" backgroundColor={Colors.primary} />
       )}
-      {loading || isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-        </View>
-      ) : (
-        <>
-          <View className="px-10" style={styles.videoContainer}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                backgroundColor: Colors.primary,
-              }}
-            >
-              <TouchableOpacity onPress={() => router.back()}>
-                <Ionicons name="chevron-back" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            {selectedGestureId &&
-              lessonGestureInfo?.contentType &&
-              lessonGestureInfo && (
-                <MediaPlayer
-                  gestureInfo={lessonGestureInfo}
-                  gestureId={selectedGestureId as string}
-                />
-              )}
-          </View>
 
-          <View style={styles.lessonInfo}>
-            <View style={styles.lessonHeader}>
-              <View>
-                <Text style={styles.title}>{assessment}</Text>
-                <Text style={styles.subtitle}>
-                  {completedLessons.size < lessonCount
-                    ? completedLessons.size
-                    : lessonCount}{' '}
-                  of {lessonCount} Lessons Completed
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <FlatList
-            data={lessonTags}
-            keyExtractor={(item) => item.id}
-            renderItem={renderLessonItem}
-            initialNumToRender={20}
-            maxToRenderPerBatch={40}
-            windowSize={21}
-            removeClippedSubviews
+      {/* Video Container */}
+      <View style={styles.videoContainer}>
+        <LessonHeader onBackPress={handleBackPress} />
+        {selectedGestureId && lessonGestureInfo?.contentType && (
+          <MediaPlayer
+            key={selectedGestureId}
+            gestureInfo={lessonGestureInfo}
+            gestureId={selectedGestureId}
+            autoPlay={true}
           />
-        </>
-      )}
+        )}
+      </View>
+
+      {/* Lesson Info */}
+      <LessonInfo
+        assessment={assessment || ''}
+        completedLessons={completedLessons}
+        lessonCount={lessonCount}
+      />
+
+      {/* Lesson List */}
+      <FlatList
+        ref={flatListRef}
+        data={lessonNuggets}
+        keyExtractor={keyExtractor}
+        renderItem={renderLessonItem}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={21}
+        removeClippedSubviews
+        onEndReached={loadMoreData}
+        onEndReachedThreshold={0.3}
+        getItemLayout={getItemLayout}
+        ListFooterComponent={ListFooterComponent}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 };
@@ -424,10 +278,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  iosStatusBar: {
+    height: 50,
+    backgroundColor: Colors.primary,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.primary,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#d32f2f',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   videoContainer: {
     height: 300,
@@ -544,5 +430,10 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+  loadingFooter: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
