@@ -89,7 +89,7 @@ export type LessonLevel =
 export type LessonCount = Record<LessonLevel, number>;
 
 export interface LessonCompletionData {
-  lessons: LessonData[];
+  lessons: LessonProgress[];
 }
 export interface OverallData {
   accumulatedLessons: number;
@@ -104,17 +104,13 @@ export const LEVELS: LessonLevel[] = [
 
 export interface LessonsCategoryProps {
   progressSummary: Record;
-  lessonCount: { [key: string]: number };
+  lessonCount: LessonCount;
 }
 
 export interface LessonProgress {
   level: LessonLevel;
   totalCompleted: number;
   totalLessons: number;
-}
-
-export interface LessonCompletionData {
-  lessons: LessonProgress[];
 }
 
 /**
