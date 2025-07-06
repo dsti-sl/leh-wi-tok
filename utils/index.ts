@@ -3,7 +3,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-import { Record } from '@/lib/types';
+// Removed incorrect Record import, using built-in Record type instead
 
 /**
  * @param arrStrings
@@ -11,7 +11,7 @@ import { Record } from '@/lib/types';
  */
 export const parseArrayStringsToSelectableObjects = (arrStrings: string[]) =>
   arrStrings.reduce(
-    (acc: Record[], val: string, curIndex: number) => [
+    (acc: { key: number; label: string; value: string }[], val: string, curIndex: number) => [
       ...acc,
       { key: curIndex + 1, label: val, value: val },
     ],
@@ -19,12 +19,12 @@ export const parseArrayStringsToSelectableObjects = (arrStrings: string[]) =>
   );
 
 export const parseArrayObjectToSelectables = (
-  arrObjects: Record[],
+  arrObjects: Record<string, any>[],
   labelKey: string,
   valueKey: string,
 ) =>
   arrObjects.reduce(
-    (acc: Record[], val, curIndex: number) => [
+    (acc: Record<string, any>[], val, curIndex: number) => [
       ...acc,
       { key: curIndex + 1, label: val[labelKey], value: val[valueKey] },
     ],
@@ -103,7 +103,7 @@ export const LEVELS: LessonLevel[] = [
 ];
 
 export interface LessonsCategoryProps {
-  progressSummary: Record;
+  progressSummary: Record<string, any>;
   lessonCount: { [key: string]: number };
 }
 
@@ -113,9 +113,10 @@ export interface LessonProgress {
   totalLessons: number;
 }
 
-export interface LessonCompletionData {
-  lessons: LessonProgress[];
-}
+// If you need a separate interface for LessonProgress[], use a different name:
+// export interface LessonProgressCompletionData {
+//   lessons: LessonProgress[];
+// }
 
 /**
  * Returns the base API URL from the Expo config.
