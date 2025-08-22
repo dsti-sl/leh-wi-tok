@@ -27,3 +27,5 @@ temp/
 # EAS IGNORES
 android
 ios
+
+build**

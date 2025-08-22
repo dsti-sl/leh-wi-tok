@@ -3,7 +3,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-import { Record } from '@/lib/types';
+import { Record as C_Record } from '@/lib/types';
 
 /**
  * @param arrStrings
@@ -11,7 +11,7 @@ import { Record } from '@/lib/types';
  */
 export const parseArrayStringsToSelectableObjects = (arrStrings: string[]) =>
   arrStrings.reduce(
-    (acc: Record[], val: string, curIndex: number) => [
+    (acc: C_Record[], val: string, curIndex: number) => [
       ...acc,
       { key: curIndex + 1, label: val, value: val },
     ],
@@ -19,12 +19,12 @@ export const parseArrayStringsToSelectableObjects = (arrStrings: string[]) =>
   );
 
 export const parseArrayObjectToSelectables = (
-  arrObjects: Record[],
+  arrObjects: C_Record[],
   labelKey: string,
   valueKey: string,
 ) =>
   arrObjects.reduce(
-    (acc: Record[], val, curIndex: number) => [
+    (acc: C_Record[], val, curIndex: number) => [
       ...acc,
       { key: curIndex + 1, label: val[labelKey], value: val[valueKey] },
     ],
@@ -89,7 +89,7 @@ export type LessonLevel =
 export type LessonCount = Record<LessonLevel, number>;
 
 export interface LessonCompletionData {
-  lessons: LessonData[];
+  lessons: LessonProgress[];
 }
 export interface OverallData {
   accumulatedLessons: number;
@@ -103,18 +103,14 @@ export const LEVELS: LessonLevel[] = [
 ];
 
 export interface LessonsCategoryProps {
-  progressSummary: Record;
-  lessonCount: { [key: string]: number };
+  progressSummary: C_Record;
+  lessonCount: LessonCount;
 }
 
 export interface LessonProgress {
   level: LessonLevel;
   totalCompleted: number;
   totalLessons: number;
-}
-
-export interface LessonCompletionData {
-  lessons: LessonProgress[];
 }
 
 /**

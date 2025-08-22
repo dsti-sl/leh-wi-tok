@@ -41,11 +41,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-video',
       {
-        supportsBackgroundPlayback: true,
+        supportsBackgroundPlayback: false,
         supportsPictureInPicture: true,
       },
     ],
-    'expo-font',
     'expo-font',
     [
       'expo-sqlite',
