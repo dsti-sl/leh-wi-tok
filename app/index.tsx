@@ -70,7 +70,7 @@ const Onboarding = () => {
     }
   };
 
-  const getImageSource = (imagePath: any) => {
+  const getImageSource = (imagePath: string) => {
     switch (imagePath) {
       case '../assets/images/SlideImg1.png':
         return require('../assets/images/SlideImg1.png');
