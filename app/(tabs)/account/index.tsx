@@ -8,6 +8,7 @@ import { Colors } from '@/constants/Colors';
 
 const Account = () => {
   const [userInfo, setUserInfo] = useState<unknown>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const router = useRouter();
 
@@ -22,10 +23,40 @@ const Account = () => {
     fetchUserInfo();
   }, []);
 
-  const handleLogout = async () => {
-    await AsyncStorage.clear();
-    Alert.alert('Logged out');
-    router.replace('/');
+  const handleLogout = () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: performLogout,
+        },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  const performLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+
+      // Clear user session data
+      await AsyncStorage.multiRemove(['token', 'user', 'completedLesson']);
+
+      // Navigate to login/onboarding screen
+      router.replace('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      Alert.alert('Error', 'Failed to log out. Please try again.');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -72,9 +103,21 @@ const Account = () => {
           <Feather name="bell" size={24} />
           <Text style={styles.itemText}>Notifications</Text>
         </View>
-        <TouchableOpacity style={styles.itemRow} onPress={handleLogout}>
-          <Feather name="log-out" size={24} />
-          <Text style={styles.itemText}>Log out</Text>
+        <TouchableOpacity
+          style={[styles.itemRow, isLoggingOut && styles.itemRowDisabled]}
+          onPress={handleLogout}
+          disabled={isLoggingOut}
+        >
+          <Feather
+            name="log-out"
+            size={24}
+            color={isLoggingOut ? '#999' : '#000'}
+          />
+          <Text
+            style={[styles.itemText, isLoggingOut && styles.itemTextDisabled]}
+          >
+            {isLoggingOut ? 'Logging out...' : 'Log out'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -140,9 +183,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 8,
   },
+  itemRowDisabled: {
+    opacity: 0.5,
+  },
   itemText: {
     fontSize: 14,
     marginLeft: 10,
+    color: '#000',
+  },
+  itemTextDisabled: {
+    color: '#999',
   },
   divider: {
     height: 2,
