@@ -9,7 +9,6 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
-import { Colors } from '@/constants/Colors';
 
 import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
 import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
@@ -19,12 +18,18 @@ import usersOutlineFillSeconday from '../../../assets/images/users-outline-fill-
 import { HomeBanner } from '@/components/home/HomeBanner';
 import HomeItem from '@/components/home/HomeItem';
 import InitialVideoCard from '@/components/home/InitialVideoCard';
+import { Colors } from '@/constants/Colors';
 import useLastLesson from '@/hooks/useLastLesson';
 import { Record } from '@/lib/types';
 import { getBaseUrl } from '@/utils';
 
 const HomeScreen = () => {
-  const { lastLesson, isFirstTimeUser, loading: lessonLoading, saveLessonPosition } = useLastLesson();
+  const {
+    lastLesson,
+    isFirstTimeUser,
+    loading: lessonLoading,
+    saveLessonPosition,
+  } = useLastLesson();
   const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,15 +61,19 @@ const HomeScreen = () => {
     }
   }, [user]);
 
-  const handleVideoPlay = (lessonId: string, videoUrl: string, position?: number) => {
+  const handleVideoPlay = (
+    lessonId: string,
+    videoUrl: string,
+    position?: number,
+  ) => {
     if (lessonId !== 'intro') {
       router.push({
         pathname: '/(tabs)/lessons',
         params: {
           lessonId,
           videoUrl,
-          startPosition: position?.toString() || '0'
-        }
+          startPosition: position?.toString() || '0',
+        },
       });
     }
   };
@@ -109,7 +118,7 @@ const HomeScreen = () => {
               description="Get Started with our progress driven Le Wi Tok ASL lessons."
               image={lessonFillSeconday as ImageSourcePropType}
               bgColor="#0f4c5c"
-              routeName="/(tabs)/lessons"
+              routeName={`/(tabs)/lessons/level/${'Beginner'}?assessment=${'Beginner'}`}
             />
             <HomeItem
               title="Common Words & Dictionary"
@@ -118,6 +127,14 @@ const HomeScreen = () => {
               bgColor="#1e1e1e"
               routeName="/(tabs)/dictionary"
             />
+            {/* <HomeItem
+              title="Become a Volunteer"
+              description="Join the community of sign language voluteers and be..."
+              image={volunteerOutlineFillSecondary as ImageSourcePropType}
+              bgColor="#1f1f39"
+              routeName="/(tabs)/home/help"
+            /> */}
+            *
             <HomeItem
               title="Become a Volunteer"
               description="Join the community of sign language voluteers and be..."
