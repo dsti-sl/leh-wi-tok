@@ -15,7 +15,6 @@ import { LessonsBanner } from '@/components/lessons/LessonsBanner';
 import LessonsCategory from '@/components/lessons/LessonsCategory';
 import useLessons from '@/hooks/useLessons';
 import {
-  CompletedLessonData,
   getBaseUrl,
   getStoredCompletedLessons,
   LessonCount,
@@ -66,7 +65,7 @@ const IndexScreen: React.FC = () => {
   const { progressSummary } = useLessons();
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [lessonCount, setLessonCount] = useState<any>({
+  const [lessonCount, setLessonCount] = useState<LessonCount>({
     Beginner: 0,
     'Basic Elementary': 0,
     Intermediate: 0,
@@ -75,9 +74,6 @@ const IndexScreen: React.FC = () => {
   const [overallData, setOverallData] = useState<OverallData>({
     accumulatedLessons: 0,
     accumulatedCompletedLessons: 0,
-  });
-  const [_, setAllTrackingLessons] = useState<CompletedLessonData>({
-    lessons: [],
   });
 
   const EXPO_PUBLIC_BASE_URL = getBaseUrl();
@@ -116,13 +112,12 @@ const IndexScreen: React.FC = () => {
         const stored = await getStoredCompletedLessons();
         lessons = stored.lessons || [];
       }
-      setAllTrackingLessons({ lessons });
       setOverallData(calculateOverallData(lessons));
 
       // Fetch all lesson counts
       const counts: Partial<LessonCount> = {};
       await Promise.all(
-        LEVELS.map(async (level: any) => {
+        LEVELS.map(async (level: LessonLevel) => {
           try {
             counts[level] = await fetchLessonCountForLevel(
               EXPO_PUBLIC_BASE_URL,

@@ -3,7 +3,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// Removed incorrect Record import, using built-in Record type instead
+import { Record as C_Record } from '@/lib/types';
 
 /**
  * @param arrStrings
@@ -11,7 +11,7 @@ import Constants from 'expo-constants';
  */
 export const parseArrayStringsToSelectableObjects = (arrStrings: string[]) =>
   arrStrings.reduce(
-    (acc: { key: number; label: string; value: string }[], val: string, curIndex: number) => [
+    (acc: C_Record[], val: string, curIndex: number) => [
       ...acc,
       { key: curIndex + 1, label: val, value: val },
     ],
@@ -19,12 +19,12 @@ export const parseArrayStringsToSelectableObjects = (arrStrings: string[]) =>
   );
 
 export const parseArrayObjectToSelectables = (
-  arrObjects: Record<string, any>[],
+  arrObjects: C_Record[],
   labelKey: string,
   valueKey: string,
 ) =>
   arrObjects.reduce(
-    (acc: Record<string, any>[], val, curIndex: number) => [
+    (acc: C_Record[], val, curIndex: number) => [
       ...acc,
       { key: curIndex + 1, label: val[labelKey], value: val[valueKey] },
     ],
@@ -89,7 +89,7 @@ export type LessonLevel =
 export type LessonCount = Record<LessonLevel, number>;
 
 export interface LessonCompletionData {
-  lessons: LessonData[];
+  lessons: LessonProgress[];
 }
 export interface OverallData {
   accumulatedLessons: number;
@@ -103,8 +103,8 @@ export const LEVELS: LessonLevel[] = [
 ];
 
 export interface LessonsCategoryProps {
-  progressSummary: Record<string, any>;
-  lessonCount: { [key: string]: number };
+  progressSummary: C_Record;
+  lessonCount: LessonCount;
 }
 
 export interface LessonProgress {
@@ -112,11 +112,6 @@ export interface LessonProgress {
   totalCompleted: number;
   totalLessons: number;
 }
-
-// If you need a separate interface for LessonProgress[], use a different name:
-// export interface LessonProgressCompletionData {
-//   lessons: LessonProgress[];
-// }
 
 /**
  * Returns the base API URL from the Expo config.

@@ -81,7 +81,9 @@ const updateWord = async (
     );
 
     console.log(`Word "${word}" updated successfully!`);
-  } catch (error) {}
+  } catch (error) {
+    console.log('Error: ' + error);
+  }
 };
 
 /**
@@ -316,6 +318,7 @@ export const fetchDictionaryData = async (): Promise<
 
     return results.map((row) => ({
       ...row,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       categories: JSON.parse((row.categories as any) || '[]'),
     }));
   } catch (error) {

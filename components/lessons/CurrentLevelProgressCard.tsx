@@ -5,15 +5,17 @@ import ProgressBar from '../common/ProgressBar';
 
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
-import { accumulateLessonCounts } from '@/utils';
+import { accumulateLessonCounts, OverallData, LessonCount } from '@/utils';
 
 interface CurrentLevelProgressCardProps {
   defaultTutorial?: Record;
+  accumulatedData: OverallData;
+  lessonCount: LessonCount;
 }
 const CurrentLevelProgressCard: React.FC<CurrentLevelProgressCardProps> = ({
   accumulatedData,
   lessonCount,
-}: any) => {
+}) => {
   const completedLessons =
     accumulateLessonCounts(lessonCount) || accumulatedData?.accumulatedLessons;
 
