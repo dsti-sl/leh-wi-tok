@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 
@@ -28,9 +28,13 @@ const Account = () => {
     router.replace('/');
   };
 
+
+
   return (
     <>
-      <View style={styles.container}></View>
+      <View style={styles.container}>
+
+      </View>
       <View style={styles.section}>
         <View style={styles.headerRow}>
           <Text style={styles.greeting}>
@@ -44,10 +48,14 @@ const Account = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your account</Text>
-        <View style={styles.itemRow}>
+        <TouchableOpacity style={styles.itemRow} onPress={
+          () => {
+            router.replace('/account/profile');
+          }
+        }>
           <Feather name="user" size={24} />
           <Text style={styles.itemText}>Personal Details</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.divider} />
@@ -115,6 +123,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderRadius: 50,
     padding: 16,
+    width: 80,
+    height: 80
   },
   avatarText: {
     color: '#fff',
