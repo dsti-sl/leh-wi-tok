@@ -10,6 +10,7 @@ import {
   Alert,
   FlatList,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
@@ -227,6 +228,7 @@ return (
         <FlatList
           data={filteredData}
           keyExtractor={(item) => item.word}
+          contentContainerStyle={styles.searchResultsContainer}
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => {
@@ -297,6 +299,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  searchResultsContainer: {
+    paddingTop: Platform.OS === 'ios' ? 0 : 10,
   },
   contentContainer: {
     padding: 16,

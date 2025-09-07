@@ -44,10 +44,7 @@ const _layout = () => {
       const nextIsSearching = !prev;
       if (!nextIsSearching) {
         setSearchInputText('');
-        router.push({
-          pathname: '/(tabs)/dictionary/definition',
-          params: { word: initialDefinitionWord, query: '' },
-        });
+        router.setParams({ word: initialDefinitionWord, query: '' });
       }
       return nextIsSearching;
     });
@@ -55,10 +52,7 @@ const _layout = () => {
 
   const handleQueryChange = (text: string) => {
     setSearchInputText(text);
-    router.push({
-      pathname: '/(tabs)/dictionary/definition',
-      params: { word: initialDefinitionWord, query: text },
-    });
+    router.setParams({ word: initialDefinitionWord, query: text });
   };
 
   return (
@@ -124,7 +118,7 @@ export default _layout;
 
 const styles = StyleSheet.create({
   headerContainer: {
-    top: Platform.OS === 'ios' ? 0 : 40,
+    top: Platform.OS === 'ios' ? 0 : 20,
     backgroundColor: '#ffffff',
     paddingHorizontal: 10,
     paddingVertical: 10,

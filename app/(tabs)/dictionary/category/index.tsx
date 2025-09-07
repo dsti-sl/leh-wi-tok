@@ -7,6 +7,7 @@ import {
   SectionList,
   TouchableOpacity,
   SafeAreaView,
+  Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { fetchDictionaryData } from '@/db/retrivedata';
@@ -99,6 +100,7 @@ const index = () => {
         <FlatList
           data={globalFilteredData}
           keyExtractor={(item: DictionaryEntry) => item.word}
+          contentContainerStyle={styles.searchResultsContainer}
           renderItem={({ item }: { item: DictionaryEntry }) => (
             <TouchableOpacity
               onPress={() =>
@@ -159,6 +161,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 16,
     paddingTop: 0,
+  },
+  searchResultsContainer: {
+    paddingTop: Platform.OS === 'ios' ? 0 : 10,
   },
   centeredContainer: {
     flex: 1,
