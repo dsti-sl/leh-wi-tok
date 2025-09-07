@@ -17,7 +17,9 @@ import { getBaseUrl } from '@/utils';
 const roles = [
   { id: 'student', label: 'Student' },
   { id: 'teacher', label: 'Teacher' },
-  // { id: 'parent', label: 'Parent' },
+  { id: 'parent', label: 'Parent' },
+  { id: 'volunteer', label: 'Volunteer' },
+  { id: 'generalUser', label: 'General User' },
   // { id: 'generalUser', label: 'General User' },
 ];
 
@@ -57,7 +59,7 @@ const RoleSelection = () => {
     } catch (error) {
       Alert.alert(
         'Error',
-        error.message || 'An error occurred while updating your role.',
+        error instanceof Error ? error.message : 'An error occurred while updating your role.',
       );
     }
   };

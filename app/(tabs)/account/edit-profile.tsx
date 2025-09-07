@@ -1,9 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation, useRouter } from "expo-router";
-import { Colors } from "@/constants/Colors";
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+} from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useRouter } from 'expo-router';
+import { Colors } from '@/constants/Colors';
 
 interface UserInfo {
   createdAt: string;
@@ -19,14 +26,14 @@ interface UserInfo {
 
 const EditProfile = () => {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [name, setName] = useState("");
-  const [handle, setHandle] = useState("");
+  const [name, setName] = useState('');
+  const [handle, setHandle] = useState('');
 
   const router = useRouter();
 
   useEffect(() => {
     const loadUser = async () => {
-      const stored = await AsyncStorage.getItem("user");
+      const stored = await AsyncStorage.getItem('user');
       if (stored) {
         const parsed: UserInfo = JSON.parse(stored);
         setUserInfo(parsed);
@@ -40,7 +47,7 @@ const EditProfile = () => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       e.preventDefault(); // stop the pop
       router.push('/account/profile');
     });
@@ -48,18 +55,17 @@ const EditProfile = () => {
     return unsubscribe;
   }, [navigation]);
 
-
   const saveProfile = async () => {
     if (!userInfo) return;
 
     const updatedUser = { ...userInfo, name, handle };
-    await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
-    Alert.alert("Profile updated!");
+    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+    Alert.alert('Profile updated!');
     router.back(); // go back to profile page
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* Header with Avatar */}
       <View style={styles.container}>
         <TouchableOpacity onPress={() => router.push('/account/profile')}>
@@ -105,52 +111,52 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: "#f9fafb",
+    backgroundColor: '#f9fafb',
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: '#e5e7eb',
   },
   headerTitle: {
     flex: 1,
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   form: {
     padding: 20,
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: 6,
     marginTop: 16,
-    color: "#374151",
+    color: '#374151',
   },
   input: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: '#d1d5db',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   saveButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,
     marginTop: 30,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   saveButtonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     marginLeft: 8,
   },
 });

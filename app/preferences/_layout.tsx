@@ -18,7 +18,6 @@ const _layout = () => {
             </View>
           ),
           headerTitleAlign: 'center', // Center title for Android
-          headerBackTitleVisible: false,
           headerStyle: {
             backgroundColor: Colors.primary,
           },

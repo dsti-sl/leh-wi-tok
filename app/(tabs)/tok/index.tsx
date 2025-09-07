@@ -3,7 +3,6 @@ import { StyleSheet, ActivityIndicator, View, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 const index = () => {
-
   const injectedJS2 = `
     (function() {
     // Hide <app-viewer-selector>
@@ -41,16 +40,15 @@ const index = () => {
 
   return (
     <View style={styles.container}>
-
       <View style={styles.banner}>
         <Text style={styles.bannerText}>
-          Please enter the text you want to shown as sign, click the screen to replay.
+          Please enter the text you want to shown as sign, click the screen to
+          replay.
         </Text>
       </View>
       <WebView
         style={styles.webView}
         source={{ uri: 'https://sign.mt/' }}
-
         injectedJavaScript={injectedJS2}
         javaScriptEnabled={true}
         domStorageEnabled={true}
@@ -72,7 +70,7 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     margin: 0,
     paddingTop: 40,
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
   },
   webView: {
     flex: 1,

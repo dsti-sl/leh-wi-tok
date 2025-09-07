@@ -280,6 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#333',
     textAlign: 'center',
-    marginTop: '50%'
+    marginTop: '50%',
   },
 });
