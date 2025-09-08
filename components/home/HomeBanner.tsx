@@ -57,7 +57,7 @@ export const HomeBanner = ({ user }: BannerProps) => {
           </TouchableOpacity>
         </View>*/}
       </View>
-      <Text style={styles.footerTxt}>Let us learn with leh we talk</Text>
+      <Text style={styles.footerTxt}>Let us learn with Le Wi Tok</Text>
     </View>
   );
 };

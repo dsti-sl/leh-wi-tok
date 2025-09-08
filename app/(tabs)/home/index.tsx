@@ -9,6 +9,7 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
 import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
@@ -18,12 +19,12 @@ import usersOutlineFillSeconday from '../../../assets/images/users-outline-fill-
 import { HomeBanner } from '@/components/home/HomeBanner';
 import HomeItem from '@/components/home/HomeItem';
 import InitialVideoCard from '@/components/home/InitialVideoCard';
-import useTutorials from '@/hooks/useTutorials';
+import useLastLesson from '@/hooks/useLastLesson';
 import { Record } from '@/lib/types';
 import { getBaseUrl } from '@/utils';
 
 const HomeScreen = () => {
-  const { defaultTutorial } = useTutorials();
+  const { lastLesson, isFirstTimeUser, loading: lessonLoading, saveLessonPosition } = useLastLesson();
   const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -55,6 +56,19 @@ const HomeScreen = () => {
     }
   }, [user]);
 
+  const handleVideoPlay = (lessonId: string, videoUrl: string, position?: number) => {
+    if (lessonId !== 'intro') {
+      router.push({
+        pathname: '/(tabs)/lessons',
+        params: {
+          lessonId,
+          videoUrl,
+          startPosition: position?.toString() || '0'
+        }
+      });
+    }
+  };
+
   if (isLoading && !user) {
     return (
       <View style={styles.loadingContainer}>
@@ -70,10 +84,22 @@ const HomeScreen = () => {
         {/* Banner */}
         {user && <HomeBanner user={user} />}
 
-        {/* Video container */}
-        {defaultTutorial && (
-          <InitialVideoCard defaultTutorial={defaultTutorial as Record} />
+        {/* Video container with smart detection */}
+        {lastLesson && !lessonLoading && (
+          <InitialVideoCard
+            videoData={lastLesson}
+            onPlayPress={handleVideoPlay}
+          />
         )}
+
+        {/* Loading state for video */}
+        {lessonLoading && (
+          <View style={styles.videoLoadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Loading your content...</Text>
+          </View>
+        )}
+
         <ScrollView style={styles.itemsContainer}>
           {/* Items */}
           <View>
@@ -85,18 +111,18 @@ const HomeScreen = () => {
               routeName="/(tabs)/home/help"
             />
             <HomeItem
-              title="Beginners Lessons"
-              description="Get Started with our beginners lessons today."
+              title="Lessons"
+              description="Get Started with our progress driven Le Wi Tok ASL lessons."
               image={lessonFillSeconday as ImageSourcePropType}
               bgColor="#0f4c5c"
-              routeName="/(tabs)/home/help"
+              routeName="/(tabs)/lessons"
             />
             <HomeItem
-              title="Common Words"
+              title="Common Words & Dictionary"
               description="Find frequently used words for instant communications "
               image={usersOutlineFillSeconday as ImageSourcePropType}
               bgColor="#1e1e1e"
-              routeName="/(tabs)/home/help"
+              routeName="/(tabs)/dictionary"
             />
             <HomeItem
               title="Become a Volunteer"
@@ -126,6 +152,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  videoLoadingContainer: {
+    marginHorizontal: 20,
+    marginVertical: 10,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
   itemsContainer: {
     width: '100%',
