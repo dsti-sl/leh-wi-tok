@@ -89,20 +89,7 @@ const Account = () => {
       <View style={styles.divider} />
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>How are we doing?</Text>
-        <TouchableOpacity style={styles.feedbackButton}>
-          <Text style={styles.feedbackText}>Give us feedback</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.divider} />
-
-      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Settings</Text>
-        <View style={styles.itemRow}>
-          <Feather name="bell" size={24} />
-          <Text style={styles.itemText}>Notifications</Text>
-        </View>
         <TouchableOpacity
           style={[styles.itemRow, isLoggingOut && styles.itemRowDisabled]}
           onPress={handleLogout}
