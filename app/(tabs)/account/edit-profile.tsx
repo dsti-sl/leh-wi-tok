@@ -1,3 +1,6 @@
+import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -7,9 +10,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, useRouter } from 'expo-router';
+
 import { Colors } from '@/constants/Colors';
 
 interface UserInfo {

@@ -1,12 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Colors } from '@/constants/Colors';
 import { useNavigation } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+
 import ProfileImagePicker from '@/components/account/ImageUpload';
-import { ScrollView } from 'react-native-gesture-handler';
+import { Colors } from '@/constants/Colors';
 
 interface UserInfo {
   createdAt: string;
