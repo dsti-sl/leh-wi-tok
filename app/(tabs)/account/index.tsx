@@ -65,10 +65,12 @@ const Account = () => {
       <View style={styles.section}>
         <View style={styles.headerRow}>
           <Text style={styles.greeting}>
-            Hey, {userInfo?.name?.split(' ')[0]}!
+            Hey, {userInfo ? userInfo.name.split(' ')[0] : ''}!
           </Text>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{userInfo?.name?.charAt(0)}</Text>
+            <Text style={styles.avatarText}>
+              {userInfo ? userInfo.name.charAt(0) : ''}
+            </Text>
           </View>
         </View>
       </View>
@@ -92,7 +94,7 @@ const Account = () => {
         <Text style={styles.sectionTitle}>Settings</Text>
         <TouchableOpacity
           style={[styles.itemRow, isLoggingOut && styles.itemRowDisabled]}
-          onPress={handleLogout}
+          onPress={confirmLogout}
           disabled={isLoggingOut}
         >
           <Feather
@@ -111,7 +113,10 @@ const Account = () => {
       <View style={styles.divider} />
 
       <View style={styles.section}>
-        <TouchableOpacity style={styles.itemRow}>
+        <TouchableOpacity
+          style={styles.itemRow}
+          onPress={confirmAccountDeletion}
+        >
           <Feather name="trash-2" size={24} color="#dc2626" />
           <Text style={[styles.itemText, { color: '#dc2626' }]}>
             Delete your account
