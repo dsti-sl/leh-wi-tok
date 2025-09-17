@@ -20,6 +20,7 @@ interface InitialVideoCardProps {
     duration: string;
     isFirstTimeUser: boolean;
     lastWatchedPosition?: number;
+    headers?: Record<string, string>;
   };
   onPlayPress?: (lessonId: string, videoUrl: string, position?: number) => void;
 }
@@ -79,6 +80,7 @@ const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
           videoSource={videoData.videoUrl}
           title="Introduction to the Le wi tok application"
           onClose={() => setShowVideoModal(false)}
+          headers={videoData.headers}
         />
       </CModal>
     </>

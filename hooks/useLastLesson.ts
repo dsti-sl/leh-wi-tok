@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getBaseUrl } from '@/utils';
+import { getBaseUrl, getToken } from '@/utils';
 
 interface LastLessonData {
   id: string;
@@ -10,6 +10,7 @@ interface LastLessonData {
   duration: string;
   isFirstTimeUser: boolean;
   lastWatchedPosition?: number;
+  headers?: Record<string, string>;
 }
 
 interface CompletedLesson {
@@ -22,10 +23,28 @@ const useLastLesson = () => {
   const [lastLesson, setLastLesson] = useState<LastLessonData | null>(null);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
+
+  // Fetch token on component mount
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const storedToken = await getToken();
+        setToken(storedToken);
+      } catch (error) {
+        console.error('Error fetching token:', error);
+      }
+    };
+
+    fetchToken();
+  }, []);
 
   useEffect(() => {
     const checkUserProgress = async () => {
       try {
+        // Wait for token to be available
+        if (!token) return;
+
         // Checks if user has any completed lessons
         const completedLessons = await AsyncStorage.getItem('completedLesson');
         const user = await AsyncStorage.getItem('user');
@@ -70,60 +89,67 @@ const useLastLesson = () => {
       }
     };
 
-    const setIntroVideo = () => {
-      setLastLesson({
-        id: 'intro',
-        title: 'Welcome to the Le Wi Tok Application',
-        videoUrl: require('../assets/videos/LeWiTok_Intro.mp4'),
-        thumbnail: require('../assets/images/Alphabet-A.png'),
-        duration: '1:16',
-        isFirstTimeUser: true,
-        lastWatchedPosition: 0,
-      });
-      setIsFirstTimeUser(true);
-    };
+    checkUserProgress();
+  }, [token]);
 
-    const fetchLastLessonDetails = async (lessonData: any) => {
-      try {
-        const baseUrl = getBaseUrl();
-        const response = await fetch(
-          `${baseUrl}/nugget?and=(lesson.id.eq.${lessonData.lessonId})&select=lesson(id,title,description,illustration),gesture(id,name,path,contentType)`,
+  const setIntroVideo = () => {
+    const baseUrl = getBaseUrl();
+    const fileId =
+      '206e6204-19c1-410a-89e2-a3d066cd63fe-The Le We Tok Video.mp4';
+    const downloadUrl = `${baseUrl}/file/download?id=${fileId}`;
+
+    setLastLesson({
+      id: 'intro',
+      title: 'Welcome to the Le Wi Tok Application',
+      videoUrl: downloadUrl,
+      thumbnail: require('../assets/images/Alphabet-A.png'),
+      duration: '1:16',
+      isFirstTimeUser: true,
+      lastWatchedPosition: 0,
+      headers: token ? { authorization: `Token ${token}` } : undefined,
+    });
+    setIsFirstTimeUser(true);
+  };
+
+  const fetchLastLessonDetails = async (lessonData: any) => {
+    try {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(
+        `${baseUrl}/nugget?and=(lesson.id.eq.${lessonData.lessonId})&select=lesson(id,title,description,illustration),gesture(id,name,path,contentType)`,
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch lesson details');
+      }
+
+      const data = await response.json();
+      if (data.data && data.data.length > 0) {
+        const lesson = data.data[0];
+        const lastPosition = await AsyncStorage.getItem(
+          `lesson_${lesson.lesson.id}_position`,
         );
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch lesson details');
-        }
-
-        const data = await response.json();
-        if (data.data && data.data.length > 0) {
-          const lesson = data.data[0];
-          const lastPosition = await AsyncStorage.getItem(
-            `lesson_${lesson.lesson.id}_position`,
-          );
-
-          setLastLesson({
-            id: lesson.lesson.id,
-            title: lesson.lesson.title,
-            videoUrl: lesson.gesture?.path || '',
-            thumbnail:
-              lesson.lesson.illustration ||
-              require('../assets/images/adaptive-icon.png'),
-            duration: '5:00',
-            isFirstTimeUser: false,
-            lastWatchedPosition: lastPosition ? parseFloat(lastPosition) : 0,
-          });
-          setIsFirstTimeUser(false);
-        } else {
-          setIntroVideo();
-        }
-      } catch (error) {
-        console.error('Error fetching lesson details:', error);
+        setLastLesson({
+          id: lesson.lesson.id,
+          title: lesson.lesson.title,
+          videoUrl: lesson.gesture?.path || '',
+          thumbnail:
+            lesson.lesson.illustration ||
+            require('../assets/images/adaptive-icon.png'),
+          duration: '5:00',
+          isFirstTimeUser: false,
+          lastWatchedPosition: lastPosition ? parseFloat(lastPosition) : 0,
+          headers: token ? { authorization: `Token ${token}` } : undefined,
+        });
+        setIsFirstTimeUser(false);
+      } else {
         setIntroVideo();
       }
-    };
-
-    checkUserProgress();
-  }, []);
+    } catch (error) {
+      console.error('Error fetching lesson details:', error);
+      setIntroVideo();
+    }
+  };
 
   const saveLessonPosition = async (lessonId: string, position: number) => {
     try {

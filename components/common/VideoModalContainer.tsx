@@ -14,12 +14,14 @@ interface VideoModalContentProps {
   videoSource: string | number;
   title?: string;
   onClose: () => void;
+  headers?: Record<string, string>;
 }
 
 const VideoModalContent: React.FC<VideoModalContentProps> = ({
   videoSource,
   title = 'Introduction Video',
-  onClose
+  onClose,
+  headers
 }) => {
   return (
     <View style={styles.container}>
@@ -42,6 +44,7 @@ const VideoModalContent: React.FC<VideoModalContentProps> = ({
               ? videoSource
               : Asset.fromModule(videoSource).uri
           }
+          headers={headers}
           style={styles.video}
           autoPlay={true}
           shouldLoop={false}

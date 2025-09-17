@@ -81,18 +81,13 @@ const HomeScreen = () => {
   if (user && user.student) {
     return (
       <View style={styles.container}>
-        {/* Banner */}
         {user && <HomeBanner user={user} />}
-
-        {/* Video container with smart detection */}
         {lastLesson && !lessonLoading && (
           <InitialVideoCard
             videoData={lastLesson}
             onPlayPress={handleVideoPlay}
           />
         )}
-
-        {/* Loading state for video */}
         {lessonLoading && (
           <View style={styles.videoLoadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
@@ -101,7 +96,6 @@ const HomeScreen = () => {
         )}
 
         <ScrollView style={styles.itemsContainer}>
-          {/* Items */}
           <View>
             <HomeItem
               title="Find Help"
