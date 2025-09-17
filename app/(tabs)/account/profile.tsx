@@ -37,7 +37,7 @@ const Account = () => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       e.preventDefault(); // stop the pop
       router.push('/account');
     });
@@ -48,8 +48,6 @@ const Account = () => {
 
   return (
     <>
-
-
       {/* Header with Avatar */}
       <View style={styles.container}>
         <TouchableOpacity onPress={() => router.push('/account')}>
@@ -58,18 +56,15 @@ const Account = () => {
       </View>
 
       <View style={styles.header}>
-        <ProfileImagePicker setProfileImage={
-          (img) => {
+        <ProfileImagePicker
+          setProfileImage={(img) => {
             setImage(img);
             // UPLOAD IMAGE
-          }
-
-        } profileImage={
-          userInfo?.pictureId ? userInfo.pictureId : image
-        } />
+          }}
+          profileImage={userInfo?.pictureId ? userInfo.pictureId : image}
+        />
         {/* <Text style={styles.greeting}>Profile Details</Text> */}
       </View>
-
 
       {/* Profile Information Card */}
       <View style={styles.section}>
@@ -107,7 +102,11 @@ const Account = () => {
           <View style={styles.infoTextWrap}>
             <Text style={styles.infoLabel}>Role</Text>
             <Text style={styles.infoValue}>
-              {userInfo?.student ? 'Student' : userInfo?.teacher ? 'Teacher' : 'Viewer'}
+              {userInfo?.student
+                ? 'Student'
+                : userInfo?.teacher
+                  ? 'Teacher'
+                  : 'Viewer'}
             </Text>
           </View>
         </View>

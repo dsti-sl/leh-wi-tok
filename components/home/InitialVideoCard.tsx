@@ -1,42 +1,91 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
-
+import React, { useState } from 'react';
+import {
+  TouchableOpacity,
+  View,
+  Text,
+  Image,
+  StyleSheet,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import CModal from '../common/CModal';
+import VideoModalContent from '../common/VideoModalContainer';
 import { Colors } from '@/constants/Colors';
-import { Record } from '@/lib/types';
 
 interface InitialVideoCardProps {
-  defaultTutorial: Record;
+  videoData: {
+    id: string;
+    title: string;
+    videoUrl: string | number;
+    thumbnail: string | number;
+    duration: string;
+    isFirstTimeUser: boolean;
+    lastWatchedPosition?: number;
+    headers?: Record<string, string>;
+  };
+  onPlayPress?: (lessonId: string, videoUrl: string, position?: number) => void;
 }
+
 const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
-  defaultTutorial,
+  videoData,
+  onPlayPress
 }) => {
+  const [showVideoModal, setShowVideoModal] = useState(false);
+
+  const handlePlayPress = () => {
+    if (videoData.isFirstTimeUser) {
+      setShowVideoModal(true);
+    } else {
+      onPlayPress?.(videoData.id, videoData.videoUrl as string, videoData.lastWatchedPosition);
+    }
+  };
+
   return (
-    <View style={styles.videoContainer}>
-      <Image
-        source={{ uri: defaultTutorial.thumbnail as string }}
-        style={{ width: 60, height: 60, borderRadius: 15 }}
-      />
-      <View style={styles.videoDetails}>
-        <Text style={[styles.txtBold]}>{defaultTutorial.title as string}</Text>
-        <Text style={[styles.txtDescription]}>
-          {defaultTutorial.description as string}
-        </Text>
-        <TouchableOpacity
-          style={styles.playBtn}
-          onPress={() => {
-            // TODO: Play in modal or a dedicated screen
-            console.log('Playing preview video');
-          }}
-        >
-          {/* <Ionicons name="play-outline" size={25} color={Colors.primary} /> */}
-          {/* <Text style={[styles.playTxt]}>Play Video</Text> */}
-        </TouchableOpacity>
+    <>
+      <View style={styles.videoContainer}>
+        <Image
+          source={typeof videoData.thumbnail === 'string'
+            ? { uri: videoData.thumbnail }
+            : videoData.thumbnail
+          }
+          style={{ width: 60, height: 60, borderRadius: 15 }}
+        />
+        <View style={styles.videoDetails}>
+          <Text style={[styles.txtBold]}>
+            {videoData.isFirstTimeUser ? 'Welcome to Le Wi Tok' : videoData.title}
+          </Text>
+          <Text style={[styles.txtDescription]}>
+            {videoData.isFirstTimeUser
+              ? 'Start your sign language learning journey with this introductory video.'
+              : `Continue learning - ${videoData.duration}`
+            }
+          </Text>
+          <TouchableOpacity
+            style={styles.playBtn}
+            onPress={handlePlayPress}
+          >
+            <Ionicons name="play-outline" size={25} color={Colors.primary} />
+            <Text style={[styles.playTxt]}>Play Video</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+
+      <CModal
+        open={showVideoModal}
+        setOpen={setShowVideoModal}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        modalContainerStyle={styles.videoModalContainer}
+      >
+        <VideoModalContent
+          videoSource={videoData.videoUrl}
+          title="Introduction to the Le wi tok application"
+          onClose={() => setShowVideoModal(false)}
+          headers={videoData.headers}
+        />
+      </CModal>
+    </>
   );
 };
-
-export default InitialVideoCard;
 
 const styles = StyleSheet.create({
   videoContainer: {
@@ -47,7 +96,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.secondary,
     borderWidth: 1,
     borderRadius: 10,
-
     flexDirection: 'row',
     gap: 10,
   },
@@ -66,7 +114,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   txtBold: {
-    fontWeight: '400',
+    fontWeight: '600',
     fontSize: 20,
   },
   playTxt: {
@@ -74,4 +122,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.primary,
   },
+  videoModalContainer: {
+    width: '100%',
+    height: '100%',
+    maxHeight: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 0,
+    padding: 0,
+  },
 });
+
+export default InitialVideoCard;

@@ -60,7 +60,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           playerInstance.pause();
         }
       }
-    },
+    }
   );
 
   useEffect(() => {
@@ -76,7 +76,10 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           try {
             player.play();
           } catch (error) {
-            console.warn('VideoPlayer: Failed to auto-play:', error);
+            console.error('Video player error:', error);
+            setHasError(true);
+            setErrorMessage('Failed to load video');
+            onError?.(error);
           }
         } else {
           try {
@@ -85,7 +88,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             console.warn('VideoPlayer: Failed to pause:', error);
           }
         }
-        // Call onLoad callback if provided TODO: Doing additional stuffs
         onLoad?.();
       }
     };
@@ -98,7 +100,10 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             handleLoad();
           }
         } catch (error) {
-          console.warn('Error checking player status:', error);
+          console.error('Video player error:', error);
+          setHasError(true);
+          setErrorMessage('Failed to load video');
+          onError?.(error);
         }
       }
     }, 250);

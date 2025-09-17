@@ -28,13 +28,9 @@ const Account = () => {
     router.replace('/');
   };
 
-
-
   return (
     <>
-      <View style={styles.container}>
-
-      </View>
+      <View style={styles.container}></View>
       <View style={styles.section}>
         <View style={styles.headerRow}>
           <Text style={styles.greeting}>
@@ -48,11 +44,12 @@ const Account = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your account</Text>
-        <TouchableOpacity style={styles.itemRow} onPress={
-          () => {
+        <TouchableOpacity
+          style={styles.itemRow}
+          onPress={() => {
             router.replace('/account/profile');
-          }
-        }>
+          }}
+        >
           <Feather name="user" size={24} />
           <Text style={styles.itemText}>Personal Details</Text>
         </TouchableOpacity>
@@ -124,7 +121,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 16,
     width: 80,
-    height: 80
+    height: 80,
   },
   avatarText: {
     color: '#fff',

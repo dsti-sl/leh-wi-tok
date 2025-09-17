@@ -57,7 +57,7 @@ const welcomeScreen = () => {
         style={styles.logo}
       />
       <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>Hi! {user?.name}</Text>
+        <Text style={styles.welcomeText}>Hi! {user?.name?.toString() || ''}</Text>
         <Text style={styles.welcomeText}>Welcome to Le Wi Tok</Text>
       </View>
       <C_Button

@@ -148,6 +148,14 @@ const index = () => {
             value={query}
             onChangeText={setQuery}
           />
+          {query?.length ? (
+            <TouchableOpacity
+              onPress={() => setQuery('')}
+              style={styles.clearButton}
+            >
+              <Ionicons name="close" size={20} color={Colors.secondary} />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {query ? (
@@ -239,6 +247,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
   },
+  clearButton: {
+    padding: 6,
+    marginLeft: 6,
+  },
   searchBar: {
     height: 50,
     borderWidth: 1,
@@ -268,6 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#333',
     textAlign: 'center',
-    marginTop: '50%'
+    marginTop: '50%',
   },
 });

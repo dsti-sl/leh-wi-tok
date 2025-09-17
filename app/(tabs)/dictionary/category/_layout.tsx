@@ -25,19 +25,13 @@ const _layout = () => {
       setTimeout(() => inputRef.current?.focus(), 100);
     } else {
       setQuery('');
-      router.push({
-        pathname: '/(tabs)/dictionary/category',
-        params: { categoryName, query: '' },
-      });
+      router.setParams({ categoryName, query: '' });
     }
   };
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
-    router.push({
-      pathname: '/(tabs)/dictionary/category',
-      params: { categoryName, query: text },
-    });
+    router.setParams({ categoryName, query: text });
   };
 
   return (
@@ -98,7 +92,7 @@ export default _layout;
 
 const styles = StyleSheet.create({
   headerContainer: {
-    top: Platform.OS === 'ios' ? 0 : 40,
+    top: Platform.OS === 'ios' ? 0 : 20,
     backgroundColor: '#ffffff',
     paddingHorizontal: 10,
     paddingVertical: 10,

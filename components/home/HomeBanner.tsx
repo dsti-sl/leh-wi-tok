@@ -26,13 +26,13 @@ export const HomeBanner = ({ user }: BannerProps) => {
         <View style={styles.userWelcomeContainer}>
           <Text
             style={styles.userTxt}
-          >{`Hello ${getFirstWord(user?.name)}`}</Text>
+          >{`Hello ${getFirstWord(String(user?.name || ''))}`}</Text>
           <Image
             source={HandShake as ImageSourcePropType}
             style={styles.imageStyles}
           />
         </View>
-        <View style={styles.iconButtons}>
+        {/* <View style={styles.iconButtons}>
           <TouchableOpacity
             onPress={() => {
               // TODO: Go to notification screen
@@ -55,9 +55,9 @@ export const HomeBanner = ({ user }: BannerProps) => {
               source={Badge as ImageSourcePropType}
             />
           </TouchableOpacity>
-        </View>
+        </View>*/}
       </View>
-      <Text style={styles.footerTxt}>Let us learn with leh we talk</Text>
+      <Text style={styles.footerTxt}>Let us learn with Le Wi Tok</Text>
     </View>
   );
 };

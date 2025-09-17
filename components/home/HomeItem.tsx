@@ -18,7 +18,7 @@ interface HomeItemProps {
   description: string;
   image: ImageSourcePropType;
   bgColor: ColorValue;
-  routeName: Href<string | object>;
+  routeName: Href;
 }
 const HomeItem: React.FC<HomeItemProps> = ({
   title,

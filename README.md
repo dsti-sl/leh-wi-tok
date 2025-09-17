@@ -1,6 +1,7 @@
-# Leh wi tok mobile app (react-native) 
+# Leh wi tok mobile app (react-native)
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
@@ -18,10 +19,10 @@
 - [Contact](#contact)
 - [Copyright](#copyright)
 
-
 ---
 
 ## Overview
+
 Leh Wi Tok is an educational app that helps users learn sign language through beginner-friendly courses and an easy-to-use dictionary with visual aids.
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
@@ -29,7 +30,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 ## Project Structure
 
-``` bash
+```bash
 .
 
 ├── .vscode/            # VSCode editor settings
@@ -83,6 +84,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 ---
 
 ## Prerequisites
+
 - Node.js version 22.10.0 (required)
 - Development build setup (required)
 - Environment Variables Setup:
@@ -95,13 +97,17 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 ## Getting Started
 
 ### Installation
+
 Install project dependencies:
+
 ```bash
 npm install
 ```
 
 ### Running the App
+
 Start the development server:
+
 ```bash
 npx expo start
 ```
@@ -111,6 +117,7 @@ npx expo start
 ## Development Builds
 
 ### Local Development Build
+
 ```bash
 # Install the dev client
 npx expo install expo-dev-client
@@ -124,6 +131,7 @@ npx expo run:ios     # For iOS (requires macOS)
 ```
 
 ### EAS Development Build
+
 ```bash
 # Install EAS CLI (if not already done)
 npm install -g eas-cli
@@ -144,6 +152,7 @@ eas build:run -p ios     # For iOS
 ```
 
 ### EAS Preview Build (Staging)
+
 ```bash
 # Create a preview (staging) build for internal testing
 eas build --profile preview --platform android # For Android
@@ -151,6 +160,7 @@ eas build --profile preview --platform ios     # For iOS
 ```
 
 ### EAS Production Build
+
 ```bash
 # Create a production build
 eas build --profile production --platform android # For Android
@@ -164,7 +174,9 @@ eas submit --platform ios     # For iOS
 ---
 
 ## Development Options
+
 You can develop your app using any of these options:
+
 - [Development build](https://docs.expo.dev/develop/development-builds/introduction/)
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
@@ -175,16 +187,21 @@ You can start developing by editing the files inside the **app** directory. This
 ---
 
 ## Project Reset
+
 When you're ready to start fresh, run:
+
 ```bash
 npm run reset-project
 ```
+
 This command will move the starter code to the **app-example** directory and create a blank **app** directory for your development.
 
 ---
 
 ## Additional Resources
+
 Learn more about developing with Expo:
+
 - [Expo documentation](https://docs.expo.dev/): Fundamentals and advanced topics
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Step-by-step guide for creating cross-platform projects
 
