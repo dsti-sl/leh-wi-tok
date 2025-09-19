@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
-import {
-  TouchableOpacity,
-  View,
-  Text,
-  Image,
-  StyleSheet,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { TouchableOpacity, View, Text, Image, StyleSheet } from 'react-native';
+
 import CModal from '../common/CModal';
 import VideoModalContent from '../common/VideoModalContainer';
+
 import { Colors } from '@/constants/Colors';
 
 interface InitialVideoCardProps {
@@ -22,12 +18,16 @@ interface InitialVideoCardProps {
     lastWatchedPosition?: number;
     headers?: Record<string, string>;
   };
-  onPlayPress?: (lessonId: string, videoUrl: string, position?: number) => void;
+  onPlayPress?: (
+    _lessonId: string,
+    _videoUrl: string,
+    _position?: number,
+  ) => void;
 }
 
 const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
   videoData,
-  onPlayPress
+  onPlayPress,
 }) => {
   const [showVideoModal, setShowVideoModal] = useState(false);
 
@@ -35,7 +35,11 @@ const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
     if (videoData.isFirstTimeUser) {
       setShowVideoModal(true);
     } else {
-      onPlayPress?.(videoData.id, videoData.videoUrl as string, videoData.lastWatchedPosition);
+      onPlayPress?.(
+        videoData.id,
+        videoData.videoUrl as string,
+        videoData.lastWatchedPosition,
+      );
     }
   };
 
@@ -43,26 +47,25 @@ const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
     <>
       <View style={styles.videoContainer}>
         <Image
-          source={typeof videoData.thumbnail === 'string'
-            ? { uri: videoData.thumbnail }
-            : videoData.thumbnail
+          source={
+            typeof videoData.thumbnail === 'string'
+              ? { uri: videoData.thumbnail }
+              : videoData.thumbnail
           }
           style={{ width: 60, height: 60, borderRadius: 15 }}
         />
         <View style={styles.videoDetails}>
           <Text style={[styles.txtBold]}>
-            {videoData.isFirstTimeUser ? 'Welcome to Le Wi Tok' : videoData.title}
+            {videoData.isFirstTimeUser
+              ? 'Welcome to Le Wi Tok'
+              : videoData.title}
           </Text>
           <Text style={[styles.txtDescription]}>
             {videoData.isFirstTimeUser
               ? 'Start your sign language learning journey with this introductory video.'
-              : `Continue learning - ${videoData.duration}`
-            }
+              : `Continue learning - ${videoData.duration}`}
           </Text>
-          <TouchableOpacity
-            style={styles.playBtn}
-            onPress={handlePlayPress}
-          >
+          <TouchableOpacity style={styles.playBtn} onPress={handlePlayPress}>
             <Ionicons name="play-outline" size={25} color={Colors.primary} />
             <Text style={[styles.playTxt]}>Play Video</Text>
           </TouchableOpacity>

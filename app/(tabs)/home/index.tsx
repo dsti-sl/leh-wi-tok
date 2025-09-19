@@ -24,12 +24,7 @@ import { Record } from '@/lib/types';
 import { getBaseUrl } from '@/utils';
 
 const HomeScreen = () => {
-  const {
-    lastLesson,
-    isFirstTimeUser,
-    loading: lessonLoading,
-    saveLessonPosition,
-  } = useLastLesson();
+  const { lastLesson, loading: lessonLoading } = useLastLesson();
   const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
