@@ -74,6 +74,7 @@ const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
         setOpen={setShowVideoModal}
         animationType="slide"
         presentationStyle="fullScreen"
+        transparent={false}
         modalContainerStyle={styles.videoModalContainer}
       >
         <VideoModalContent

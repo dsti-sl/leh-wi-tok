@@ -32,14 +32,20 @@ const CModal: React.FC<CModalProps> = ({
       onRequestClose={() => setOpen(false)}
       {...props}
     >
-      <TouchableOpacity
-        style={styles.modalBackground}
-        onPress={() => setOpen(false)}
-      >
-        <View style={[styles.modalContainer, modalContainerStyle]}>
+      {transparent ? (
+        <TouchableOpacity
+          style={styles.modalBackground}
+          onPress={() => setOpen(false)}
+        >
+          <View style={[styles.modalContainer, modalContainerStyle]}>
+            {children}
+          </View>
+        </TouchableOpacity>
+      ) : (
+        <View style={[styles.fullScreenContainer, modalContainerStyle]}>
           {children}
         </View>
-      </TouchableOpacity>
+      )}
     </Modal>
   );
 };
@@ -59,5 +65,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 8,
     padding: 10,
+  },
+  fullScreenContainer: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
 });
