@@ -134,7 +134,6 @@ const HomeScreen = () => {
               bgColor="#1f1f39"
               routeName="/(tabs)/home/help"
             /> */}
-            *
             <HomeItem
               title="Become a Volunteer"
               description="Join the community of sign language voluteers and be..."
