@@ -1,149 +1,34 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
   Image,
-  Alert,
-  Linking,
-  ActivityIndicator, // <== for spinner
+  ActivityIndicator,
 } from 'react-native';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
-import { getBaseUrl } from '@/utils';
-
-const OAUTH_ENDPOINTS = {
-  google: 'https://example.com/oauth/google',
-  facebook: 'https://example.com/oauth/facebook',
-  twitter: 'https://example.com/oauth/twitter',
-};
+import useSignup from '@/hooks/useSignup';
 
 const SignUpScreen = () => {
-  const [fullName, setFullName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-
-  const validateForm = useCallback(() => {
-    if (!fullName) return 'Full name is required';
-    if (!/^[A-Za-z\s]+$/.test(fullName))
-      return 'Full name can only contain letters and spaces';
-    if (!phoneNumber) return 'Phone number is required';
-    if (!/^\d+$/.test(phoneNumber))
-      return 'Phone number can only contain digits';
-    if (email && !/^\S+@\S+\.\S+$/.test(email)) return 'Invalid email format';
-    return '';
-  }, [fullName, phoneNumber, email]);
-
-  const EXPO_PUBLIC_BASE_URL = getBaseUrl();
-
-  const handleSignUp = useCallback(async () => {
-    setError('');
-    setIsLoading(true); // Start loading
-
-    try {
-      const validationError = validateForm();
-      if (validationError) {
-        setError(validationError);
-        return;
-      }
-
-      const userData = {
-        name: fullName,
-        phone: phoneNumber,
-        user: phoneNumber,
-      };
-
-      // Register user
-      const registerResponse = await fetch(
-        `${EXPO_PUBLIC_BASE_URL}/user/register`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData),
-        },
-      );
-
-      const registerData = await registerResponse.json().catch(() => ({}));
-      if (!registerResponse.ok) {
-        const regErrMsg =
-          registerData?.errors?.[0]?.detail ||
-          'Failed to register. Please try again.';
-        Alert.alert('Registration Error', regErrMsg);
-        setError(regErrMsg);
-        return;
-      }
-
-      // Auto-login (get OTP)
-      const loginResponse = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: phoneNumber }),
-      });
-      const loginData = await loginResponse.json().catch(() => ({}));
-      if (loginResponse.ok) {
-        // Success! Redirect
-        Alert.alert('Success', loginData?.meta?.message || 'OTP sent!');
-        router.replace(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=false`);
-      } else {
-        const loginErrMsg =
-          loginData?.meta?.message ||
-          loginData?.errors?.[0]?.detail ||
-          'Failed to request OTP. Please try again.';
-        setError(loginErrMsg);
-        Alert.alert('OTP Error', loginErrMsg);
-      }
-    } catch (err: any) {
-      // Safe error handling
-      const errMsg =
-        (err?.errors && err.errors[0]?.detail) ||
-        err?.message ||
-        'Network error: Unable to verify OTP. Please check your connection.';
-      setError(errMsg);
-      Alert.alert('Error', errMsg);
-    } finally {
-      setIsLoading(false); // Always stop loading!
-    }
-  }, [fullName, phoneNumber, validateForm]);
-
-  // OAuth Sign Up
-  const handleOAuthSignUp = useCallback(
-    async (provider: keyof typeof OAUTH_ENDPOINTS) => {
-      const url = OAUTH_ENDPOINTS[provider];
-      try {
-        await Linking.openURL(url);
-      } catch {
-        Alert.alert(
-          'OAuth Error',
-          'Failed to open OAuth URL. Please try again.',
-        );
-      }
-    },
-    [],
-  );
-
-  // Input handlers: clear error on change for better UX
-  const onChangeFullName = (text: string) => {
-    setFullName(text);
-    if (error) setError('');
-  };
-  const onChangePhone = (text: string) => {
-    setPhoneNumber(text);
-    if (error) setError('');
-  };
-  const onChangeEmail = (text: string) => {
-    setEmail(text);
-    if (error) setError('');
-  };
+  const {
+    fullName,
+    setFullName,
+    phoneNumber,
+    setPhoneNumber,
+    email,
+    setEmail,
+    error,
+    isLoading,
+    handleSignUp,
+  } = useSignup();
 
   return (
     <View style={styles.container}>
@@ -160,40 +45,9 @@ const SignUpScreen = () => {
           style={styles.boyCoderIcon}
         />
       </Text>
-      <Text style={styles.subText}>Let's go through a few simple steps</Text>
-      {/*       <View style={styles.oauthContainer}>
-        <TouchableOpacity
-          onPress={() => handleOAuthSignUp('google')}
-          style={styles.oauthButton}
-          disabled={isLoading} // disable while loading
-        >
-          <Image
-            source={require('../assets/images/Google.png')}
-            style={styles.oauthIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleOAuthSignUp('twitter')}
-          style={styles.oauthButton}
-          disabled={isLoading}
-        >
-          <Image
-            source={require('../assets/images/Twitter.png')}
-            style={styles.oauthIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleOAuthSignUp('facebook')}
-          style={styles.oauthButton}
-          disabled={isLoading}
-        >
-          <Image
-            source={require('../assets/images/Facebook.png')}
-            style={styles.oauthIcon}
-          />
-        </TouchableOpacity>
-      </View> 
-      <Text style={styles.orText}>Or</Text> */}
+      <Text style={styles.subText}>
+        Let&apos;s go through a few simple steps
+      </Text>
       <Text style={styles.label}>Full Name</Text>
       <View style={styles.inputContainer}>
         <Ionicons
@@ -205,10 +59,10 @@ const SignUpScreen = () => {
         <TextInput
           style={styles.input}
           placeholder="Enter your Full Name"
-          onChangeText={onChangeFullName}
+          onChangeText={(text) => setFullName(text)}
           value={fullName}
           autoCapitalize="words"
-          editable={!isLoading} // disable input during loading
+          editable={!isLoading}
         />
       </View>
       <Text style={styles.label}>Phone Number</Text>
@@ -223,7 +77,7 @@ const SignUpScreen = () => {
           style={styles.input}
           placeholder="Enter your Phone Number"
           keyboardType="phone-pad"
-          onChangeText={onChangePhone}
+          onChangeText={(text) => setPhoneNumber(text)}
           value={phoneNumber}
           editable={!isLoading}
         />
@@ -240,7 +94,7 @@ const SignUpScreen = () => {
           style={styles.input}
           placeholder="Enter your email"
           keyboardType="email-address"
-          onChangeText={onChangeEmail}
+          onChangeText={(text) => setEmail(text)}
           value={email}
           autoCapitalize="none"
           editable={!isLoading}
@@ -252,10 +106,8 @@ const SignUpScreen = () => {
         title={isLoading ? 'Please wait...' : 'Sign Up'}
         onPress={handleSignUp}
         buttonStyle={styles.signupButton}
-        disabled={isLoading} // disable while loading!
-        // if C_Button doesn't support 'disabled', wrap with TouchableOpacity or adjust accordingly
+        disabled={isLoading}
       />
-
       {isLoading && (
         <ActivityIndicator
           size="large"
@@ -263,18 +115,16 @@ const SignUpScreen = () => {
           style={{ marginTop: 10 }}
         />
       )}
-      <View>
-        <TouchableOpacity
-          onPress={() => router.push('/signin')}
-          style={styles.loginLink}
-          disabled={isLoading}
-        >
-          <Text style={styles.loginText}>
-            Already have an account?{' '}
-            <Text style={styles.loginLinkText}>Log in</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        onPress={() => router.push('/signin')}
+        style={styles.loginLink}
+        disabled={isLoading}
+      >
+        <Text style={styles.loginText}>
+          Already have an account?{' '}
+          <Text style={styles.loginLinkText}>Log in</Text>
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -316,29 +166,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  oauthContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  oauthButton: {
-    backgroundColor: '#F0F0F0',
-    padding: 15,
-    borderRadius: 40,
-    marginHorizontal: 10,
-  },
-  oauthIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  orText: {
-    textAlign: 'center',
-    color: '#000',
-    fontSize: 14,
-    marginVertical: 15,
-    fontWeight: 'bold',
-  },
+  // Removed unused oauth styles
   label: {
     fontSize: 12,
     color: '#000',
