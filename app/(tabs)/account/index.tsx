@@ -1,63 +1,18 @@
 import { Feather } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import useAccount from '@/hooks/useAccount';
 
 const Account = () => {
-  const [userInfo, setUserInfo] = useState<unknown>(null);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      const user = await AsyncStorage.getItem('user');
-      if (user) {
-        setUserInfo(JSON.parse(user));
-      }
-    };
-
-    fetchUserInfo();
-  }, []);
-
-  const handleLogout = () => {
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: performLogout,
-        },
-      ],
-      { cancelable: true },
-    );
-  };
-
-  const performLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-
-      // Clear user session data
-      await AsyncStorage.multiRemove(['token', 'user', 'completedLesson']);
-
-      // Navigate to login/onboarding screen
-      router.replace('/');
-    } catch (error) {
-      console.error('Error during logout:', error);
-      Alert.alert('Error', 'Failed to log out. Please try again.');
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
+  const {
+    userInfo,
+    isLoggingOut,
+    confirmLogout,
+    confirmAccountDeletion,
+    goToProfile,
+  } = useAccount();
 
   return (
     <>
@@ -80,7 +35,7 @@ const Account = () => {
         <TouchableOpacity
           style={styles.itemRow}
           onPress={() => {
-            router.replace('/account/profile');
+            goToProfile();
           }}
         >
           <Feather name="user" size={24} />
