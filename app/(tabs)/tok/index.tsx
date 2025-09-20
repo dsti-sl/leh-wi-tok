@@ -1,6 +1,14 @@
 import React from 'react';
-import { StyleSheet, ActivityIndicator, View, Text } from 'react-native';
+import {
+  StyleSheet,
+  ActivityIndicator,
+  View,
+  Text,
+  StatusBar,
+} from 'react-native';
 import { WebView } from 'react-native-webview';
+
+import { Colors } from '@/constants/Colors';
 
 const index = () => {
   const injectedJS2 = `
@@ -40,19 +48,39 @@ const index = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.banner}>
-        <Text style={styles.bannerText}>
-          Please enter the text you want to shown as sign, click the screen to
-          replay.
-        </Text>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={Colors.primary}
+        translucent={false}
+      />
+      <View style={styles.headerSection}>
+        <View style={styles.headerBanner} />
+        <View style={styles.cardContainer}>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.iconContainer}>
+                <Text style={styles.icon}>✋</Text>
+              </View>
+              <Text style={styles.cardTitle}>Sign Language Translator</Text>
+            </View>
+            <Text style={styles.cardText}>
+              Enter the text you want to show as sign language, then tap the
+              screen to replay the animation.
+            </Text>
+          </View>
+        </View>
       </View>
       <WebView
         style={styles.webView}
         source={{ uri: 'https://sign.mt/' }}
         injectedJavaScript={injectedJS2}
+        injectedJavaScriptBeforeContentLoaded={injectedJS2}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
+        onMessage={(event) => {
+          console.log('FROM WEBVIEW:', event.nativeEvent.data);
+        }}
         scalesPageToFit={true}
         renderLoading={() => (
           <ActivityIndicator style={styles.loader} size="large" />
@@ -67,9 +95,8 @@ export default index;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingBottom: 15,
+    paddingBottom: 25,
     margin: 0,
-    paddingTop: 40,
     backgroundColor: '#fff',
   },
   webView: {
@@ -82,11 +109,67 @@ const styles = StyleSheet.create({
     transform: [{ translateX: -25 }, { translateY: -25 }],
   },
   banner: {
-    backgroundColor: '#f0f0f0',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f8f9fa',
+  },
+  headerSection: {
+    position: 'relative',
+    marginBottom: 60,
+  },
+  headerBanner: {
+    height: 120,
+    backgroundColor: Colors.primary,
+  },
+  cardContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 16,
+    right: 16,
+    zIndex: 1,
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#e1e5e9',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#e3f2fd',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  icon: {
+    fontSize: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    flex: 1,
+  },
+  cardText: {
+    fontSize: 14,
+    color: '#6b7280',
+    lineHeight: 20,
   },
   bannerText: {
     fontSize: 16,
