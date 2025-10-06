@@ -1,17 +1,18 @@
 import React from 'react';
+
 import {
-  StyleSheet,
-  View,
-  Text,
   Image,
   ImageSourcePropType,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-
-import HandShake from '../../assets/images/Handshake.png';
 
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
 import { getFirstWord } from '@/utils';
+
+import HandShake from '../../assets/images/Handshake.png';
 
 interface BannerProps {
   user: Record;

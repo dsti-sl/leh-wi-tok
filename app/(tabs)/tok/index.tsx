@@ -1,11 +1,13 @@
 import React from 'react';
+
 import {
-  StyleSheet,
   ActivityIndicator,
-  View,
-  Text,
   StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+
 import { WebView } from 'react-native-webview';
 
 import { Colors } from '@/constants/Colors';
@@ -78,7 +80,7 @@ const index = () => {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
-        onMessage={(event) => {
+        onMessage={event => {
           console.log('FROM WEBVIEW:', event.nativeEvent.data);
         }}
         scalesPageToFit={true}

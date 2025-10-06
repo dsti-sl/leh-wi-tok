@@ -1,15 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
+
 import {
-  View,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  Platform,
-  StyleSheet,
+  View,
 } from 'react-native';
+
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+
+import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 
@@ -21,7 +24,7 @@ const _layout = () => {
   const inputRef = useRef<TextInput>(null);
 
   const handleSearchToggle = () => {
-    setIsSearching((prev) => !prev);
+    setIsSearching(prev => !prev);
     if (!isSearching) {
       setTimeout(() => inputRef.current?.focus(), 100);
     } else {

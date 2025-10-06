@@ -57,7 +57,7 @@ export const clearAllLessonPositions = async () => {
   try {
     const keys = await AsyncStorage.getAllKeys();
     const lessonPositionKeys = keys.filter(
-      (key) => key.startsWith('lesson_') && key.endsWith('_position'),
+      key => key.startsWith('lesson_') && key.endsWith('_position'),
     );
     await AsyncStorage.multiRemove(lessonPositionKeys);
   } catch (error) {

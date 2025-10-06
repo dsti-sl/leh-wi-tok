@@ -1,15 +1,18 @@
-import { MaterialIcons } from '@expo/vector-icons';
-import { Href, router } from 'expo-router';
 import React from 'react';
+
 import {
   ColorValue,
+  Image,
   ImageSourcePropType,
   StyleSheet,
   Text,
-  Image,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { Href, router } from 'expo-router';
+
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 

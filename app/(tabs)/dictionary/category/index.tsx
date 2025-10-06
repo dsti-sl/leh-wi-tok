@@ -1,15 +1,17 @@
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+
 import {
+  FlatList,
+  Platform,
+  SafeAreaView,
+  SectionList,
   StyleSheet,
   Text,
-  View,
-  FlatList,
-  SectionList,
   TouchableOpacity,
-  SafeAreaView,
-  Platform,
+  View,
 } from 'react-native';
+
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { fetchDictionaryData } from '@/db/retrivedata';
 import useSearch from '@/hooks/useSearch';
@@ -65,7 +67,7 @@ const index = () => {
       return [];
     }
 
-    const wordsForCurrentCategory = dictionaryData.filter((entry) =>
+    const wordsForCurrentCategory = dictionaryData.filter(entry =>
       entry.categories.includes(categoryName),
     );
 
@@ -81,7 +83,7 @@ const index = () => {
 
     return Object.keys(groupedData)
       .sort()
-      .map((key) => ({
+      .map(key => ({
         title: key,
         data: groupedData[key].sort((a, b) => a.word.localeCompare(b.word)),
       }));

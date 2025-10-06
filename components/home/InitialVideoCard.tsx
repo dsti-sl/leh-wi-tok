@@ -1,11 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { TouchableOpacity, View, Text, Image, StyleSheet } from 'react-native';
+
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import { Colors } from '@/constants/Colors';
 
 import CModal from '../common/CModal';
 import VideoModalContent from '../common/VideoModalContainer';
-
-import { Colors } from '@/constants/Colors';
 
 interface InitialVideoCardProps {
   videoData: {

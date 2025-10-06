@@ -1,11 +1,12 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
 
-import ProgressBar from '../common/ProgressBar';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
-import { accumulateLessonCounts, OverallData, LessonCount } from '@/utils';
+import { LessonCount, OverallData, accumulateLessonCounts } from '@/utils';
+
+import ProgressBar from '../common/ProgressBar';
 
 interface CurrentLevelProgressCardProps {
   defaultTutorial?: Record;

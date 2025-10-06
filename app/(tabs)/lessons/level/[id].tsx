@@ -1,29 +1,31 @@
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+
+import {
+  ActivityIndicator,
+  Platform,
+  SectionList,
+  StyleSheet,
+  View,
+} from 'react-native';
+
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useCallback, useRef, useMemo } from 'react';
-import {
-  View,
-  StyleSheet,
-  Platform,
-  ActivityIndicator,
-  SectionList,
-} from 'react-native';
 
 import MediaPlayer from '@/components/common/MediaPlayer';
 import LessonItem from '@/components/lessons/LessonItem';
 import LessonSectionHeader from '@/components/lessons/LessonSectionHeader';
 import {
+  ErrorView,
   LessonHeader,
   LessonInfo,
   LoadingView,
-  ErrorView,
 } from '@/components/lessons/LessonUtils';
 import { Colors } from '@/constants/Colors';
 import {
-  useLessonData,
   GestureInfo,
-  LessonTag,
   LessonSection,
+  LessonTag,
+  useLessonData,
 } from '@/hooks/useLessonData';
 import { useLessonUtils } from '@/hooks/useLessonUtils';
 

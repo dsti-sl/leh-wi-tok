@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 
-import { LessonTag } from './useLessonData';
-
 import { getBaseUrl } from '@/utils';
+
+import { LessonTag } from './useLessonData';
 
 interface UseLessonUtilsReturn {
   parseWysiwygContent: (_jsonString: string) => string[];
@@ -27,7 +27,7 @@ export const useLessonUtils = (): UseLessonUtilsReturn => {
       return parsed
         .map((block: { type: string; children?: { text: string }[] }) => {
           if (block.type === 'paragraph' && block.children) {
-            return block.children.map((child) => child.text).join('');
+            return block.children.map(child => child.text).join('');
           }
           return '';
         })

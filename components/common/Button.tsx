@@ -1,10 +1,11 @@
 import React from 'react';
+
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  TextStyle,
   ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
 } from 'react-native';
 
 import { Colors } from '@/constants/Colors';

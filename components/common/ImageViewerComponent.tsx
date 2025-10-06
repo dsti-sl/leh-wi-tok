@@ -1,13 +1,16 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+
 import {
-  View,
-  StyleSheet,
   ActivityIndicator,
+  StyleSheet,
   Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
+
+import { Image } from 'expo-image';
+
+import { Ionicons } from '@expo/vector-icons';
 
 interface ImageViewerComponentProps {
   uri: string;
@@ -36,7 +39,7 @@ const ImageViewerComponent: React.FC<ImageViewerComponentProps> = ({
         .then(() => {
           // TODO: Handle successful prefetch
         })
-        .catch((error) => {
+        .catch(error => {
           console.warn('Image prefetch failed:', error);
           // Continue without prefetch - not a critical error
         });

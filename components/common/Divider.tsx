@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
 import { Colors } from '@/constants/Colors';

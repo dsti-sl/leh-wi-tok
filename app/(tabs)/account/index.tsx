@@ -1,6 +1,5 @@
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React from 'react';
+
 import {
   ScrollView,
   StyleSheet,
@@ -8,6 +7,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import { useRouter } from 'expo-router';
+
+import { Feather, Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 import useAccount from '@/hooks/useAccount';

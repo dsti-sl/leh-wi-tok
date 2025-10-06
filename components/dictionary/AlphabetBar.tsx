@@ -1,11 +1,12 @@
 import React from 'react';
+
 import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
   Image,
   ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -53,7 +54,7 @@ const AlphabetBar: React.FC<AlphabetBarProps> = ({ onPressLetter }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {alphabet.map((letter) => (
+        {alphabet.map(letter => (
           <TouchableOpacity
             key={letter}
             style={styles.letterButton}

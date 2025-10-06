@@ -1,15 +1,19 @@
-import { Feather } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
   Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+
+import { useNavigation, useRouter } from 'expo-router';
+
+import { Feather } from '@expo/vector-icons';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Colors } from '@/constants/Colors';
 
@@ -48,7 +52,7 @@ const EditProfile = () => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
       e.preventDefault(); // stop the pop
       router.push('/account');
     });

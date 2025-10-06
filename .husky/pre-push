@@ -1,0 +1,38 @@
+#!/bin/sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Running pre-push checks..."
+
+# Run TypeScript type checking
+echo "🔍 Running TypeScript type checking..."
+npm run type-check
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript type checking failed. Please fix type errors before pushing."
+  exit 1
+fi
+
+# Run linting
+echo "🔧 Running ESLint..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ Linting failed. Please fix linting issues before pushing."
+  exit 1
+fi
+
+# Check for security vulnerabilities
+echo "🔒 Checking for security vulnerabilities..."
+npm run security-check
+if [ $? -ne 0 ]; then
+  echo "❌ Security vulnerabilities found. Please review and fix them before pushing."
+  exit 1
+fi
+
+# Run expo-doctor
+echo "🩺 Running Expo doctor..."
+npm run expo-doctor
+if [ $? -ne 0 ]; then
+  echo "❌ Expo doctor found issues. Please fix them before pushing."
+  exit 1
+fi
+
+echo "✅ All pre-push checks passed! 🎉"

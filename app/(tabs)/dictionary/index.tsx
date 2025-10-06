@@ -1,23 +1,26 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
   FlatList,
-  TouchableOpacity,
   Platform,
   RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+
+import { useRouter } from 'expo-router';
+
+import { Ionicons } from '@expo/vector-icons';
 
 import AlphabetBar from '@/components/dictionary/AlphabetBar';
 import CategoryCard from '@/components/dictionary/CategoryCard';
 import { Colors } from '@/constants/Colors';
 import {
-  fetchDictionaryData,
   checkAndUpdateTranslations,
+  fetchDictionaryData,
 } from '@/data/dictionary';
 import useSearch from '@/hooks/useSearch';
 
@@ -33,8 +36,8 @@ interface DictionaryEntry {
 const extractCategories = (data: DictionaryEntry[]) => {
   const categoryMap = new Map();
 
-  data.forEach((entry) => {
-    entry.categories.forEach((category) => {
+  data.forEach(entry => {
+    entry.categories.forEach(category => {
       if (categoryMap.has(category)) {
         const existing = categoryMap.get(category);
         categoryMap.set(category, {
@@ -161,7 +164,7 @@ const index = () => {
         {query ? (
           <FlatList
             data={filteredData}
-            keyExtractor={(item) => item.word}
+            keyExtractor={item => item.word}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
@@ -185,7 +188,7 @@ const index = () => {
         ) : (
           <FlatList
             data={categories}
-            keyExtractor={(item) => item.categoryName}
+            keyExtractor={item => item.categoryName}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }

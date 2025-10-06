@@ -1,7 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { TouchableOpacity, Image, StyleSheet, View, Alert } from 'react-native';
+
+import { Alert, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+import * as ImagePicker from 'expo-image-picker';
+
+import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 

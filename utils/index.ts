@@ -1,7 +1,8 @@
 // UTILITIES METHODS
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Record as C_Record } from '@/lib/types';
 

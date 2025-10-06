@@ -1,14 +1,16 @@
+import React, { useEffect, useState } from 'react';
+
+import {
+  ActivityIndicator,
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  Platform,
-} from 'react-native';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';

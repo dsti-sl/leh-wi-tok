@@ -1,22 +1,26 @@
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
 import {
-  StyleSheet,
-  Text,
-  View,
+  Dimensions,
   FlatList,
   Image,
-  TouchableOpacity,
-  Dimensions,
   StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
-import slidesData from '../constants/OnboardingData.json';
+import { router } from 'expo-router';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Colors } from '@/constants/Colors';
 import { fetchAndInsertTranslations } from '@/data/dictionary';
+
+import slidesData from '../constants/OnboardingData.json';
 
 const { width, height } = Dimensions.get('window');
 const ONBOARDING_KEY = 'hasOnboarded';

@@ -1,6 +1,8 @@
-import { router } from 'expo-router';
 import React from 'react';
+
 import { Platform, StyleSheet, Text, View } from 'react-native';
+
+import { router } from 'expo-router';
 
 import Button from '@/components/common/Button';
 import CAlert from '@/components/common/CAlert';

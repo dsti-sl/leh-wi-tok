@@ -1,13 +1,16 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Asset } from 'expo-asset';
 import React from 'react';
+
 import {
-  View,
+  StatusBar,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  StatusBar,
+  View,
 } from 'react-native';
+
+import { Asset } from 'expo-asset';
+
+import { Ionicons } from '@expo/vector-icons';
 
 import VideoPlayerComponent from './VideoPlayerComponent';
 
@@ -37,7 +40,7 @@ const VideoModalContent: React.FC<VideoModalContentProps> = ({
       <TouchableOpacity
         style={styles.videoContainer}
         activeOpacity={1}
-        onPress={(e) => e.stopPropagation()}
+        onPress={e => e.stopPropagation()}
       >
         <VideoPlayerComponent
           uri={
@@ -50,7 +53,7 @@ const VideoModalContent: React.FC<VideoModalContentProps> = ({
           autoPlay={true}
           shouldLoop={false}
           onLoad={() => console.log('Video loaded')}
-          onError={(error) => console.error('Video error:', error)}
+          onError={error => console.error('Video error:', error)}
         />
       </TouchableOpacity>
     </View>

@@ -1,22 +1,24 @@
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  Dimensions,
-  ActivityIndicator,
-  ScrollView,
-  Alert,
-  FlatList,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
 
 import {
-  fetchDictionaryData,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+import { useLocalSearchParams, useRouter } from 'expo-router';
+
+import {
   LocalDictionaryEntry as DictionaryEntry,
+  fetchDictionaryData,
 } from '@/data/dictionary';
 import useSearch from '@/hooks/useSearch';
 
@@ -99,9 +101,7 @@ const index = () => {
   const loadWordDefinition = async (word: string, data: DictionaryEntry[]) => {
     setIsLoadingDefinition(true);
     try {
-      const entry = data.find(
-        (e) => e.word.toLowerCase() === word.toLowerCase(),
-      );
+      const entry = data.find(e => e.word.toLowerCase() === word.toLowerCase());
       if (!entry) {
         setWordData(null);
         throw new Error(`Definition for "${word}" not found.`);
@@ -176,24 +176,24 @@ const index = () => {
             ]}
             resizeMode="cover"
             onLoadStart={() =>
-              setImageStatus((s) => ({
+              setImageStatus(s => ({
                 ...s,
                 [type]: { loading: true, error: false },
               }))
             }
             onLoad={() =>
-              setImageStatus((s) => ({
+              setImageStatus(s => ({
                 ...s,
                 [type]: { loading: false, error: false },
               }))
             }
-            onError={(e) => {
+            onError={e => {
               console.warn(
                 `Image load error [${type}] at URI:`,
                 uri,
                 e.nativeEvent,
               );
-              setImageStatus((s) => ({
+              setImageStatus(s => ({
                 ...s,
                 [type]: { loading: false, error: true },
               }));
@@ -228,7 +228,7 @@ const index = () => {
       <View style={styles.container}>
         <FlatList
           data={filteredData}
-          keyExtractor={(item) => item.word}
+          keyExtractor={item => item.word}
           contentContainerStyle={styles.searchResultsContainer}
           renderItem={({ item }) => (
             <TouchableOpacity

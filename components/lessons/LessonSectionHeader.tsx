@@ -1,6 +1,8 @@
-import { FontAwesome5 } from '@expo/vector-icons';
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { FontAwesome5 } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 

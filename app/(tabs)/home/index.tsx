@@ -1,19 +1,17 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+
 import {
-  ImageSourcePropType,
   ActivityIndicator,
-  StyleSheet,
-  View,
-  Text,
+  ImageSourcePropType,
   ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
-import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
-import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
-import questionMarkCircular from '../../../assets/images/question-mark-circular.png';
-import usersOutlineFillSeconday from '../../../assets/images/users-outline-fill-secondary.png';
+import { router } from 'expo-router';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { HomeBanner } from '@/components/home/HomeBanner';
 import HomeItem from '@/components/home/HomeItem';
@@ -22,6 +20,11 @@ import { Colors } from '@/constants/Colors';
 import useLastLesson from '@/hooks/useLastLesson';
 import { Record } from '@/lib/types';
 import { getBaseUrl } from '@/utils';
+
+import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
+import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
+import questionMarkCircular from '../../../assets/images/question-mark-circular.png';
+import usersOutlineFillSeconday from '../../../assets/images/users-outline-fill-secondary.png';
 
 const HomeScreen = () => {
   const { lastLesson, loading: lessonLoading } = useLastLesson();

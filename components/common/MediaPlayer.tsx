@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+
+import { getBaseUrl, getToken } from '@/utils';
 
 import ImageViewerComponent from './ImageViewerComponent';
 import VideoPlayerComponent from './VideoPlayerComponent';
-
-import { getBaseUrl, getToken } from '@/utils';
 
 interface GestureInfo {
   contentType: string;
