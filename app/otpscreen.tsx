@@ -1,18 +1,20 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
+
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
   ActivityIndicator,
   Alert,
-  TouchableOpacity,
+  Image,
   KeyboardAvoidingView,
   Platform,
-  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+
+import { router, useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
@@ -162,12 +164,12 @@ const OtpScreen = () => {
         {otp.map((value, index) => (
           <TextInput
             key={index}
-            ref={(ref) => (inputRefs.current[index] = ref)}
+            ref={ref => (inputRefs.current[index] = ref)}
             style={styles.otpInput}
             keyboardType="numeric"
             maxLength={1}
             value={value}
-            onChangeText={(text) => handleOtpChange(text, index)}
+            onChangeText={text => handleOtpChange(text, index)}
             onKeyPress={({ nativeEvent }) => {
               if (nativeEvent.key === 'Backspace' && !value && index > 0) {
                 inputRefs.current[index - 1]?.focus();

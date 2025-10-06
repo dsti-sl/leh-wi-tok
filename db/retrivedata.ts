@@ -23,7 +23,7 @@ export const fetchDictionaryData = async (): Promise<DictionaryEntry[]> => {
     );
 
     // Parse categories JSON safely
-    const parsedData = rows.map((item) => ({
+    const parsedData = rows.map(item => ({
       ...item,
       categories:
         typeof item.categories === 'string'

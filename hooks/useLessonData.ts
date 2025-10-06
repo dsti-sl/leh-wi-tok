@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Platform, ToastAndroid, Alert } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { Alert, Platform, ToastAndroid } from 'react-native';
 
 import {
   getBaseUrl,
@@ -172,7 +173,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
         const data = await response.json();
 
         if (append) {
-          setLessonNuggets((prev) => [...prev, ...data.data]);
+          setLessonNuggets(prev => [...prev, ...data.data]);
         } else {
           setLessonNuggets(data.data);
           setLessonCount(data.meta.count);
@@ -193,7 +194,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
           }
 
           // Filter completed lessons
-          const currentLevel = progressData.find((l) => l.level === assessment);
+          const currentLevel = progressData.find(l => l.level === assessment);
           const completedIds = currentLevel?.lessonsCompleted || [];
           const filteredCompleted = completedIds.filter((id: string) =>
             data.data.some((lesson: LessonTag) => lesson.id === id),
@@ -203,7 +204,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
           // Repair local progress if needed
           if (filteredCompleted.length !== completedIds.length) {
-            const updatedProgress = progressData.map((p) =>
+            const updatedProgress = progressData.map(p =>
               p.level === assessment
                 ? {
                     ...p,
@@ -256,8 +257,8 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
         if (!userId) return;
 
         // Update local state
-        const previousCompleted = Array.from(completedLessons).filter((id) =>
-          lessonNuggets.some((l) => l.id === id),
+        const previousCompleted = Array.from(completedLessons).filter(id =>
+          lessonNuggets.some(l => l.id === id),
         );
         const newCompleted = new Set(previousCompleted);
         newCompleted.add(lessonId);
@@ -265,7 +266,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
         // Update storage
         const storedCompleted = await getStoredCompletedLessons();
         const updatedLessons = (storedCompleted.lessons ?? []).filter(
-          (l) => l.level !== assessment,
+          l => l.level !== assessment,
         );
         updatedLessons.push({
           level: assessment,
@@ -279,7 +280,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
         // Sync progress to server
         const matchedProgress = serverProgress.find(
-          (p) => p.level === assessment,
+          p => p.level === assessment,
         );
         const levelExists = !!matchedProgress;
 
@@ -352,7 +353,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
     const sections = Object.values(grouped);
 
     // Sort nuggets within each section by priority
-    sections.forEach((section) => {
+    sections.forEach(section => {
       section.data.sort((a, b) => a.priority - b.priority);
     });
 
@@ -369,7 +370,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
   // Section expansion toggle
   const toggleSectionExpansion = useCallback((sectionId: string) => {
-    setExpandedSections((prev) => {
+    setExpandedSections(prev => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
@@ -383,7 +384,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   // Get section progress information
   const getSectionProgress = useCallback(
     (section: LessonSection) => {
-      const completedCount = section.data.filter((nugget) =>
+      const completedCount = section.data.filter(nugget =>
         completedLessons.has(nugget.id),
       ).length;
       const totalCount = section.data.length;
@@ -397,7 +398,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
     (callbacks: LessonClickCallbacks) => {
       return async (lesson: LessonTag) => {
         try {
-          callbacks.setExpandedLessonId((prev) =>
+          callbacks.setExpandedLessonId(prev =>
             prev === lesson.id ? null : lesson.id,
           );
 
@@ -406,7 +407,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
           for (let secIdx = 0; secIdx < sectionsData.length; secIdx++) {
             const section = sectionsData[secIdx];
             const nuggetIndex = section.data.findIndex(
-              (item) => item.id === lesson.id,
+              item => item.id === lesson.id,
             );
             if (nuggetIndex !== -1) {
               sectionIndex = secIdx;

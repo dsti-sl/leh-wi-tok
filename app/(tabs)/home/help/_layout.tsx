@@ -1,14 +1,16 @@
+import React from 'react';
+
+import {
+  Image,
+  ImageSourcePropType,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import {
-  View,
-  ImageSourcePropType,
-  Text,
-  Image,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
 
 import arrowBackOutline from '@/assets/images/arrow-back-outline.png';
 import { Colors } from '@/constants/Colors';

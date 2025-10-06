@@ -1,6 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
+
 import {
   ActivityIndicator,
   RefreshControl,
@@ -8,6 +7,10 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+
+import { useFocusEffect } from 'expo-router';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import CurrentLevelProgressCard from '@/components/lessons/CurrentLevelProgressCard';
 import { LessonsBanner } from '@/components/lessons/LessonsBanner';

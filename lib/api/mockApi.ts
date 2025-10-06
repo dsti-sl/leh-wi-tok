@@ -1,7 +1,7 @@
 import { getLevelLessons as getLocalLessons } from '../dummyData';
 
 // Simulate network delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export interface ApiResponse<T> {
   data: T;
@@ -38,13 +38,13 @@ export class MockApiService {
 
     // Merge with stored progress if any
     const progress = this.userProgress.get(level) || [];
-    const lessonsWithProgress = lessons.map((lesson) => ({
+    const lessonsWithProgress = lessons.map(lesson => ({
       ...lesson,
       progress:
-        progress.find((p) => p.lessonId === lesson.id)?.progress ||
+        progress.find(p => p.lessonId === lesson.id)?.progress ||
         lesson.progress,
       completed:
-        progress.find((p) => p.lessonId === lesson.id)?.completed ||
+        progress.find(p => p.lessonId === lesson.id)?.completed ||
         lesson.completed,
     }));
 
@@ -71,7 +71,7 @@ export class MockApiService {
     };
 
     const newProgress = [
-      ...currentProgress.filter((p) => p.lessonId !== lessonId),
+      ...currentProgress.filter(p => p.lessonId !== lessonId),
       updatedProgress,
     ];
 
@@ -96,7 +96,7 @@ export class MockApiService {
 
     const updatedProgress = [
       ...currentProgress.filter(
-        (p) => p.lessonId !== lessonId && p.lessonId !== lessonId + 1,
+        p => p.lessonId !== lessonId && p.lessonId !== lessonId + 1,
       ),
       { lessonId, progress: 100, completed: true, timestamp },
       {

@@ -1,17 +1,20 @@
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+
 import {
-  View,
+  ActivityIndicator,
+  Image,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
-  Platform,
-  Image,
-  ActivityIndicator,
+  View,
 } from 'react-native';
+
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+
+import { Feather, Ionicons } from '@expo/vector-icons';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
@@ -59,7 +62,7 @@ const SignUpScreen = () => {
         <TextInput
           style={styles.input}
           placeholder="Enter your Full Name"
-          onChangeText={(text) => setFullName(text)}
+          onChangeText={text => setFullName(text)}
           value={fullName}
           autoCapitalize="words"
           editable={!isLoading}
@@ -77,7 +80,7 @@ const SignUpScreen = () => {
           style={styles.input}
           placeholder="Enter your Phone Number"
           keyboardType="phone-pad"
-          onChangeText={(text) => setPhoneNumber(text)}
+          onChangeText={text => setPhoneNumber(text)}
           value={phoneNumber}
           editable={!isLoading}
         />
@@ -94,7 +97,7 @@ const SignUpScreen = () => {
           style={styles.input}
           placeholder="Enter your email"
           keyboardType="email-address"
-          onChangeText={(text) => setEmail(text)}
+          onChangeText={text => setEmail(text)}
           value={email}
           autoCapitalize="none"
           editable={!isLoading}

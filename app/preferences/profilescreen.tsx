@@ -1,18 +1,21 @@
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+
 import {
-  View,
-  TextInput,
+  ActivityIndicator,
   Alert,
-  ScrollView,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
+  View,
 } from 'react-native';
+
+import { useLocalSearchParams, useRouter } from 'expo-router';
+
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 import ProfileImagePicker from '@/components/account/ImageUpload';
 import C_Button from '@/components/common/Button';
@@ -211,7 +214,7 @@ const ProfileDetailsScreen = () => {
 
           <Select
             inputLabel="Class / Form"
-            selectItems={grades.map((grade) => ({
+            selectItems={grades.map(grade => ({
               label: grade,
               value: grade,
             }))}
@@ -219,7 +222,7 @@ const ProfileDetailsScreen = () => {
             labelField="label"
             valueField="value"
             placeholder="Select Class / Form"
-            setSelectedItem={(item) => setSelectedGrade(item.value as string)}
+            setSelectedItem={item => setSelectedGrade(item.value as string)}
             selectedItemStyle={styles.inputContainer}
             selectItemsContainerStyle={styles.inputContainer}
           />
@@ -238,7 +241,7 @@ const ProfileDetailsScreen = () => {
 
           <Select
             inputLabel="Location"
-            selectItems={locations.map((location) => ({
+            selectItems={locations.map(location => ({
               label: location,
               value: location,
             }))}
@@ -246,9 +249,7 @@ const ProfileDetailsScreen = () => {
             labelField="label"
             valueField="value"
             placeholder="Select Location"
-            setSelectedItem={(item) =>
-              setSelectedLocation(item.value as string)
-            }
+            setSelectedItem={item => setSelectedLocation(item.value as string)}
             selectItemsContainerStyle={styles.selectItemContainer}
             selectedItemStyle={styles.input}
           />

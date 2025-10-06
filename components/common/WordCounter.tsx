@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { StyleSheet, Text, ViewStyle } from 'react-native';
 
 interface WordCounterProps {

@@ -1,17 +1,20 @@
-import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
+  ActivityIndicator,
   Image,
   Platform,
+  StyleSheet,
+  Text,
+  TextInput,
   TouchableOpacity,
-  ActivityIndicator,
+  View,
 } from 'react-native';
+
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+
+import { Feather } from '@expo/vector-icons';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
@@ -49,7 +52,7 @@ const SignInScreen = () => {
           style={styles.input}
           placeholder="Enter your phone number"
           keyboardType="phone-pad"
-          onChangeText={(text) => setPhoneNumber(text)}
+          onChangeText={text => setPhoneNumber(text)}
           value={phoneNumber}
         />
       </View>

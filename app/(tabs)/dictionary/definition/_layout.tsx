@@ -1,15 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
 import {
-  View,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  Platform,
-  StyleSheet,
+  View,
 } from 'react-native';
+
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+
+import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 
@@ -41,7 +44,7 @@ const _layout = () => {
   }, [urlQueryParam]);
 
   const handleSearchToggle = () => {
-    setIsSearching((prev) => {
+    setIsSearching(prev => {
       const nextIsSearching = !prev;
       if (!nextIsSearching) {
         setSearchInputText('');

@@ -1,20 +1,22 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
+
 import {
   FlatList,
   StyleSheet,
+  Text,
+  TextStyle,
   TouchableOpacity,
   View,
-  Text,
   ViewStyle,
-  TextStyle,
 } from 'react-native';
 
-import CModal from './CModal';
-import Divider from './Divider';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
+
+import CModal from './CModal';
+import Divider from './Divider';
 
 interface SelectProps {
   inputLabel: string;
@@ -82,7 +84,7 @@ const Select: React.FC<SelectProps> = ({
       >
         <FlatList
           data={selectItems}
-          keyExtractor={(item) => item.value as string}
+          keyExtractor={item => item.value as string}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[

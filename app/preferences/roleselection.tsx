@@ -1,14 +1,15 @@
-import { useRouter } from 'expo-router';
-import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
+
 import {
-  View,
-  Text,
+  Alert,
   Image,
   StyleSheet,
+  Text,
   TouchableOpacity,
-  Alert,
+  View,
 } from 'react-native';
+
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
@@ -103,7 +104,7 @@ const RoleSelection = () => {
         />
       </View>
       <View style={styles.rolesContainer}>
-        {roles.map((role) => (
+        {roles.map(role => (
           <TouchableOpacity
             key={role.id}
             style={styles.roleOption}

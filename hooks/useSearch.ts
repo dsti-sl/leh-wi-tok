@@ -23,7 +23,7 @@ const useSearch = <T>({
   const performFuzzySearch = (query: string, data: T[]): T[] => {
     const lowerQuery = query.toLowerCase();
     return data
-      .filter((item) =>
+      .filter(item =>
         String(item[searchKey]).toLowerCase().includes(lowerQuery),
       ) // Filter by substring match
       .sort((a, b) => {

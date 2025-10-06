@@ -1,9 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect, router } from 'expo-router';
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { StyleSheet, View } from 'react-native';
 
-import LessonCard from './LessonCard';
+import { router, useFocusEffect } from 'expo-router';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Record } from '@/lib/types';
 import {
@@ -13,6 +14,8 @@ import {
   LessonProgress,
   LessonsCategoryProps,
 } from '@/utils';
+
+import LessonCard from './LessonCard';
 
 // -- Helper functions outside component (pure, testable) --
 const getStoredUserId = async (): Promise<string | null> => {
@@ -102,7 +105,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   // Helper for level-based lesson data
   const getLessonData = useCallback(
     (level: LessonLevel) =>
-      userCompletionRate.lessons.find((lesson) => lesson.level === level) ?? {
+      userCompletionRate.lessons.find(lesson => lesson.level === level) ?? {
         ...defaultLessonData,
         totalLessons: lessonCount[level] ?? 0,
       },

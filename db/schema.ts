@@ -11,7 +11,7 @@ export const initializeDatabase = async (): Promise<boolean> => {
     // Wait for initialization to complete
     let attempts = 0;
     while (isInitializing && attempts < 5) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
       attempts++;
     }
     return isInitialized;

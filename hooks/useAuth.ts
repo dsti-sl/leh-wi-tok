@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
+
 import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
 
 import { getBaseUrl, getStoredUserId } from '@/utils';
 

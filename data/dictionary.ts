@@ -182,7 +182,7 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
 
       // Transform and download assets for the current batch
       const transformedBatch = await Promise.all(
-        batch.map(async (item) => {
+        batch.map(async item => {
           if (!item.phrase) {
             console.warn('Skipping entry with missing phrase:', item);
             return null;
@@ -191,11 +191,11 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
           try {
             const tags = item.tags || [];
             const partOfSpeechTag = tags.find(
-              (tag) => tag.category === 'part-of-speech',
+              tag => tag.category === 'part-of-speech',
             );
             const categoriesTags = tags
-              .filter((tag) => tag.category === 'categories')
-              .map((tag) => tag.title);
+              .filter(tag => tag.category === 'categories')
+              .map(tag => tag.title);
 
             const partOfSpeech = partOfSpeechTag?.title || null;
 
@@ -231,7 +231,7 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
       );
 
       const validData = transformedBatch.filter(
-        (item) => item !== null,
+        item => item !== null,
       ) as LocalDictionaryEntry[];
 
       if (validData.length > 0) {
@@ -275,7 +275,7 @@ export const fetchDictionaryData = async (): Promise<
       'SELECT word, definition, illustration, image, partOfSpeech, categories FROM dictionary',
     );
 
-    return results.map((row) => ({
+    return results.map(row => ({
       ...row,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       categories: JSON.parse((row.categories as any) || '[]'),

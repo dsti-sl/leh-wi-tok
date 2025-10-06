@@ -1,19 +1,20 @@
 import React from 'react';
+
 import {
-  StyleSheet,
-  View,
   Image,
-  Text,
   ImageSourcePropType,
-  TextStyle,
   ImageStyle,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
   ViewStyle,
 } from 'react-native';
 
+import { Colors } from '@/constants/Colors';
+
 import Button from './Button';
 import CModal from './CModal';
-
-import { Colors } from '@/constants/Colors';
 
 interface CAlertProps {
   open: boolean;

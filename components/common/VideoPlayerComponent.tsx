@@ -1,13 +1,16 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import React, { useEffect, useState, memo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
+
 import {
-  View,
-  StyleSheet,
   ActivityIndicator,
+  StyleSheet,
   Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
+
+import { useVideoPlayer, VideoView } from 'expo-video';
+
+import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 
@@ -51,7 +54,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       uri,
       headers: headers || {},
     },
-    (playerInstance) => {
+    playerInstance => {
       if (playerInstance) {
         playerInstance.loop = shouldLoop;
         if (autoPlay) {
