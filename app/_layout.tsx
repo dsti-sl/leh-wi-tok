@@ -4,8 +4,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import 'react-native-reanimated';
 import { StatusBar } from 'react-native';
+
 import { initializeDatabase } from '@/db/schema';
-import { getDatabase } from '@/db/schema';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -24,12 +24,25 @@ export default function RootLayout() {
   */
 
   useEffect(() => {
-    initializeDatabase();
-    console.log('Database', getDatabase.toString());
-    StatusBar.setBarStyle('light-content');
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
+    const initializeApp = async () => {
+      try {
+        StatusBar.setBarStyle('light-content');
+
+        // Initialize database with proper error handling
+        await initializeDatabase();
+
+        if (loaded) {
+          await SplashScreen.hideAsync();
+        }
+      } catch (error) {
+        // Hide splash screen even if there's an error to prevent white screen
+        if (loaded) {
+          await SplashScreen.hideAsync();
+        }
+      }
+    };
+
+    initializeApp();
   }, [loaded]);
 
   if (!loaded) {
