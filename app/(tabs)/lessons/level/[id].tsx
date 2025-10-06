@@ -1,84 +1,39 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useCallback, useRef, memo } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Platform,
-  TouchableOpacity,
   ActivityIndicator,
-  FlatList,
-  Alert,
+  SectionList,
 } from 'react-native';
 
 import MediaPlayer from '@/components/common/MediaPlayer';
 import LessonItem from '@/components/lessons/LessonItem';
+import LessonSectionHeader from '@/components/lessons/LessonSectionHeader';
+import {
+  LessonHeader,
+  LessonInfo,
+  LoadingView,
+  ErrorView,
+} from '@/components/lessons/LessonUtils';
 import { Colors } from '@/constants/Colors';
-import { useLessonData, GestureInfo, LessonTag } from '@/hooks/useLessonData';
+import {
+  useLessonData,
+  GestureInfo,
+  LessonTag,
+  LessonSection,
+} from '@/hooks/useLessonData';
 import { useLessonUtils } from '@/hooks/useLessonUtils';
-
-const ITEM_HEIGHT = 80;
-
-const LessonHeader = memo(({ onBackPress }: { onBackPress: () => void }) => (
-  <View style={styles.headerContainer}>
-    <TouchableOpacity onPress={onBackPress}>
-      <Ionicons name="chevron-back" size={24} color="#fff" />
-    </TouchableOpacity>
-  </View>
-));
-LessonHeader.displayName = 'LessonHeader';
-
-const LessonInfo = memo(
-  ({
-    assessment,
-    completedLessons,
-    lessonCount,
-  }: {
-    assessment: string;
-    completedLessons: Set<string>;
-    lessonCount: number;
-  }) => (
-    <View style={styles.lessonInfo}>
-      <View style={styles.lessonHeader}>
-        <View>
-          <Text style={styles.title}>{assessment}</Text>
-          <Text style={styles.subtitle}>
-            {Math.min(completedLessons.size, lessonCount)} of {lessonCount}{' '}
-            Lessons Completed
-          </Text>
-        </View>
-      </View>
-    </View>
-  ),
-);
-LessonInfo.displayName = 'LessonInfo';
-
-const LoadingView = memo(() => (
-  <View style={styles.loadingContainer}>
-    <ActivityIndicator size="large" color={Colors.primary} />
-  </View>
-));
-LoadingView.displayName = 'LoadingView';
-
-const ErrorView = memo(
-  ({ error, onRetry }: { error: string; onRetry: () => void }) => (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>Error: {error}</Text>
-      <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
-        <Text style={styles.retryText}>Retry</Text>
-      </TouchableOpacity>
-    </View>
-  ),
-);
-ErrorView.displayName = 'ErrorView';
 
 const Level: React.FC = () => {
   const { assessment } = useLocalSearchParams<{ assessment: string }>();
 
   const {
     lessonNuggets,
+    sectionsData,
+    expandedSections,
     isLoading,
     isLoadingMore,
     lessonCount,
@@ -86,8 +41,10 @@ const Level: React.FC = () => {
     token,
     error,
     loadMoreData,
-    markLessonCompleted,
+    toggleSectionExpansion,
+    getSectionProgress,
     refetch,
+    createHandleLessonClick,
   } = useLessonData(assessment || '');
 
   const {
@@ -103,7 +60,7 @@ const Level: React.FC = () => {
   const [lessonGestureInfo, setLessonGestureInfo] =
     useState<GestureInfo | null>(null);
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
-  const flatListRef = useRef<FlatList>(null);
+  const sectionListRef = useRef<SectionList<LessonTag, LessonSection>>(null);
 
   const handleBackPress = useCallback(() => {
     router.back();
@@ -113,54 +70,73 @@ const Level: React.FC = () => {
     refetch();
   }, [refetch]);
 
-  const scrollToLesson = useCallback((index: number) => {
-    if (flatListRef.current) {
+  const scrollToSection = useCallback((sectionIndex: number) => {
+    if (sectionListRef.current) {
       try {
-        flatListRef.current.scrollToIndex({
-          index,
+        sectionListRef.current.scrollToLocation({
+          sectionIndex,
+          itemIndex: 0,
           animated: true,
           viewPosition: 0.5,
         });
       } catch (error) {
-        // Fallback to scrollToOffset
-        flatListRef.current.scrollToOffset({
-          offset: index * ITEM_HEIGHT,
-          animated: true,
-        });
+        // Failed to scroll; ignore quietly
       }
+    } else {
+      // SectionList ref not ready; ignore
     }
   }, []);
 
-  const handleLessonClick = useCallback(
-    async (lesson: LessonTag) => {
-      try {
-        setExpandedLessonId((prev) => (prev === lesson.id ? null : lesson.id));
+  const handleLessonClick = useMemo(
+    () =>
+      createHandleLessonClick({
+        setExpandedLessonId,
+        setSelectedGestureId,
+        setLessonGestureInfo,
+        scrollToSection,
+      }),
+    [createHandleLessonClick, scrollToSection],
+  );
 
-        const lessonIndex = lessonNuggets.findIndex(
-          (item) => item.id === lesson.id,
-        );
-        if (lessonIndex !== -1) {
-          scrollToLesson(lessonIndex);
-        }
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: LessonSection }) => {
+      const isExpanded = expandedSections.has(section.id);
+      const { completedCount, totalCount } = getSectionProgress(section);
 
-        setSelectedGestureId(lesson?.gesture?.id || null);
-        setLessonGestureInfo(lesson?.gesture || null);
-
-        await markLessonCompleted(lesson.id);
-      } catch (error) {
-        console.error('Error handling lesson click:', error);
-        Alert.alert('Error', 'Failed to process lesson selection');
-      }
+      return (
+        <LessonSectionHeader
+          lessonTitle={section.title}
+          nuggetCount={totalCount}
+          completedCount={completedCount}
+          isExpanded={isExpanded}
+          onToggle={() => toggleSectionExpansion(section.id)}
+        />
+      );
     },
-    [lessonNuggets, scrollToLesson, markLessonCompleted],
+    [expandedSections, getSectionProgress, toggleSectionExpansion],
   );
 
   const renderLessonItem = useCallback(
-    ({ item, index }: { item: LessonTag; index: number }) => {
+    ({
+      item,
+      index,
+      section,
+    }: {
+      item: LessonTag;
+      index: number;
+      section: LessonSection;
+    }) => {
+      const isExpanded = expandedSections.has(section.id);
+
+      // Only render expanded section's items
+      if (!isExpanded) {
+        return null;
+      }
+
       const locked = isLessonLocked(
         item,
         index,
-        lessonNuggets,
+        section.data,
         completedLessons,
       );
       const isActive = expandedLessonId === item.id;
@@ -182,7 +158,7 @@ const Level: React.FC = () => {
       );
     },
     [
-      lessonNuggets,
+      expandedSections,
       completedLessons,
       expandedLessonId,
       handleLessonClick,
@@ -192,15 +168,6 @@ const Level: React.FC = () => {
       isSupportedImageFormat,
       token,
     ],
-  );
-
-  const getItemLayout = useCallback(
-    (_data: unknown, index: number) => ({
-      length: ITEM_HEIGHT,
-      offset: ITEM_HEIGHT * index,
-      index,
-    }),
-    [],
   );
 
   const ListFooterComponent = useCallback(
@@ -213,7 +180,10 @@ const Level: React.FC = () => {
     [isLoadingMore],
   );
 
-  const keyExtractor = useCallback((item: LessonTag) => item.id, []);
+  const keyExtractor = useCallback(
+    (item: LessonTag, index: number) => item.id + '_' + index,
+    [],
+  );
 
   if (error && !lessonNuggets.length) {
     return <ErrorView error={error} onRetry={handleRetry} />;
@@ -252,20 +222,21 @@ const Level: React.FC = () => {
       />
 
       {/* Lesson List */}
-      <FlatList
-        ref={flatListRef}
-        data={lessonNuggets}
+      <SectionList<LessonTag, LessonSection>
+        ref={sectionListRef}
+        sections={sectionsData}
         keyExtractor={keyExtractor}
         renderItem={renderLessonItem}
+        renderSectionHeader={renderSectionHeader}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={21}
         removeClippedSubviews
         onEndReached={loadMoreData}
         onEndReachedThreshold={0.3}
-        getItemLayout={getItemLayout}
         ListFooterComponent={ListFooterComponent}
         showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
       />
     </View>
   );
@@ -282,60 +253,12 @@ const styles = StyleSheet.create({
     height: 50,
     backgroundColor: Colors.primary,
   },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.primary,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#d32f2f',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   videoContainer: {
     height: 300,
     backgroundColor: '#2d2d2d',
   },
   video: {
     flex: 1,
-  },
-  lessonInfo: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
   },
   lessonItem: {
     flexDirection: 'row',
@@ -375,11 +298,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4682B4',
     borderRadius: 1,
   },
-  lessonHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+
   playAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
