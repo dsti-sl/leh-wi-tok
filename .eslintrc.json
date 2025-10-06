@@ -1,10 +1,11 @@
 {
   "env": {
     "browser": true,
-    "es2021": true
+    "es2021": true,
+    "node": true,
+    "react-native/react-native": true
   },
   "extends": [
-    // "airbnb",
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
@@ -15,18 +16,30 @@
     "ecmaFeatures": {
       "jsx": true
     },
-    "ecmaVersion": 12,
+    "ecmaVersion": 2021,
     "sourceType": "module"
   },
   "plugins": [
     "@typescript-eslint",
     "react",
-    "prettier",
-    "import",
-    "unused-imports"
+    "react-native",
+    "unused-imports",
+    "import"
   ],
   "rules": {
     "prettier/prettier": "error",
+    "@typescript-eslint/no-unused-vars": "off",
+    "no-unused-vars": "off",
+    "unused-imports/no-unused-imports": "error",
+    "unused-imports/no-unused-vars": [
+      "error",
+      {
+        "vars": "all",
+        "varsIgnorePattern": "^_",
+        "args": "after-used",
+        "argsIgnorePattern": "^_"
+      }
+    ],
     "import/order": [
       "error",
       {
@@ -34,8 +47,38 @@
           "builtin",
           "external",
           "internal",
-          ["parent", "sibling", "index"]
+          "parent",
+          "sibling",
+          "index",
+          "type"
         ],
+        "pathGroups": [
+          {
+            "pattern": "react",
+            "group": "external",
+            "position": "before"
+          },
+          {
+            "pattern": "react-native",
+            "group": "external",
+            "position": "before"
+          },
+          {
+            "pattern": "expo-*",
+            "group": "external",
+            "position": "before"
+          },
+          {
+            "pattern": "@expo/**",
+            "group": "external",
+            "position": "before"
+          },
+          {
+            "pattern": "@/**",
+            "group": "internal"
+          }
+        ],
+        "pathGroupsExcludedImportTypes": ["react"],
         "newlines-between": "always",
         "alphabetize": {
           "order": "asc",
@@ -43,17 +86,22 @@
         }
       }
     ],
-    "no-unused-vars": [
-      "error",
-      { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }
-    ],
-    "unused-imports/no-unused-imports": "error",
-    "unused-imports/no-unused-vars": [
-      "error",
-      { "vars": "all", "args": "none" }
-    ],
-    "react/jsx-max-props-per-line": [1, { "when": "multiline" }],
-    "object-curly-newline": ["error", { "multiline": true, "consistent": true }]
+    "import/no-duplicates": "error",
+    "import/no-unresolved": "off",
+    "import/named": "off",
+    "import/default": "off",
+    "import/namespace": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/prop-types": "off",
+    "react/jsx-uses-react": "off",
+    "react-native/no-unused-styles": "error",
+    "react-native/split-platform-components": "off",
+    "react-native/no-inline-styles": "warn",
+    "react-native/no-color-literals": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/dot-notation": "off"
   },
   "settings": {
     "react": {
@@ -71,6 +119,15 @@
       },
       "rules": {
         "@typescript-eslint/no-var-requires": "off"
+      }
+    },
+    {
+      "files": ["**/__tests__/**/*", "**/*.test.*"],
+      "env": {
+        "jest": true
+      },
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
       }
     }
   ]

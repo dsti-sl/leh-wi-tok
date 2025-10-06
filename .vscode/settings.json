@@ -8,26 +8,38 @@
   },
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "always"
+    }
   },
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "always"
+    }
   },
   "[javascriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "always"
+    }
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features",
-    "editor.formatOnSave": true
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "always"
+    }
   },
   "eslint.alwaysShowStatus": true,
   "prettier.singleQuote": true,
   "prettier.trailingComma": "all",
   "prettier.printWidth": 80,
   "prettier.tabWidth": 2,
-  "prettier.endOfLine": "auto",
+  "prettier.endOfLine": "lf",
   "prettier.jsxSingleQuote": false,
   "prettier.bracketSpacing": true,
   "prettier.bracketSameLine": false,
@@ -36,6 +48,8 @@
   "editor.formatOnPaste": true,
   "editor.formatOnSaveMode": "modificationsIfAvailable",
   "diffEditor.codeLens": true,
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "typescript.suggest.autoImports": true,
 
   // disable spell checks
   "cSpell.enabled": false
