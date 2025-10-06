@@ -4,8 +4,6 @@ import { getDatabase } from '@/db/schema';
 import { getBaseUrl } from '@/utils';
 import { fileDownloads } from '@/utils/filedownloads';
 
-const BASE_URL = getBaseUrl();
-
 interface ApiTranslationItem {
   id: string;
   phrase: string;
@@ -79,10 +77,8 @@ const updateWord = async (
         word,
       ],
     );
-
-    console.log(`Word "${word}" updated successfully!`);
   } catch (error) {
-    console.log('Error: ' + error);
+    console.error('Error updating word:', error);
   }
 };
 
@@ -138,8 +134,6 @@ export const insertDictionaryData = async (
         }
       }
     });
-
-    console.log('Dictionary data inserted or updated successfully!');
   } catch (error) {
     console.error('Error inserting or updating dictionary data:', error);
   }
@@ -150,24 +144,19 @@ export const insertDictionaryData = async (
  * This function will now handle downloading images and converting them to local URIs.
  */
 export const fetchAndInsertTranslations = async (): Promise<void> => {
-  if (!BASE_URL) {
-    console.error('BASE_URL is not defined in .env!');
-    return;
-  }
-
-  const baseUrlClean = BASE_URL.endsWith('/')
-    ? BASE_URL.slice(0, -1)
-    : BASE_URL;
-
-  // Backend's translation endpoint. Processes words in a batch of 50s.
-  const urlParams = `${baseUrlClean}/translation?select=id,phrase,description,
-  gesture(id,name,path,contentType),illustration(id,name,path,contentType),
-  tags(category,title)&page-size=50`;
-
   try {
-    console.log(
-      `[fetchAndInsertTranslations] Fetching data from API: ${urlParams}`,
-    );
+    const baseUrl = getBaseUrl();
+    if (!baseUrl) {
+      console.error('BASE_URL is not available!');
+      return;
+    }
+
+    const baseUrlClean = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+    // Backend's translation endpoint. Processes words in a batch of 50s.
+    const urlParams = `${baseUrlClean}/translation?select=id,phrase,description,
+    gesture(id,name,path,contentType),illustration(id,name,path,contentType),
+    tags(category,title)&page-size=50`;
     const response = await fetch(urlParams);
 
     if (!response.ok) {
@@ -215,13 +204,7 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
             const gesturePath =
               item.gesture?.id && item.gesture?.name
                 ? await fileDownloads(item.gesture.id, item.gesture.name).catch(
-                    (err) => {
-                      console.error(
-                        `Failed to download gesture for "${item.phrase}" (ID: ${item.gesture?.id}):`,
-                        err,
-                      );
-                      return null;
-                    },
+                    () => null,
                   )
                 : null;
 
@@ -230,13 +213,7 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
                 ? await fileDownloads(
                     item.illustration.id,
                     item.illustration.name,
-                  ).catch((err) => {
-                    console.error(
-                      `Failed to download illustration for "${item.phrase}" (ID: ${item.illustration?.id}):`,
-                      err,
-                    );
-                    return null;
-                  })
+                  ).catch(() => null)
                 : null;
 
             return {
@@ -248,7 +225,6 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
               categories: categoriesTags,
             } as LocalDictionaryEntry;
           } catch (error) {
-            console.error(`Error processing entry "${item.phrase}":`, error);
             return null;
           }
         }),
@@ -260,24 +236,11 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
 
       if (validData.length > 0) {
         await insertDictionaryData(validData);
-        console.log(
-          `[fetchAndInsertTranslations] Processed batch of ${validData.length} entries.`,
-        );
-      } else {
-        console.warn(
-          '[fetchAndInsertTranslations] No valid data in this batch.',
-        );
       }
     }
-
-    console.log(
-      '[fetchAndInsertTranslations] All translation data fetched and stored successfully!',
-    );
   } catch (error) {
-    console.error(
-      '[fetchAndInsertTranslations] Error fetching and storing translation data:',
-      error,
-    );
+    console.error('Error fetching translation data:', error);
+    // Don't throw the error to avoid breaking the app
   }
 };
 
@@ -286,7 +249,6 @@ export const fetchAndInsertTranslations = async (): Promise<void> => {
  */
 export const checkAndUpdateTranslations = async (): Promise<void> => {
   try {
-    console.log('Checking for dictionary updates...');
     const lastUpdateKey = 'lastDictionaryUpdate';
     const currentTime = new Date().getTime();
     const lastUpdate = await AsyncStorage.getItem(lastUpdateKey);
@@ -298,9 +260,6 @@ export const checkAndUpdateTranslations = async (): Promise<void> => {
     ) {
       await fetchAndInsertTranslations();
       await AsyncStorage.setItem(lastUpdateKey, currentTime.toString());
-      console.log('Dictionary updated successfully');
-    } else {
-      console.log('Dictionary is up to date');
     }
   } catch (error) {
     console.error('Error checking for dictionary updates:', error);

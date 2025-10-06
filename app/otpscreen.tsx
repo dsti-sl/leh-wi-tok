@@ -61,6 +61,18 @@ const OtpScreen = () => {
       if (response.ok) {
         const token = data.data[0]?.token;
         await setToken(token);
+
+        // Sync translations after successful authentication
+        try {
+          const { checkAndUpdateTranslations } = await import(
+            '@/data/dictionary'
+          );
+          await checkAndUpdateTranslations();
+          console.log('Translations synced after login');
+        } catch (syncError) {
+          console.log('Translation sync failed (non-critical):', syncError);
+        }
+
         isSignIn ? router.replace('/home') : router.replace('/preferences');
       } else {
         setError(data.message || 'Invalid OTP. Please try again.');

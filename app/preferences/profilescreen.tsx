@@ -1,5 +1,4 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -230,6 +229,7 @@ const ProfileDetailsScreen = () => {
             <TextInput
               style={styles.input}
               placeholder="Age"
+              placeholderTextColor="#999"
               keyboardType="numeric"
               value={age}
               onChangeText={validateAgeInput}

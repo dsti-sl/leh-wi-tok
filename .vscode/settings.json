@@ -35,5 +35,8 @@
   "editor.autoIndent": "advanced",
   "editor.formatOnPaste": true,
   "editor.formatOnSaveMode": "modificationsIfAvailable",
-  "diffEditor.codeLens": true
+  "diffEditor.codeLens": true,
+
+  // disable spell checks
+  "cSpell.enabled": false
 }

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Platform, ToastAndroid } from 'react-native';
+import { useCallback, useEffect, useState, useMemo } from 'react';
+import { Platform, ToastAndroid, Alert } from 'react-native';
 
 import {
   getBaseUrl,
@@ -42,8 +42,24 @@ export interface LessonTag {
   };
 }
 
+export interface LessonSection {
+  id: string;
+  title: string;
+  description?: string;
+  data: LessonTag[];
+}
+
+interface LessonClickCallbacks {
+  setExpandedLessonId: (_fn: (_prev: string | null) => string | null) => void;
+  setSelectedGestureId: (_gestureId: string | null) => void;
+  setLessonGestureInfo: (_gestureInfo: GestureInfo | null) => void;
+  scrollToSection: (_sectionIndex: number) => void;
+}
+
 interface UseLessonDataReturn {
   lessonNuggets: LessonTag[];
+  sectionsData: LessonSection[];
+  expandedSections: Set<string>;
   isLoading: boolean;
   isLoadingMore: boolean;
   lessonCount: number;
@@ -55,7 +71,15 @@ interface UseLessonDataReturn {
   fetchLessons: (_page?: number, _append?: boolean) => Promise<void>;
   loadMoreData: () => void;
   markLessonCompleted: (_lessonId: string) => Promise<void>;
+  toggleSectionExpansion: (_sectionId: string) => void;
+  getSectionProgress: (_section: LessonSection) => {
+    completedCount: number;
+    totalCount: number;
+  };
   refetch: () => Promise<void>;
+  createHandleLessonClick: (
+    _callbacks: LessonClickCallbacks,
+  ) => (_lesson: LessonTag) => Promise<void>;
 }
 
 export const useLessonData = (assessment: string): UseLessonDataReturn => {
@@ -71,6 +95,12 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreData, setHasMoreData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(),
+  );
+
+  // Pagination page size
+  const PAGE_SIZE = 10;
 
   const BASE_URL = getBaseUrl();
 
@@ -132,7 +162,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
         // Fetch lesson nuggets with pagination
         const response = await fetch(
-          `${BASE_URL}/nugget?and=(lesson.tags.title.eq.${assessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active,detail,illustration&page=${page}&page-size=10&order=priority`,
+          `${BASE_URL}/nugget?and=(lesson.tags.title.eq.${assessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active,detail,illustration&page=${page}&page-size=${PAGE_SIZE}&order=priority`,
         );
 
         if (!response.ok) {
@@ -147,8 +177,9 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
           setLessonNuggets(data.data);
           setLessonCount(data.meta.count);
         }
-
-        setHasMoreData(data.data.length === 10);
+        // This avoids coupling to the returned page array length
+        const more = page * PAGE_SIZE < (data?.meta?.count ?? 0);
+        setHasMoreData(more);
         setCurrentPage(page);
 
         // Fetch progress only on initial load
@@ -293,6 +324,122 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
     return fetchLessons(1, false);
   }, [fetchLessons]);
 
+  // Memoize sections data to avoid unnecessary recalculations
+  const sectionsData = useMemo((): LessonSection[] => {
+    const grouped = lessonNuggets.reduce(
+      (acc, nugget) => {
+        const lessonId = nugget.lesson?.id || 'unknown';
+        const lessonTitle = nugget.lesson?.title || 'Unknown Lesson';
+        const lessonDescription = nugget.lesson?.description;
+
+        if (!acc[lessonId]) {
+          acc[lessonId] = {
+            id: lessonId,
+            title: lessonTitle,
+            description: lessonDescription,
+            data: [],
+          };
+        }
+
+        acc[lessonId].data.push(nugget);
+        return acc;
+      },
+      {} as Record<string, LessonSection>,
+    );
+
+    // Convert to array and sort by lesson title
+    // TODO: Consider sorting by lessons priority/order to simplify this block implementation
+    const sections = Object.values(grouped);
+
+    // Sort nuggets within each section by priority
+    sections.forEach((section) => {
+      section.data.sort((a, b) => a.priority - b.priority);
+    });
+
+    return sections;
+  }, [lessonNuggets]);
+
+  // Auto-expand first section on initial load
+  useEffect(() => {
+    if (sectionsData.length > 0 && expandedSections.size === 0) {
+      const firstSectionId = sectionsData[0].id;
+      setExpandedSections(new Set([firstSectionId]));
+    }
+  }, [sectionsData, expandedSections.size]);
+
+  // Section expansion toggle
+  const toggleSectionExpansion = useCallback((sectionId: string) => {
+    setExpandedSections((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Get section progress information
+  const getSectionProgress = useCallback(
+    (section: LessonSection) => {
+      const completedCount = section.data.filter((nugget) =>
+        completedLessons.has(nugget.id),
+      ).length;
+      const totalCount = section.data.length;
+      return { completedCount, totalCount };
+    },
+    [completedLessons],
+  );
+
+  // Create handleLessonClick factory function
+  const createHandleLessonClick = useCallback(
+    (callbacks: LessonClickCallbacks) => {
+      return async (lesson: LessonTag) => {
+        try {
+          callbacks.setExpandedLessonId((prev) =>
+            prev === lesson.id ? null : lesson.id,
+          );
+
+          // Find the section index for scrolling
+          let sectionIndex = -1;
+          for (let secIdx = 0; secIdx < sectionsData.length; secIdx++) {
+            const section = sectionsData[secIdx];
+            const nuggetIndex = section.data.findIndex(
+              (item) => item.id === lesson.id,
+            );
+            if (nuggetIndex !== -1) {
+              sectionIndex = secIdx;
+              break;
+            }
+          }
+
+          if (sectionIndex !== -1) {
+            callbacks.scrollToSection(sectionIndex);
+          }
+
+          const gestureId = lesson?.gesture?.id || null;
+          callbacks.setSelectedGestureId(gestureId);
+          callbacks.setLessonGestureInfo(lesson?.gesture || null);
+
+          await markLessonCompleted(lesson.id);
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error occurred';
+          console.error(
+            '❌ [handleLessonClick] Error handling lesson click:',
+            errorMessage,
+          );
+          Alert.alert(
+            'Error',
+            'Failed to process lesson selection. Please try again.',
+          );
+        }
+      };
+    },
+    [sectionsData, markLessonCompleted],
+  );
+
   // Initial data fetch
   useEffect(() => {
     fetchLessons(1, false);
@@ -300,6 +447,8 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
   return {
     lessonNuggets,
+    sectionsData,
+    expandedSections,
     isLoading,
     isLoadingMore,
     lessonCount,
@@ -311,6 +460,9 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
     fetchLessons,
     loadMoreData,
     markLessonCompleted,
+    toggleSectionExpansion,
+    getSectionProgress,
     refetch,
+    createHandleLessonClick,
   };
 };

@@ -1,3 +1,6 @@
+import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -7,9 +10,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, useRouter } from 'expo-router';
+
 import { Colors } from '@/constants/Colors';
 
 interface UserInfo {
@@ -49,7 +50,7 @@ const EditProfile = () => {
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       e.preventDefault(); // stop the pop
-      router.push('/account/profile');
+      router.push('/account');
     });
 
     return unsubscribe;
@@ -68,7 +69,7 @@ const EditProfile = () => {
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {/* Header with Avatar */}
       <View style={styles.container}>
-        <TouchableOpacity onPress={() => router.push('/account/profile')}>
+        <TouchableOpacity onPress={() => router.push('/account')}>
           <Feather name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
       </View>

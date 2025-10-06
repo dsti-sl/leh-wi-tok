@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   StyleSheet,
@@ -9,17 +11,15 @@ import {
   Platform,
   RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+
+import AlphabetBar from '@/components/dictionary/AlphabetBar';
+import CategoryCard from '@/components/dictionary/CategoryCard';
+import { Colors } from '@/constants/Colors';
 import {
   fetchDictionaryData,
-  fetchAndInsertTranslations,
   checkAndUpdateTranslations,
 } from '@/data/dictionary';
 import useSearch from '@/hooks/useSearch';
-import CategoryCard from '@/components/dictionary/CategoryCard';
-import { Colors } from '@/constants/Colors';
-import { Ionicons } from '@expo/vector-icons';
-import AlphabetBar from '@/components/dictionary/AlphabetBar';
 
 interface DictionaryEntry {
   word: string;

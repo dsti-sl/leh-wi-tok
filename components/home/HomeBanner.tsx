@@ -5,11 +5,8 @@ import {
   Text,
   Image,
   ImageSourcePropType,
-  TouchableOpacity,
 } from 'react-native';
 
-import Badge from '../../assets/images/badge.png';
-import Bell from '../../assets/images/bell.png';
 import HandShake from '../../assets/images/Handshake.png';
 
 import { Colors } from '@/constants/Colors';

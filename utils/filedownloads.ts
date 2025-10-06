@@ -12,6 +12,7 @@ export async function fileDownloads(
   filename: string,
 ): Promise<string> {
   try {
+    // TODO: @vidallisk read var from expo constant
     const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
     if (!BASE_URL) {
       throw new Error('BASE_URL is not defined in .env!');
@@ -28,7 +29,6 @@ export async function fileDownloads(
 
     const dirInfo = await FileSystem.getInfoAsync(assetsDir);
     if (!dirInfo.exists) {
-      console.log(`[fileDownloads] Creating assets directory: ${assetsDir}`);
       await FileSystem.makeDirectoryAsync(assetsDir, { intermediates: true });
     }
     const existingFileInfo = await FileSystem.getInfoAsync(localPath);
@@ -37,13 +37,8 @@ export async function fileDownloads(
       existingFileInfo.size &&
       existingFileInfo.size > 100 // Minimal size check to avoid empty/error files
     ) {
-      console.log(`[fileDownloads] File already exists locally: ${localPath}`);
       return `file://${localPath}`;
     }
-
-    console.log(
-      `[fileDownloads] Attempting to download from ${downloadUrl} to ${localPath}`,
-    );
 
     const token = await getToken();
 
@@ -60,8 +55,6 @@ export async function fileDownloads(
     );
     // FileSystem.downloadAsync returns the file:// URI directly if successful but dont't touch please.
 
-    console.log(`[fileDownloads] File downloaded to: ${downloadedFileUri}`);
-
     const downloadedFileInfo = await FileSystem.getInfoAsync(downloadedFileUri);
     if (
       !downloadedFileInfo.exists ||
@@ -69,39 +62,12 @@ export async function fileDownloads(
         downloadedFileInfo.size !== undefined &&
         downloadedFileInfo.size < 100)
     ) {
-      const sizeInfo =
-        downloadedFileInfo.exists && typeof downloadedFileInfo.size === 'number'
-          ? downloadedFileInfo.size
-          : 'N/A';
-      console.warn(
-        `[fileDownloads] Downloaded file seems invalid for ID ${fileId} (size: ${sizeInfo})`,
-      );
       await FileSystem.deleteAsync(downloadedFileUri, { idempotent: true });
       return '';
     }
 
-    try {
-      const snippet = await FileSystem.readAsStringAsync(downloadedFileUri, {
-        encoding: FileSystem.EncodingType.Base64,
-        length: 40,
-      });
-      console.log(
-        '[fileDownloads] Base64 start of file (first 10 chars):',
-        snippet.slice(0, 10),
-      );
-    } catch (readError) {
-      console.warn(
-        '[fileDownloads] Could not read file snippet for debug:',
-        readError,
-      );
-    }
-
     return downloadedFileUri;
   } catch (error) {
-    console.error(
-      `[fileDownloads] Error downloading file ID ${fileId}, filename ${filename}:`,
-      error,
-    );
     return '';
   }
 }

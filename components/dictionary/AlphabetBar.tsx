@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
+
 import { Colors } from '@/constants/Colors';
 
 interface AlphabetBarProps {
