@@ -25,6 +25,8 @@ tmp/
 temp/
 .env
 
+tsconfig.tsbuildinfo
+
 
 # EAS IGNORES
 android
