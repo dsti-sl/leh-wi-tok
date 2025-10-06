@@ -1,0 +1,15 @@
+#!/bin/sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged for formatting and linting
+echo "📝 Checking formatting and linting..."
+npm run lint:staged
+
+if [ $? -ne 0 ]; then
+  echo "❌ Formatting or linting issues detected. Please fix them before committing."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"
