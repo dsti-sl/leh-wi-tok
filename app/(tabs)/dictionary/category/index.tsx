@@ -1,3 +1,4 @@
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   StyleSheet,
@@ -9,7 +10,7 @@ import {
   SafeAreaView,
   Platform,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+
 import { fetchDictionaryData } from '@/db/retrivedata';
 import useSearch from '@/hooks/useSearch';
 

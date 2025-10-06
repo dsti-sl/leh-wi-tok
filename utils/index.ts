@@ -115,7 +115,7 @@ export interface LessonProgress {
 
 /**
  * Returns the base API URL from the Expo config.
- * Throws an error if the URL is not set.
+ * Returns fallback URL if not set in production builds.
  */
 export function getBaseUrl(): string {
   // You can adjust the property if your config structure changes

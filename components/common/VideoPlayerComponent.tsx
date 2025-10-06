@@ -60,7 +60,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           playerInstance.pause();
         }
       }
-    }
+    },
   );
 
   useEffect(() => {

@@ -1,25 +1,42 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import useAccount from '@/hooks/useAccount';
 
 const Account = () => {
-  const { userInfo, isLoggingOut, confirmLogout, confirmAccountDeletion } = useAccount();
+  const { userInfo, isLoggingOut, confirmLogout, confirmAccountDeletion } =
+    useAccount();
   const router = useRouter();
 
   const initial = userInfo?.name?.[0]?.toUpperCase?.() ?? '';
 
   return (
-    <ScrollView scrollEnabled={false} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      scrollEnabled={false}
+      contentContainerStyle={styles.scrollContent}
+    >
       <View style={styles.banner}>
         <View style={styles.headerRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initial}</Text>
-            <TouchableOpacity accessibilityLabel="Change profile photo" style={styles.iconOverlay}>
-              <Ionicons name="camera-outline" size={20} color={Colors.primary} />
+            <TouchableOpacity
+              accessibilityLabel="Change profile photo"
+              style={styles.iconOverlay}
+            >
+              <Ionicons
+                name="camera-outline"
+                size={20}
+                color={Colors.primary}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -60,7 +77,9 @@ const Account = () => {
           <View style={styles.infoTextWrap}>
             <Text style={styles.infoLabel}>Joined</Text>
             <Text style={styles.infoValue}>
-              {userInfo?.createdAt ? new Date(userInfo.createdAt).toDateString() : ''}
+              {userInfo?.createdAt
+                ? new Date(userInfo.createdAt).toDateString()
+                : ''}
             </Text>
           </View>
         </View>
@@ -70,7 +89,11 @@ const Account = () => {
           <View style={styles.infoTextWrap}>
             <Text style={styles.infoLabel}>Role</Text>
             <Text style={styles.infoValue}>
-              {userInfo?.student ? 'Student' : userInfo?.teacher ? 'Teacher' : 'Viewer'}
+              {userInfo?.student
+                ? 'Student'
+                : userInfo?.teacher
+                  ? 'Teacher'
+                  : 'Viewer'}
             </Text>
           </View>
         </View>
@@ -85,14 +108,26 @@ const Account = () => {
           onPress={confirmLogout}
           disabled={isLoggingOut}
         >
-          <Feather name="log-out" size={24} color={isLoggingOut ? '#999' : '#000'} />
-          <Text style={[styles.itemText, isLoggingOut && styles.itemTextDisabled]}>
+          <Feather
+            name="log-out"
+            size={24}
+            color={isLoggingOut ? '#999' : '#000'}
+          />
+          <Text
+            style={[styles.itemText, isLoggingOut && styles.itemTextDisabled]}
+          >
             {isLoggingOut ? 'Logging out...' : 'Log out'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity disabled={true} style={styles.itemRow} onPress={confirmAccountDeletion}>
+        <TouchableOpacity
+          disabled={true}
+          style={styles.itemRow}
+          onPress={confirmAccountDeletion}
+        >
           <Feather name="trash-2" size={24} color="#dc2626" />
-          <Text style={[styles.itemText, { color: '#dc2626' }]}>Delete your account</Text>
+          <Text style={[styles.itemText, { color: '#dc2626' }]}>
+            Delete your account
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

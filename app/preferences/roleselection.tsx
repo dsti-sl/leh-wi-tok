@@ -59,7 +59,9 @@ const RoleSelection = () => {
     } catch (error) {
       Alert.alert(
         'Error',
-        error instanceof Error ? error.message : 'An error occurred while updating your role.',
+        error instanceof Error
+          ? error.message
+          : 'An error occurred while updating your role.',
       );
     }
   };

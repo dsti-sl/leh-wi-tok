@@ -47,7 +47,9 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   lessonCount,
 }) => {
   const [userCompletionRate, setUserCompletionRate] =
-    useState<LessonCompletionData>({ lessons: [] });
+    useState<LessonCompletionData>({
+      lessons: [],
+    });
 
   const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 

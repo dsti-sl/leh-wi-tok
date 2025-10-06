@@ -1,18 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   View,
-  ScrollView,
-  RefreshControl,
 } from 'react-native';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
 
 import CurrentLevelProgressCard from '@/components/lessons/CurrentLevelProgressCard';
 import { LessonsBanner } from '@/components/lessons/LessonsBanner';
 import LessonsCategory from '@/components/lessons/LessonsCategory';
+import { Colors } from '@/constants/Colors';
 import useLessons from '@/hooks/useLessons';
 import {
   getBaseUrl,

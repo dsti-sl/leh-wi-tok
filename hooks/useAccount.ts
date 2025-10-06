@@ -24,7 +24,6 @@ export interface UseAccountReturn {
   handleAccountDeletion: () => void;
   confirmLogout: () => void;
   confirmAccountDeletion: () => void;
-  goToProfile: () => void;
 }
 
 const useAccount = (): UseAccountReturn => {
@@ -98,10 +97,6 @@ const useAccount = (): UseAccountReturn => {
     );
   };
 
-  const goToProfile = () => {
-    router.replace('/account/profile');
-  };
-
   return {
     userInfo,
     isLoggingOut,
@@ -110,7 +105,6 @@ const useAccount = (): UseAccountReturn => {
     handleAccountDeletion: performAccountDeletion,
     confirmLogout,
     confirmAccountDeletion,
-    goToProfile,
   };
 };
 

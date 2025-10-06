@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Asset } from 'expo-asset';
 import React from 'react';
 import {
   View,
@@ -6,9 +8,8 @@ import {
   StyleSheet,
   StatusBar,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
 import VideoPlayerComponent from './VideoPlayerComponent';
-import { Asset } from 'expo-asset';
 
 interface VideoModalContentProps {
   videoSource: string | number;
@@ -21,7 +22,7 @@ const VideoModalContent: React.FC<VideoModalContentProps> = ({
   videoSource,
   title = 'Introduction Video',
   onClose,
-  headers
+  headers,
 }) => {
   return (
     <View style={styles.container}>
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)'
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   closeButton: {
     padding: 8,
