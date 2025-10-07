@@ -212,6 +212,7 @@ const Level: React.FC = () => {
             gestureInfo={lessonGestureInfo}
             gestureId={selectedGestureId}
             autoPlay={true}
+            useAdaptiveStreaming={true}
           />
         )}
       </View>
