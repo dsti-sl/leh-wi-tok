@@ -48,7 +48,7 @@ const VideoModalContent: React.FC<VideoModalContentProps> = ({
               ? videoSource
               : Asset.fromModule(videoSource).uri
           }
-          headers={headers}
+          {...(headers && { headers })}
           style={styles.video}
           autoPlay={true}
           shouldLoop={false}

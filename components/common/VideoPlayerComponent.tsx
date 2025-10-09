@@ -18,8 +18,6 @@ import NetInfo from '@react-native-community/netinfo';
 import { Colors } from '@/constants/Colors';
 import { getBaseUrl, getToken } from '@/utils';
 
-// ============= INTERFACES =============
-
 interface VideoQuality {
   quality: string;
   resolution: string;
@@ -48,9 +46,8 @@ interface VideoPlayerComponentProps {
   onError?: (_error: unknown) => void;
   shouldLoop?: boolean;
   autoPlay?: boolean;
-  // New adaptive streaming props
   enableAdaptiveStreaming?: boolean;
-  videoId?: string; // Required for adaptive streaming
+  videoId?: string;
 }
 
 // ============= CONSTANTS =============
@@ -80,8 +77,6 @@ const NETWORK_QUALITY_MAP: Record<string, string> = {
   none: '144p',
 };
 
-// ============= MAIN COMPONENT =============
-
 const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   uri,
   headers,
@@ -94,13 +89,11 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   enableAdaptiveStreaming = false,
   videoId,
 }) => {
-  // ===== ORIGINAL STATE =====
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  // ===== ADAPTIVE STREAMING STATE =====
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
   const [selectedQuality, setSelectedQuality] = useState<string>('auto');
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string>(uri);
@@ -109,13 +102,10 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   const [isBuffering, setIsBuffering] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
-  // NEW: Controls visibility state
   const [showControls, setShowControls] = useState(true);
 
-  // ===== REFS =====
   const playerRef = useRef<any>(null);
 
-  // ===== INITIALIZATION =====
   useEffect(() => {
     if (enableAdaptiveStreaming) {
       const initializeData = async () => {
@@ -131,7 +121,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     }
   }, [enableAdaptiveStreaming]);
 
-  // ===== NETWORK MONITORING =====
   useEffect(() => {
     if (!enableAdaptiveStreaming) return;
 
@@ -144,20 +133,18 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     return () => unsubscribe();
   }, [enableAdaptiveStreaming]);
 
-  // ===== AUTO-HIDE CONTROLS TIMER =====
   useEffect(() => {
     if (!showControls) return;
 
     // Auto-hide controls after 3 seconds
     const timer = setTimeout(() => {
       setShowControls(false);
-      setShowQualityMenu(false); // Also hide quality menu
+      setShowQualityMenu(false);
     }, 3000);
 
     return () => clearTimeout(timer);
   }, [showControls]);
 
-  // ===== VIDEO PLAYER =====
   const player = useVideoPlayer(
     {
       uri: enableAdaptiveStreaming ? currentStreamUrl : uri,
@@ -179,7 +166,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     },
   );
 
-  // ===== MONITOR PLAYBACK STATUS =====
   useEffect(() => {
     if (!player || !enableAdaptiveStreaming) return;
 
@@ -192,7 +178,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     };
   }, [player, enableAdaptiveStreaming]);
 
-  // ===== LOAD VIDEO INFO (ADAPTIVE STREAMING) =====
   const loadVideoInfo = useCallback(async () => {
     if (!videoId || !token || !enableAdaptiveStreaming) return;
 
@@ -233,7 +218,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
               'none',
           });
 
-          // Set initial URL
           if (info.hasQualities && info.qualities?.length > 0) {
             const recommended = getRecommendedQuality();
             const url = getStreamUrl(info, recommended);
@@ -250,7 +234,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         );
       }
 
-      // Fallback to original URI
       setCurrentStreamUrl(uri);
       setUsingFallback(true);
       console.log('Using fallback video player for:', videoId);
@@ -266,14 +249,12 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     }
   }, [videoId, token, headers, onError, uri, enableAdaptiveStreaming]);
 
-  // ===== LOAD ADAPTIVE STREAMING INFO =====
   useEffect(() => {
     if (enableAdaptiveStreaming && token) {
       loadVideoInfo();
     }
   }, [enableAdaptiveStreaming, token, loadVideoInfo]);
 
-  // ===== ORIGINAL URI CHANGE HANDLER =====
   useEffect(() => {
     if (!enableAdaptiveStreaming) {
       setCurrentStreamUrl(uri);
@@ -284,13 +265,11 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     }
   }, [uri, enableAdaptiveStreaming]);
 
-  // ===== QUALITY RECOMMENDATION =====
   const getRecommendedQuality = useCallback((): string => {
     const type = connectionType.toLowerCase();
     return NETWORK_QUALITY_MAP[type] || '240p';
   }, [connectionType]);
 
-  // ===== GET STREAM URL =====
   const getStreamUrl = useCallback(
     (info: VideoInfo, quality: string): string => {
       if (quality === 'original') {
@@ -343,7 +322,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     enableAdaptiveStreaming,
   ]);
 
-  // ===== QUALITY CHANGE HANDLER =====
   const handleQualityChange = useCallback(
     async (quality: string) => {
       if (!videoInfo || !enableAdaptiveStreaming) return;
@@ -385,7 +363,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     ],
   );
 
-  // ===== GET QUALITY LABEL =====
   const getQualityLabel = useCallback((): string => {
     if (!enableAdaptiveStreaming || usingFallback) {
       return 'Original';
@@ -402,13 +379,11 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     enableAdaptiveStreaming,
   ]);
 
-  // ===== HANDLE VIDEO TAP =====
   const handleVideoTap = useCallback(() => {
     setShowControls(prev => !prev);
-    setShowQualityMenu(false); // Hide quality menu when toggling controls
+    setShowQualityMenu(false);
   }, []);
 
-  // ===== ORIGINAL PLAYER LOGIC =====
   useEffect(() => {
     if (!player) return;
 
@@ -484,7 +459,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     );
   }
 
-  // Show loading state if player is not ready
   if (!player) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
@@ -497,7 +471,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     <View style={[styles.container, style]}>
       <StatusBar hidden />
 
-      {/* Video View with Tap Handler */}
       <TouchableOpacity
         style={styles.videoTouchArea}
         onPress={handleVideoTap}
@@ -511,18 +484,16 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           allowsPictureInPicture
           contentFit="contain"
           accessibilityLabel={accessibilityLabel}
-          nativeControls={true} // Always show native controls
+          nativeControls={true}
         />
       </TouchableOpacity>
 
-      {/* Loading Overlay */}
       {isLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       )}
 
-      {/* Buffering Indicator (Adaptive Streaming) */}
       {enableAdaptiveStreaming && isBuffering && (
         <View style={styles.bufferingOverlay}>
           <ActivityIndicator size="small" color="#FFFFFF" />
@@ -530,7 +501,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         </View>
       )}
 
-      {/* Quality Controls (Adaptive Streaming) - Only show when controls are visible */}
       {enableAdaptiveStreaming &&
         !usingFallback &&
         videoInfo?.hasQualities &&
@@ -546,7 +516,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
             {showQualityMenu && (
               <View style={styles.qualityMenu}>
-                {/* Auto Option */}
                 <TouchableOpacity
                   style={[
                     styles.qualityOption,
@@ -560,10 +529,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
                   </Text>
                 </TouchableOpacity>
 
-                {/* Quality Options - Sorted from Highest to Lowest */}
                 {videoInfo.qualities
                   ?.sort((a, b) => {
-                    // Define quality order for proper sorting (highest to lowest)
                     const qualityOrder = [
                       '1080p',
                       '720p',
@@ -575,16 +542,13 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
                     const aIndex = qualityOrder.indexOf(a.quality);
                     const bIndex = qualityOrder.indexOf(b.quality);
 
-                    // If both qualities are in the order array, sort by their index
                     if (aIndex !== -1 && bIndex !== -1) {
-                      return aIndex - bIndex; // Lower index = higher quality
+                      return aIndex - bIndex;
                     }
 
-                    // If only one is in the array, prioritize it
                     if (aIndex !== -1) return -1;
                     if (bIndex !== -1) return 1;
 
-                    // If neither is in the array, sort alphabetically (reverse)
                     return b.quality.localeCompare(a.quality);
                   })
                   ?.map(q => (
@@ -606,7 +570,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
                     </TouchableOpacity>
                   ))}
 
-                {/* Original Option */}
                 <TouchableOpacity
                   style={[
                     styles.qualityOption,
@@ -625,7 +588,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           </View>
         )}
 
-      {/* Network Indicator (Adaptive Streaming) */}
+      {/* Network Indicator (Adaptive Streaming) for now, this is not 
+      visible to the user */}
       {/*       {enableAdaptiveStreaming && (
         <View style={styles.networkIndicator}>
           <View
@@ -640,7 +604,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   );
 };
 
-// ============= HELPERS =============
+// ============= HELPER Functions to handle adaptive streaming for the video player =============
 
 function getNetworkDotStyle(type: string) {
   if (type.includes('wifi') || type.includes('ethernet')) {
@@ -654,8 +618,6 @@ function getNetworkDotStyle(type: string) {
   }
   return { backgroundColor: '#FF3B30' };
 }
-
-// ============= STYLES =============
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000', position: 'relative' },
@@ -703,7 +665,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   retryText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  // Adaptive streaming styles
   bufferingOverlay: {
     position: 'absolute',
     top: 0,
