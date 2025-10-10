@@ -202,8 +202,6 @@ const Level: React.FC = () => {
       ) : (
         <StatusBar style="light" backgroundColor={Colors.primary} />
       )}
-
-      {/* Video Container */}
       <View style={styles.videoContainer}>
         <LessonHeader onBackPress={handleBackPress} />
         {selectedGestureId && lessonGestureInfo?.contentType && (
@@ -212,6 +210,7 @@ const Level: React.FC = () => {
             gestureInfo={lessonGestureInfo}
             gestureId={selectedGestureId}
             autoPlay={true}
+            useAdaptiveStreaming={true}
           />
         )}
       </View>

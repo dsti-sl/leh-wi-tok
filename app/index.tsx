@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Colors } from '@/constants/Colors';
-import { fetchAndInsertTranslations } from '@/data/dictionary';
+//import { fetchAndInsertTranslations } from '@/data/dictionary';
 
 import slidesData from '../constants/OnboardingData.json';
 
@@ -86,13 +86,13 @@ const Onboarding = () => {
         return null;
     }
   };
-  useEffect(() => {
+  /*   useEffect(() => {
     const syncTranslations = async () => {
       console.log('Fetching and inserting translations...');
       await fetchAndInsertTranslations();
     };
     syncTranslations();
-  }, []);
+  }, []); */
 
   const renderPagination = () => (
     <View style={styles.pagination}>

@@ -19,12 +19,14 @@ interface MediaPlayerProps {
   gestureId: string;
   gestureInfo: GestureInfo;
   autoPlay?: boolean;
+  useAdaptiveStreaming?: boolean; // New prop to enable adaptive streaming
 }
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
   gestureId,
   gestureInfo,
   autoPlay = false,
+  useAdaptiveStreaming = false, // Default to false for backward compatibility
 }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,7 +55,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   const handleMediaLoad = useCallback(() => {
     // Media loaded successfully
-    // TODO Do some stuffs
+    console.log('Media loaded successfully');
   }, []);
 
   const handleMediaError = useCallback((error: unknown) => {
@@ -84,13 +86,15 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     );
   }
 
-  const headers = { authorization: `Token ${token}` };
+  const headers = { authorization: `Bearer ${token}` };
 
   if (gestureInfo?.contentType === 'video/mp4' && fileUrl) {
     return (
       <View style={styles.container}>
         <VideoPlayerComponent
           uri={fileUrl}
+          videoId={gestureId}
+          enableAdaptiveStreaming={useAdaptiveStreaming}
           autoPlay={autoPlay}
           headers={headers}
           style={styles.media}
@@ -152,11 +156,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  loadingText: {
-    color: '#666',
-    marginTop: 10,
-    fontSize: 16,
-  },
+  loadingText: { color: '#666', marginTop: 10, fontSize: 16 },
   errorContainer: {
     justifyContent: 'center',
     alignItems: 'center',

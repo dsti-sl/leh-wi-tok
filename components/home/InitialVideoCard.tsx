@@ -86,7 +86,7 @@ const InitialVideoCard: React.FC<InitialVideoCardProps> = ({
           videoSource={videoData.videoUrl}
           title="Introduction to the Le wi tok application"
           onClose={() => setShowVideoModal(false)}
-          headers={videoData.headers}
+          {...(videoData.headers && { headers: videoData.headers })}
         />
       </CModal>
     </>

@@ -28,7 +28,6 @@
     "noImplicitThis": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
     "useUnknownInCatchVariables": true,
     "noPropertyAccessFromIndexSignature": false,
     "incremental": true
