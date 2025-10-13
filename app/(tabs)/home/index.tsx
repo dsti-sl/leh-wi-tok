@@ -54,7 +54,9 @@ const HomeScreen = () => {
   }, [BASE_URL]);
 
   useEffect(() => {
-    if (user && !user.student) {
+    if (!user) return;
+
+    if (!user.location) {
       router.replace('/preferences');
     }
   }, [user]);
@@ -85,7 +87,7 @@ const HomeScreen = () => {
     );
   }
 
-  if (user && user.student) {
+  if ((user?.location as Record)?.id) {
     return (
       <View style={styles.container}>
         {user && <HomeBanner user={user} />}

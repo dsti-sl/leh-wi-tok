@@ -88,7 +88,7 @@
     "lint-staged": "^16.2.3",
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
-    "typescript": "~5.3.3"
+    "typescript": "^5.9.3"
   },
   "private": true
 }

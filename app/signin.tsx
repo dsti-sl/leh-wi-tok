@@ -51,6 +51,7 @@ const SignInScreen = () => {
         <TextInput
           style={styles.input}
           placeholder="Enter your phone number"
+          placeholderTextColor={'#ccc'}
           keyboardType="phone-pad"
           onChangeText={text => setPhoneNumber(text)}
           value={phoneNumber}
