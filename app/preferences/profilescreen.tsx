@@ -231,6 +231,7 @@ const ProfileDetailsScreen = () => {
             <TextInput
               style={styles.input}
               placeholder="Username"
+              placeholderTextColor={'#ccc'}
               value={typeof name === 'string' ? name : ''}
               disableFullscreenUI={true}
               autoCapitalize="none"
@@ -241,6 +242,7 @@ const ProfileDetailsScreen = () => {
           </View>
 
           <Select
+            disabled={!user?.student}
             inputLabel="Class / Form"
             selectItems={grades.map(grade => ({
               label: grade,
@@ -260,7 +262,7 @@ const ProfileDetailsScreen = () => {
             <TextInput
               style={styles.input}
               placeholder="Age"
-              placeholderTextColor="#999"
+              placeholderTextColor="#ccc"
               keyboardType="numeric"
               value={age}
               onChangeText={validateAgeInput}
