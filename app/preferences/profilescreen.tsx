@@ -32,9 +32,11 @@ const ProfileDetailsScreen = () => {
   const [age, setAge] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading2, setIsLoading2] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [locationId, setLocationID] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<Record<string, any> | null>(null);
   const [gradeID, setGradeID] = useState('');
   const router = useRouter();
   const { userId, name } = useLocalSearchParams();
@@ -44,7 +46,26 @@ const ProfileDetailsScreen = () => {
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        setIsLoading2(true);
+        setLoading(true);
+        const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/me`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setUser(data.data[0]);
+        }
+        setLoading(false);
+      } catch (error) {
+        setLoading(false);
+      }
+    };
+
+    fetchUserDetails();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        setLoading(true);
         const response = await fetch(
           `${EXPO_PUBLIC_BASE_URL}/location?name=eq.${selectedLocation}`,
         );
@@ -52,9 +73,9 @@ const ProfileDetailsScreen = () => {
         if (response.ok) {
           setLocationID(data.data[0].id);
         }
-        setIsLoading2(false);
+        setLoading(false);
       } catch (error) {
-        setIsLoading2(false);
+        setLoading(false);
       }
     };
 
@@ -62,9 +83,11 @@ const ProfileDetailsScreen = () => {
   }, [selectedLocation]);
 
   useEffect(() => {
+    if (!user?.student) return;
+
     const fetchUserDetails = async () => {
       try {
-        setIsLoading2(true);
+        setLoading(true);
         const response = await fetch(
           `${EXPO_PUBLIC_BASE_URL}/tag?title=eq.${selectedGrade}`,
         );
@@ -72,14 +95,14 @@ const ProfileDetailsScreen = () => {
         if (response.ok) {
           setGradeID(data.data[0].id);
         }
-        setIsLoading2(false);
+        setLoading(false);
       } catch (error) {
-        setIsLoading2(false);
+        setLoading(false);
       }
     };
 
     fetchUserDetails();
-  }, [selectedGrade]);
+  }, [selectedGrade, user]);
 
   const validateAgeInput = (input: string) => {
     const numericValue = input.replace(/[^0-9]/g, '');
@@ -94,7 +117,12 @@ const ProfileDetailsScreen = () => {
   };
 
   const handleSaveAndContinue = async () => {
-    if (!name || !selectedGrade || !age || !selectedLocation) {
+    if (
+      !name ||
+      (!selectedGrade && user?.student) ||
+      !age ||
+      !selectedLocation
+    ) {
       return Alert.alert(
         'Error',
         'Please fill out all fields before continuing.',
@@ -120,7 +148,7 @@ const ProfileDetailsScreen = () => {
       const profileDetails = {
         handle: name,
         pictureId: uploadResponse.data[0].id,
-        tags: [gradeID],
+        tags: user?.student ? [gradeID] : [],
         age: parseInt(age),
         locationId,
       };
@@ -167,7 +195,7 @@ const ProfileDetailsScreen = () => {
     return response.json();
   };
 
-  if (isLoading || isLoading2) {
+  if (loading || isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
