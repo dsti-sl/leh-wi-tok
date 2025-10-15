@@ -248,40 +248,16 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           setVideoInfo(info);
           setUsingFallback(false);
 
-          console.log('=== VIDEO INFO LOADED ===');
-          console.log('Video Name:', info.name);
-          console.log('Video ID:', videoId);
-          console.log('Has Qualities:', info.hasQualities);
-          console.log('Original URL:', info.originalUrl);
-          console.log(
-            'Available Qualities:',
-            info.qualities?.map((q: VideoQuality) => ({
-              quality: q.quality,
-              resolution: q.resolution,
-              bitrate: q.bitrate,
-              streamUrl: q.streamUrl,
-            })),
-          );
-
           if (info.hasQualities && info.qualities?.length > 0) {
             const recommended = getRecommendedQuality();
             const url = getStreamUrl(info, recommended);
-            console.log('Recommended Quality:', recommended);
-            console.log('Initial Stream URL:', url);
             setCurrentStreamUrl(url);
           } else {
-            console.log('No qualities available, using original URL');
             setCurrentStreamUrl(info.originalUrl);
           }
-          console.log('========================');
           return;
         }
-      } catch (adaptiveError) {
-        console.log(
-          'Adaptive streaming not available, using fallback:',
-          adaptiveError,
-        );
-      }
+      } catch (adaptiveError) {}
 
       setCurrentStreamUrl(uri);
       setUsingFallback(true);
@@ -321,10 +297,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
   const getStreamUrl = useCallback(
     (info: VideoInfo, quality: string): string => {
-      console.log('=== GET STREAM URL ===');
-      console.log('Requested Quality:', quality);
-      console.log('Video Info:', JSON.stringify(info, null, 2));
-
       if (quality === 'original') {
         let originalUrl = info.originalUrl;
         // Convert HTTP to HTTPS if base URL is HTTPS
@@ -333,9 +305,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           getBaseUrl().startsWith('https://')
         ) {
           originalUrl = originalUrl.replace('http://', 'https://');
-          console.log('Converted original URL to HTTPS:', originalUrl);
         }
-        console.log('Using original URL:', originalUrl);
         return originalUrl;
       }
 
@@ -388,11 +358,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         getBaseUrl().startsWith('https://')
       ) {
         fallbackUrl = fallbackUrl.replace('http://', 'https://');
-        console.log('Converted fallback URL to HTTPS:', fallbackUrl);
       }
-
-      console.log('Using fallback URL:', fallbackUrl);
-      console.log('====================');
       return fallbackUrl;
     },
     [],
@@ -411,9 +377,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       const newUrl = getStreamUrl(videoInfo, recommended);
 
       if (newUrl !== currentStreamUrl) {
-        console.log(
-          `Network changed to ${connectionType}, switching to ${recommended}`,
-        );
         setCurrentStreamUrl(newUrl);
       }
     }
@@ -432,15 +395,10 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     async (quality: string) => {
       if (!videoInfo || !enableAdaptiveStreaming) return;
 
-      console.log('=== QUALITY CHANGE ===');
-      console.log('Changing from:', selectedQuality, 'to:', quality);
-      console.log('Video Info:', videoInfo);
-
       setSelectedQuality(quality);
       setShowQualityMenu(false);
 
       if (usingFallback) {
-        console.log('Using fallback mode, no quality change');
         return;
       }
 
@@ -453,11 +411,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         console.log('Auto quality selected:', recommended);
       } else {
         newUrl = getStreamUrl(videoInfo, quality);
-        console.log('Manual quality selected:', quality);
       }
-
-      console.log('New Stream URL:', newUrl);
-      console.log('=====================');
 
       // Simply update the URL - useVideoPlayer will handle recreation
       setCurrentStreamUrl(newUrl);
@@ -489,28 +443,17 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   ]);
 
   const handleVideoTap = useCallback(() => {
-    console.log('=== VIDEO TAP ===');
-    console.log('Platform:', Platform.OS);
-    console.log('Current showControls:', showControls);
-    console.log('Current showQualityMenu:', showQualityMenu);
-
     if (Platform.OS === 'android') {
-      // On Android, toggle controls to sync with native behavior
       setShowControls(prev => !prev);
-      // Close quality menu when toggling controls
+
       setShowQualityMenu(false);
     } else {
-      // On iOS, toggle as before
       setShowControls(prev => !prev);
       setShowQualityMenu(false);
     }
   }, [showControls, showQualityMenu]);
 
   const handleQualityButtonPress = useCallback(() => {
-    console.log('=== QUALITY BUTTON PRESS ===');
-    console.log('Platform:', Platform.OS);
-    console.log('Current showQualityMenu:', showQualityMenu);
-
     setShowQualityMenu(prev => !prev);
 
     // On Android, ensure controls stay visible when menu is open
@@ -554,9 +497,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             handleLoad();
           }
         } catch (error) {
-          //console.error('Video player status check error:', error);
-          // Don't set error state for status check failures
-          // as they might be due to player recreation
         }
       }
     }, 250);
@@ -566,7 +506,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     };
   }, [player, shouldLoop, onError, onLoad, hasLoaded, autoPlay]);
 
-  // Add a new useEffect to handle URL changes more safely
   useEffect(() => {
     if (enableAdaptiveStreaming && currentStreamUrl) {
       // Reset loading state when URL changes

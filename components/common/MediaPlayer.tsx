@@ -35,14 +35,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const BASE_URL = getBaseUrl();
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
 
-  // Log video URL construction
-  console.log('=== LESSON VIDEO URL CONSTRUCTION ===');
-  console.log('Base URL:', BASE_URL);
-  console.log('Gesture ID:', gestureId);
-  console.log('Full Video URL:', fileUrl);
-  console.log('Content Type:', gestureInfo?.contentType);
-  console.log('Gesture Name:', gestureInfo?.name);
-  console.log('=====================================');
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -62,10 +54,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     fetchToken();
   }, []);
 
-  const handleMediaLoad = useCallback(() => {
-    // Media loaded successfully
-    console.log('Media loaded successfully');
-  }, []);
+  const handleMediaLoad = useCallback(() => {}, []);
 
   const handleMediaError = useCallback((error: unknown) => {
     console.error('Media loading error:', error);
