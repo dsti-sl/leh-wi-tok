@@ -32,6 +32,7 @@ interface SelectProps {
   placeholderStyle?: TextStyle;
   showDivider?: boolean;
   divider?: React.ReactNode;
+  disabled?: boolean;
 }
 const Select: React.FC<SelectProps> = ({
   inputLabel,
@@ -46,6 +47,7 @@ const Select: React.FC<SelectProps> = ({
   selectContainer = {},
   placeholderStyle = {},
   showDivider = true,
+  disabled = false,
   divider = <Divider />,
 }) => {
   const [openModal, setOpenModal] = useState(false);
@@ -58,6 +60,7 @@ const Select: React.FC<SelectProps> = ({
       <TouchableOpacity
         onPress={() => setOpenModal(true)}
         style={styles.selectField}
+        disabled={disabled}
       >
         {!selectedItem[valueField] ? (
           <Text style={[styles.placeholderStyle, placeholderStyle]}>
@@ -96,6 +99,7 @@ const Select: React.FC<SelectProps> = ({
                 setSelectedItem(item);
                 setOpenModal(false);
               }}
+              disabled={disabled}
             >
               <Text style={styles.itemText}>{item[labelField] as string}</Text>
             </TouchableOpacity>

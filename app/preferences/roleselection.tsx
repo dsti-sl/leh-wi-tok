@@ -37,8 +37,14 @@ const RoleSelection = () => {
   };
 
   const updateRole = async (role: string) => {
-    const roleUpdate =
-      role === 'student' ? { student: true } : { teacher: true };
+    const rolesUpdate = roles.reduce(
+      (acc, curr) => {
+        acc[curr.id] = curr.id === role;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
+
     try {
       const response = await fetch(
         `${EXPO_PUBLIC_BASE_URL}/user?id=${userId}`,
@@ -47,11 +53,11 @@ const RoleSelection = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(roleUpdate),
+          body: JSON.stringify(rolesUpdate),
         },
       );
 
-      const data = await response.json();
+      await response.json();
 
       if (response.ok) {
         Alert.alert('Success', 'Role updated successfully!');
@@ -72,10 +78,7 @@ const RoleSelection = () => {
       Alert.alert('Error', 'Please select a role before proceeding.');
       return;
     }
-    if (selectedRole === 'teacher') {
-      Alert.alert('Warning', 'Teachers are not allowed to use this app yet.');
-      return;
-    }
+
     setIsLoading(true);
     try {
       await updateRole(selectedRole);

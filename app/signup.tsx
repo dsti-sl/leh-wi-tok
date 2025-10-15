@@ -61,7 +61,8 @@ const SignUpScreen = () => {
         />
         <TextInput
           style={styles.input}
-          placeholder="Enter your Full Name"
+          placeholder="John Doe"
+          placeholderTextColor={'#ccc'}
           onChangeText={text => setFullName(text)}
           value={fullName}
           autoCapitalize="words"
@@ -78,7 +79,8 @@ const SignUpScreen = () => {
         />
         <TextInput
           style={styles.input}
-          placeholder="Enter your Phone Number"
+          placeholder="23278123456"
+          placeholderTextColor={'#ccc'}
           keyboardType="phone-pad"
           onChangeText={text => setPhoneNumber(text)}
           value={phoneNumber}
@@ -95,7 +97,8 @@ const SignUpScreen = () => {
         />
         <TextInput
           style={styles.input}
-          placeholder="Enter your email"
+          placeholder="user@gmail.com"
+          placeholderTextColor={'#ccc'}
           keyboardType="email-address"
           onChangeText={text => setEmail(text)}
           value={email}
