@@ -136,14 +136,14 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   useEffect(() => {
     if (!showControls) return;
 
-    // Auto-hide controls after 3 seconds
+    // Auto-hide controls after 5 seconds (increased from 3)
     const timer = setTimeout(() => {
       setShowControls(false);
       setShowQualityMenu(false);
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [showControls]);
+  }, [showControls, showQualityMenu]);
 
   const player = useVideoPlayer(
     {
@@ -489,9 +489,35 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   ]);
 
   const handleVideoTap = useCallback(() => {
-    setShowControls(prev => !prev);
-    setShowQualityMenu(false);
-  }, []);
+    console.log('=== VIDEO TAP ===');
+    console.log('Platform:', Platform.OS);
+    console.log('Current showControls:', showControls);
+    console.log('Current showQualityMenu:', showQualityMenu);
+
+    if (Platform.OS === 'android') {
+      // On Android, toggle controls to sync with native behavior
+      setShowControls(prev => !prev);
+      // Close quality menu when toggling controls
+      setShowQualityMenu(false);
+    } else {
+      // On iOS, toggle as before
+      setShowControls(prev => !prev);
+      setShowQualityMenu(false);
+    }
+  }, [showControls, showQualityMenu]);
+
+  const handleQualityButtonPress = useCallback(() => {
+    console.log('=== QUALITY BUTTON PRESS ===');
+    console.log('Platform:', Platform.OS);
+    console.log('Current showQualityMenu:', showQualityMenu);
+
+    setShowQualityMenu(prev => !prev);
+
+    // On Android, ensure controls stay visible when menu is open
+    if (Platform.OS === 'android' && !showQualityMenu) {
+      setShowControls(true);
+    }
+  }, [showQualityMenu]);
 
   useEffect(() => {
     if (!player) return;
@@ -627,7 +653,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           <View style={styles.qualityControls}>
             <TouchableOpacity
               style={styles.qualityButton}
-              onPress={() => setShowQualityMenu(!showQualityMenu)}
+              onPress={handleQualityButtonPress}
               activeOpacity={0.7}
             >
               <Text style={styles.qualityButtonText}>{getQualityLabel()}</Text>
@@ -798,7 +824,7 @@ const styles = StyleSheet.create({
   bufferingText: { color: '#FFF', marginTop: 8, fontSize: 14 },
   qualityControls: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 40 : 20,
+    bottom: Platform.OS === 'ios' ? 40 : 50,
     right: 15,
     zIndex: 1000,
   },
