@@ -173,11 +173,15 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       console.log('====================================');
 
       if (playerInstance) {
-        playerInstance.loop = shouldLoop;
-        if (autoPlay) {
-          playerInstance.play();
-        } else {
-          playerInstance.pause();
+        try {
+          playerInstance.loop = shouldLoop;
+          if (autoPlay) {
+            playerInstance.play();
+          } else {
+            playerInstance.pause();
+          }
+        } catch (error) {
+          console.error('Error configuring player instance:', error);
         }
       }
     },
@@ -187,13 +191,31 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     if (!player || !enableAdaptiveStreaming) return;
 
     const subscription = player.addListener('statusChange', status => {
+      console.log('=== ANDROID VIDEO STATUS ===');
+      console.log('Status:', status.status);
+      console.log('Platform:', Platform.OS);
+      console.log('Video ID:', videoId);
+      console.log('Current URL:', currentStreamUrl);
+
+      if (status.status === 'error') {
+        console.log('=== ANDROID VIDEO ERROR ===');
+        console.log('Error Details:', status);
+        console.log('Headers:', headers);
+        console.log('Adaptive Streaming:', enableAdaptiveStreaming);
+        console.log('===========================');
+      }
+
       setIsBuffering(status.status === 'loading');
     });
 
     return () => {
-      subscription.remove();
+      try {
+        subscription?.remove();
+      } catch (error) {
+        console.warn('Error removing player subscription:', error);
+      }
     };
-  }, [player, enableAdaptiveStreaming]);
+  }, [player, videoId, currentStreamUrl, headers, enableAdaptiveStreaming]);
 
   const loadVideoInfo = useCallback(async () => {
     if (!videoId || !token || !enableAdaptiveStreaming) return;
@@ -422,7 +444,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         return;
       }
 
-      const currentTime = player?.currentTime || 0;
+      // Don't access player.currentTime here as it may be stale
       let newUrl: string;
 
       if (quality === 'auto') {
@@ -435,24 +457,13 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       }
 
       console.log('New Stream URL:', newUrl);
-      console.log('Current Time:', currentTime);
       console.log('=====================');
 
+      // Simply update the URL - useVideoPlayer will handle recreation
       setCurrentStreamUrl(newUrl);
-
-      /*       setTimeout(() => {
-        if (player && currentTime > 0) {
-          player.currentTime = currentTime;
-          if (autoPlay) {
-            player.play();
-          }
-        }
-      }, 500); */
     },
     [
       videoInfo,
-      player,
-      autoPlay,
       getRecommendedQuality,
       getStreamUrl,
       usingFallback,
@@ -494,9 +505,9 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           try {
             player.play();
           } catch (error) {
-            console.error('Video player error:', error);
+            console.error('Video player play error:', error);
             setHasError(true);
-            setErrorMessage('Failed to load video');
+            setErrorMessage('Failed to play video');
             onError?.(error);
           }
         } else {
@@ -517,10 +528,9 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             handleLoad();
           }
         } catch (error) {
-          console.error('Video player error:', error);
-          setHasError(true);
-          setErrorMessage('Failed to load video');
-          onError?.(error);
+          //console.error('Video player status check error:', error);
+          // Don't set error state for status check failures
+          // as they might be due to player recreation
         }
       }
     }, 250);
@@ -529,6 +539,17 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       clearInterval(statusInterval);
     };
   }, [player, shouldLoop, onError, onLoad, hasLoaded, autoPlay]);
+
+  // Add a new useEffect to handle URL changes more safely
+  useEffect(() => {
+    if (enableAdaptiveStreaming && currentStreamUrl) {
+      // Reset loading state when URL changes
+      setIsLoading(true);
+      setHasLoaded(false);
+      setHasError(false);
+      setErrorMessage('');
+    }
+  }, [currentStreamUrl, enableAdaptiveStreaming]);
 
   const handleRetry = () => {
     setHasError(false);
