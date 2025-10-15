@@ -68,10 +68,6 @@ const Onboarding = () => {
   }) => {
     const newIndex = Math.round(event.nativeEvent.contentOffset.x / width);
     setCurrentIndex(newIndex);
-
-    if (newIndex === slidesData.length - 1) {
-      handleCompleteOnboarding();
-    }
   };
 
   const getImageSource = (imagePath: string) => {
