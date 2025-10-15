@@ -26,7 +26,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   gestureId,
   gestureInfo,
   autoPlay = false,
-  useAdaptiveStreaming = false, // Default to false for backward compatibility
+  useAdaptiveStreaming = false,
 }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +34,15 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   const BASE_URL = getBaseUrl();
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
+
+  // Log video URL construction
+  console.log('=== LESSON VIDEO URL CONSTRUCTION ===');
+  console.log('Base URL:', BASE_URL);
+  console.log('Gesture ID:', gestureId);
+  console.log('Full Video URL:', fileUrl);
+  console.log('Content Type:', gestureInfo?.contentType);
+  console.log('Gesture Name:', gestureInfo?.name);
+  console.log('=====================================');
 
   useEffect(() => {
     const fetchToken = async () => {
