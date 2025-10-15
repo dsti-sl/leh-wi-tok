@@ -26,7 +26,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   gestureId,
   gestureInfo,
   autoPlay = false,
-  useAdaptiveStreaming = false, // Default to false for backward compatibility
+  useAdaptiveStreaming = false,
 }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +34,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   const BASE_URL = getBaseUrl();
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
+
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -53,10 +54,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     fetchToken();
   }, []);
 
-  const handleMediaLoad = useCallback(() => {
-    // Media loaded successfully
-    console.log('Media loaded successfully');
-  }, []);
+  const handleMediaLoad = useCallback(() => {}, []);
 
   const handleMediaError = useCallback((error: unknown) => {
     console.error('Media loading error:', error);

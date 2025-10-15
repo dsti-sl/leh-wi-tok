@@ -29,6 +29,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     permissions: ['CAMERA', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE'],
     package: 'com.dsti.lehwitok',
+    allowBackup: false,
   },
   web: {
     bundler: 'metro',

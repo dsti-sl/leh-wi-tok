@@ -136,14 +136,14 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   useEffect(() => {
     if (!showControls) return;
 
-    // Auto-hide controls after 3 seconds
+    // Auto-hide controls after 5 seconds (increased from 3)
     const timer = setTimeout(() => {
       setShowControls(false);
       setShowQualityMenu(false);
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [showControls]);
+  }, [showControls, showQualityMenu]);
 
   const player = useVideoPlayer(
     {
@@ -156,11 +156,15 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     },
     playerInstance => {
       if (playerInstance) {
-        playerInstance.loop = shouldLoop;
-        if (autoPlay) {
-          playerInstance.play();
-        } else {
-          playerInstance.pause();
+        try {
+          playerInstance.loop = shouldLoop;
+          if (autoPlay) {
+            playerInstance.play();
+          } else {
+            playerInstance.pause();
+          }
+        } catch (error) {
+          console.error('Error configuring player instance:', error);
         }
       }
     },
@@ -170,13 +174,19 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     if (!player || !enableAdaptiveStreaming) return;
 
     const subscription = player.addListener('statusChange', status => {
+
+
       setIsBuffering(status.status === 'loading');
     });
 
     return () => {
-      subscription.remove();
+      try {
+        subscription?.remove();
+      } catch (error) {
+        console.warn('Error removing player subscription:', error);
+      }
     };
-  }, [player, enableAdaptiveStreaming]);
+  }, [player, videoId, currentStreamUrl, headers, enableAdaptiveStreaming]);
 
   const loadVideoInfo = useCallback(async () => {
     if (!videoId || !token || !enableAdaptiveStreaming) return;
@@ -209,15 +219,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           setVideoInfo(info);
           setUsingFallback(false);
 
-          console.log('Video loaded with adaptive streaming:', {
-            name: info.name,
-            duration: info.duration,
-            hasQualities: info.hasQualities,
-            qualities:
-              info.qualities?.map((q: VideoQuality) => q.quality).join(', ') ||
-              'none',
-          });
-
           if (info.hasQualities && info.qualities?.length > 0) {
             const recommended = getRecommendedQuality();
             const url = getStreamUrl(info, recommended);
@@ -227,16 +228,10 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           }
           return;
         }
-      } catch (adaptiveError) {
-        console.log(
-          'Adaptive streaming not available, using fallback:',
-          adaptiveError,
-        );
-      }
+      } catch (adaptiveError) {}
 
       setCurrentStreamUrl(uri);
       setUsingFallback(true);
-      console.log('Using fallback video player for:', videoId);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to load video';
@@ -273,21 +268,62 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   const getStreamUrl = useCallback(
     (info: VideoInfo, quality: string): string => {
       if (quality === 'original') {
-        return info.originalUrl;
+        let originalUrl = info.originalUrl;
+        // Convert HTTP to HTTPS if base URL is HTTPS
+        if (
+          originalUrl.startsWith('http://') &&
+          getBaseUrl().startsWith('https://')
+        ) {
+          originalUrl = originalUrl.replace('http://', 'https://');
+        }
+        return originalUrl;
       }
 
       if (!info.hasQualities) {
-        return info.originalUrl;
+        let originalUrl = info.originalUrl;
+        // Convert HTTP to HTTPS if base URL is HTTPS
+        if (
+          originalUrl.startsWith('http://') &&
+          getBaseUrl().startsWith('https://')
+        ) {
+          originalUrl = originalUrl.replace('http://', 'https://');
+        }
+        return originalUrl;
       }
 
       const qualityOption = info.qualities?.find(q => q.quality === quality);
       if (qualityOption) {
-        console.log(`Selected ${quality}: ${qualityOption.bitrate}`);
-        return qualityOption.streamUrl;
+
+        let finalUrl = qualityOption.streamUrl;
+
+        // Convert HTTP to HTTPS if base URL is HTTPS
+        if (
+          finalUrl.startsWith('http://') &&
+          getBaseUrl().startsWith('https://')
+        ) {
+          finalUrl = finalUrl.replace('http://', 'https://');
+        }
+
+        // Convert relative URL to absolute URL if needed
+        if (finalUrl.startsWith('/')) {
+          const baseUrl = getBaseUrl();
+          finalUrl = `${baseUrl}${finalUrl}`;
+        }
+
+        return finalUrl;
       }
 
       const fallback = info.qualities?.[0];
-      return fallback ? fallback.streamUrl : info.originalUrl;
+      let fallbackUrl = fallback ? fallback.streamUrl : info.originalUrl;
+
+      // Convert HTTP to HTTPS if base URL is HTTPS
+      if (
+        fallbackUrl.startsWith('http://') &&
+        getBaseUrl().startsWith('https://')
+      ) {
+        fallbackUrl = fallbackUrl.replace('http://', 'https://');
+      }
+      return fallbackUrl;
     },
     [],
   );
@@ -305,9 +341,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       const newUrl = getStreamUrl(videoInfo, recommended);
 
       if (newUrl !== currentStreamUrl) {
-        console.log(
-          `Network changed to ${connectionType}, switching to ${recommended}`,
-        );
         setCurrentStreamUrl(newUrl);
       }
     }
@@ -329,9 +362,11 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       setSelectedQuality(quality);
       setShowQualityMenu(false);
 
-      if (usingFallback) return;
+      if (usingFallback) {
+        return;
+      }
 
-      const currentTime = player?.currentTime || 0;
+      // Don't access player.currentTime here as it may be stale
       let newUrl: string;
 
       if (quality === 'auto') {
@@ -341,25 +376,16 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         newUrl = getStreamUrl(videoInfo, quality);
       }
 
+      // Simply update the URL - useVideoPlayer will handle recreation
       setCurrentStreamUrl(newUrl);
-
-      /*       setTimeout(() => {
-        if (player && currentTime > 0) {
-          player.currentTime = currentTime;
-          if (autoPlay) {
-            player.play();
-          }
-        }
-      }, 500); */
     },
     [
       videoInfo,
-      player,
-      autoPlay,
       getRecommendedQuality,
       getStreamUrl,
       usingFallback,
       enableAdaptiveStreaming,
+      selectedQuality,
     ],
   );
 
@@ -380,9 +406,24 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   ]);
 
   const handleVideoTap = useCallback(() => {
-    setShowControls(prev => !prev);
-    setShowQualityMenu(false);
-  }, []);
+    if (Platform.OS === 'android') {
+      setShowControls(prev => !prev);
+
+      setShowQualityMenu(false);
+    } else {
+      setShowControls(prev => !prev);
+      setShowQualityMenu(false);
+    }
+  }, [showControls, showQualityMenu]);
+
+  const handleQualityButtonPress = useCallback(() => {
+    setShowQualityMenu(prev => !prev);
+
+    // On Android, ensure controls stay visible when menu is open
+    if (Platform.OS === 'android' && !showQualityMenu) {
+      setShowControls(true);
+    }
+  }, [showQualityMenu]);
 
   useEffect(() => {
     if (!player) return;
@@ -396,16 +437,15 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           try {
             player.play();
           } catch (error) {
-            console.error('Video player error:', error);
+            console.error('Video player play error:', error);
             setHasError(true);
-            setErrorMessage('Failed to load video');
+            setErrorMessage('Failed to play video');
             onError?.(error);
           }
         } else {
           try {
             player.pause();
           } catch (error) {
-            console.warn('VideoPlayer: Failed to pause:', error);
           }
         }
         onLoad?.();
@@ -419,10 +459,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             handleLoad();
           }
         } catch (error) {
-          console.error('Video player error:', error);
-          setHasError(true);
-          setErrorMessage('Failed to load video');
-          onError?.(error);
         }
       }
     }, 250);
@@ -431,6 +467,16 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       clearInterval(statusInterval);
     };
   }, [player, shouldLoop, onError, onLoad, hasLoaded, autoPlay]);
+
+  useEffect(() => {
+    if (enableAdaptiveStreaming && currentStreamUrl) {
+      // Reset loading state when URL changes
+      setIsLoading(true);
+      setHasLoaded(false);
+      setHasError(false);
+      setErrorMessage('');
+    }
+  }, [currentStreamUrl, enableAdaptiveStreaming]);
 
   const handleRetry = () => {
     setHasError(false);
@@ -508,7 +554,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           <View style={styles.qualityControls}>
             <TouchableOpacity
               style={styles.qualityButton}
-              onPress={() => setShowQualityMenu(!showQualityMenu)}
+              onPress={handleQualityButtonPress}
               activeOpacity={0.7}
             >
               <Text style={styles.qualityButtonText}>{getQualityLabel()}</Text>
@@ -679,7 +725,7 @@ const styles = StyleSheet.create({
   bufferingText: { color: '#FFF', marginTop: 8, fontSize: 14 },
   qualityControls: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 40 : 20,
+    bottom: Platform.OS === 'ios' ? 40 : 50,
     right: 15,
     zIndex: 1000,
   },
