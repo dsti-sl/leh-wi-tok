@@ -46,7 +46,7 @@ export interface LessonTag {
 export interface LessonSection {
   id: string;
   title: string;
-  description?: string;
+  description?: string | undefined;
   data: LessonTag[];
 }
 
@@ -363,8 +363,11 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   // Auto-expand first section on initial load
   useEffect(() => {
     if (sectionsData.length > 0 && expandedSections.size === 0) {
-      const firstSectionId = sectionsData[0].id;
-      setExpandedSections(new Set([firstSectionId]));
+      const firstSection = sectionsData[0];
+      if (firstSection) {
+        const firstSectionId = firstSection.id;
+        setExpandedSections(new Set([firstSectionId]));
+      }
     }
   }, [sectionsData, expandedSections.size]);
 
@@ -406,7 +409,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
           let sectionIndex = -1;
           for (let secIdx = 0; secIdx < sectionsData.length; secIdx++) {
             const section = sectionsData[secIdx];
-            const nuggetIndex = section.data.findIndex(
+            const nuggetIndex = section?.data.findIndex(
               item => item.id === lesson.id,
             );
             if (nuggetIndex !== -1) {

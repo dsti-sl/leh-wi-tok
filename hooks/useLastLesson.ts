@@ -12,7 +12,7 @@ interface LastLessonData {
   duration: string;
   isFirstTimeUser: boolean;
   lastWatchedPosition?: number;
-  headers?: Record<string, string>;
+  headers?: Record<string, string> | undefined;
 }
 
 interface CompletedLesson {
@@ -96,8 +96,7 @@ const useLastLesson = () => {
 
   const setIntroVideo = () => {
     const baseUrl = getBaseUrl();
-    const fileId =
-      '206e6204-19c1-410a-89e2-a3d066cd63fe-The Le We Tok Video.mp4';
+    const fileId = '65254ae9-6d04-46d1-ab16-7975a877bb6a';
     const downloadUrl = `${baseUrl}/file/download?id=${fileId}`;
 
     setLastLesson({
@@ -129,6 +128,15 @@ const useLastLesson = () => {
         const lesson = data.data[0];
         const lastPosition = await AsyncStorage.getItem(
           `lesson_${lesson.lesson.id}_position`,
+        );
+
+        console.log('=== LESSON VIDEO URL ===');
+        console.log('Lesson ID:', lesson.lesson.id);
+        console.log('Lesson Title:', lesson.lesson.title);
+        console.log('Gesture Path (videoUrl):', lesson.gesture?.path);
+        console.log(
+          'Headers:',
+          token ? { authorization: `Token ${token}` } : undefined,
         );
 
         setLastLesson({

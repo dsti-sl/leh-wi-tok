@@ -174,8 +174,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     if (!player || !enableAdaptiveStreaming) return;
 
     const subscription = player.addListener('statusChange', status => {
-
-
       setIsBuffering(status.status === 'loading');
     });
 
@@ -293,7 +291,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
       const qualityOption = info.qualities?.find(q => q.quality === quality);
       if (qualityOption) {
-
         let finalUrl = qualityOption.streamUrl;
 
         // Convert HTTP to HTTPS if base URL is HTTPS
@@ -445,8 +442,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         } else {
           try {
             player.pause();
-          } catch (error) {
-          }
+          } catch (error) {}
         }
         onLoad?.();
       }
@@ -458,8 +454,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           if (!hasLoaded && player.duration > 0) {
             handleLoad();
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
     }, 250);
 
@@ -489,9 +484,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     }
   };
 
-  // ===== RENDER =====
-
-  // Error state
   if (hasError) {
     return (
       <View style={styles.errorContainer}>

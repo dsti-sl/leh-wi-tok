@@ -18,7 +18,7 @@ interface InitialVideoCardProps {
     duration: string;
     isFirstTimeUser: boolean;
     lastWatchedPosition?: number;
-    headers?: Record<string, string>;
+    headers?: Record<string, string> | undefined;
   };
   onPlayPress?: (
     _lessonId: string,

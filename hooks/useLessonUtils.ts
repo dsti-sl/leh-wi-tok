@@ -59,7 +59,7 @@ export const useLessonUtils = (): UseLessonUtilsReturn => {
     ): boolean => {
       if (index === 0) return false;
       const previousLesson = lessons[index - 1];
-      return !completedLessons.has(previousLesson.id);
+      return previousLesson ? !completedLessons.has(previousLesson.id) : true;
     },
     [],
   );
