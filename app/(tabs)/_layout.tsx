@@ -2,17 +2,30 @@ import React from 'react';
 
 import { StyleSheet } from 'react-native';
 
-import { Tabs } from 'expo-router';
+import { Tabs, useSegments } from 'expo-router';
 
 import TabBarIcon from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 
 export default function Layout() {
+  const segments = useSegments();
+
+  // Hide tab bar on child routes
+  const shouldHideTabBar = segments.some(
+    segment =>
+      segment === 'level' ||
+      segment === 'edit-profile' ||
+      segment === 'category' ||
+      segment === 'definition' ||
+      segment === 'help' ||
+      segment.startsWith('['),
+  );
+
   return (
     <Tabs
       screenOptions={{
         tabBarShowLabel: true,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: shouldHideTabBar ? { display: 'none' } : styles.tabBar,
         tabBarItemStyle: styles.tabBarItemStyle,
         tabBarLabelStyle: styles.tabLabel,
         tabBarActiveTintColor: Colors.primary,
