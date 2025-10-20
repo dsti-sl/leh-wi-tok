@@ -130,14 +130,6 @@ const useLastLesson = () => {
           `lesson_${lesson.lesson.id}_position`,
         );
 
-        console.log('=== LESSON VIDEO URL ===');
-        console.log('Lesson ID:', lesson.lesson.id);
-        console.log('Lesson Title:', lesson.lesson.title);
-        console.log('Gesture Path (videoUrl):', lesson.gesture?.path);
-        console.log(
-          'Headers:',
-          token ? { authorization: `Token ${token}` } : undefined,
-        );
 
         setLastLesson({
           id: lesson.lesson.id,
