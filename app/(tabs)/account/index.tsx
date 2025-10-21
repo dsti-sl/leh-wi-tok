@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import {
   ScrollView,
@@ -14,13 +14,27 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 import useAccount from '@/hooks/useAccount';
+import { fetchAndInsertTranslations } from '@/data/dictionary';
 
 const Account = () => {
   const { userInfo, isLoggingOut, confirmLogout, confirmAccountDeletion } =
     useAccount();
   const router = useRouter();
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const initial = userInfo?.name?.[0]?.toUpperCase?.() ?? '';
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      await fetchAndInsertTranslations();
+      console.log('Dictionary synced successfully');
+    } catch (error) {
+      console.error('Error syncing dictionary:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   return (
     <ScrollView
@@ -48,15 +62,33 @@ const Account = () => {
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Account Details</Text>
-          <TouchableOpacity
-            disabled={true}
-            accessibilityLabel="Edit profile"
-            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            onPress={() => router.push('/account/edit-profile')}
-            style={{ ...styles.iconButton, backgroundColor: Colors.primary }}
-          >
-            <Feather name="edit" size={16} color={Colors.secondary} />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              disabled={isSyncing}
+              accessibilityLabel="Sync dictionary"
+              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+              onPress={handleSync}
+              style={[
+                styles.iconButton,
+                { backgroundColor: isSyncing ? '#ccc' : Colors.primary },
+              ]}
+            >
+              <Ionicons
+                name={isSyncing ? 'refresh' : 'sync'}
+                size={16}
+                color={Colors.secondary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              disabled={true}
+              accessibilityLabel="Edit profile"
+              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+              onPress={() => router.push('/account/edit-profile')}
+              style={{ ...styles.iconButton, backgroundColor: Colors.primary }}
+            >
+              <Feather name="edit" size={16} color={Colors.secondary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.infoRow}>
@@ -192,6 +224,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 18,

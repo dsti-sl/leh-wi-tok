@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { fetchDictionaryData } from '@/db/retrivedata';
 import useSearch from '@/hooks/useSearch';
+import { fetchAndInsertTranslations } from '@/data/dictionary';
 
 interface DictionaryEntry {
   word: string;
@@ -35,6 +36,7 @@ const index = () => {
 
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const {
     query,
@@ -62,6 +64,22 @@ const index = () => {
 
     fetchData();
   }, [searchParamQuery, setQuery]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Call your fetchAndInsertTranslations function
+      await fetchAndInsertTranslations();
+
+      // Refresh the local data
+      const data: DictionaryEntry[] = await fetchDictionaryData();
+      setDictionaryData(data);
+    } catch (error) {
+      console.error('Error refreshing dictionary data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const categoryGroupedWords: GroupedWordsSection[] = useMemo(() => {
     if (loading || query) {
       return [];
@@ -73,9 +91,11 @@ const index = () => {
 
     const groupedData = wordsForCurrentCategory.reduce(
       (acc: Record<string, DictionaryEntry[]>, item) => {
-        const firstLetter = item.word[0].toUpperCase();
-        if (!acc[firstLetter]) acc[firstLetter] = [];
-        acc[firstLetter].push(item);
+        const firstLetter = item.word[0]?.toUpperCase();
+        if (firstLetter) {
+          if (!acc[firstLetter]) acc[firstLetter] = [];
+          acc[firstLetter].push(item);
+        }
         return acc;
       },
       {} as Record<string, DictionaryEntry[]>,
@@ -85,7 +105,8 @@ const index = () => {
       .sort()
       .map(key => ({
         title: key,
-        data: groupedData[key].sort((a, b) => a.word.localeCompare(b.word)),
+        data:
+          groupedData[key]?.sort((a, b) => a.word.localeCompare(b.word)) || [],
       }));
   }, [dictionaryData, categoryName, query, loading]);
 
@@ -104,6 +125,8 @@ const index = () => {
           data={globalFilteredData}
           keyExtractor={(item: DictionaryEntry) => item.word}
           contentContainerStyle={styles.searchResultsContainer}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           renderItem={({ item }: { item: DictionaryEntry }) => (
             <TouchableOpacity
               onPress={() =>
@@ -127,6 +150,8 @@ const index = () => {
         <SectionList
           sections={categoryGroupedWords}
           keyExtractor={(item: DictionaryEntry) => item.word}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           renderItem={({ item }: { item: DictionaryEntry }) => (
             <TouchableOpacity
               onPress={() =>
