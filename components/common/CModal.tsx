@@ -14,7 +14,7 @@ interface CModalProps extends ModalProps {
   open: boolean;
   setOpen: (_open: boolean) => void;
   children: React.ReactNode;
-  modalContainerStyle?: ViewStyle;
+  modalContainerStyle?: ViewStyle | undefined;
 }
 const CModal: React.FC<CModalProps> = ({
   open,

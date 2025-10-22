@@ -27,7 +27,11 @@ export const parseArrayObjectToSelectables = (
   arrObjects.reduce(
     (acc: C_Record[], val, curIndex: number) => [
       ...acc,
-      { key: curIndex + 1, label: val[labelKey], value: val[valueKey] },
+      {
+        key: curIndex + 1,
+        label: val[labelKey] || '',
+        value: val[valueKey] || '',
+      },
     ],
     [],
   );
