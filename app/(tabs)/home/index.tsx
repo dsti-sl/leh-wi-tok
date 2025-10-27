@@ -107,13 +107,6 @@ const HomeScreen = () => {
         <ScrollView style={styles.itemsContainer}>
           <View>
             <HomeItem
-              title="Find Help"
-              description="Find help from volunteers who are blah, blah and blah"
-              image={questionMarkCircular as ImageSourcePropType}
-              bgColor="#0d3a46"
-              routeName="/(tabs)/home/help"
-            />
-            <HomeItem
               title="Lessons"
               description="Get Started with our progress driven Le Wi Tok ASL lessons."
               image={lessonFillSeconday as ImageSourcePropType}
@@ -127,19 +120,12 @@ const HomeScreen = () => {
               bgColor="#1e1e1e"
               routeName="/(tabs)/dictionary"
             />
-            {/* <HomeItem
-              title="Become a Volunteer"
-              description="Join the community of sign language voluteers and be..."
-              image={volunteerOutlineFillSecondary as ImageSourcePropType}
-              bgColor="#1f1f39"
-              routeName="/(tabs)/home/help"
-            /> */}
             <HomeItem
-              title="Become a Volunteer"
-              description="Join the community of sign language voluteers and be..."
+              title="Kam Mak Wi Tok"
+              description="With instant translation of text to sign language"
               image={volunteerOutlineFillSecondary as ImageSourcePropType}
               bgColor="#1f1f39"
-              routeName="/(tabs)/home/help"
+              routeName="/(tabs)/tok"
             />
           </View>
         </ScrollView>
