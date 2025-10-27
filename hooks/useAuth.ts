@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { router } from 'expo-router';
 
-import { getBaseUrl, getStoredUserId } from '@/utils';
+import { getBaseUrl, getStoredUserId, normalizePhoneNumber } from '@/utils';
 
 const useAuth = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -13,8 +13,6 @@ const useAuth = () => {
     if (!phoneNumber) return 'Phone number is required';
     if (!/^\d+$/.test(phoneNumber))
       return 'Phone number can only contain digits';
-    if (phoneNumber.length < 9 || phoneNumber.length > 12)
-      return 'Phone number must be between 9 and 12 digits';
     return '';
   };
 
@@ -38,17 +36,25 @@ const useAuth = () => {
       setError(validationError);
       return;
     }
+
+    const normalizedPhone = normalizePhoneNumber(phoneNumber);
+
+    if (normalizedPhone.length !== 12) {
+      setError('Phone number must be 9 digits (e.g., 076879133)');
+      return;
+    }
+
     setError('');
     setIsLoading(true);
     try {
       const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: phoneNumber }),
+        body: JSON.stringify({ user: normalizedPhone }),
       });
       const data = await response.json();
       if (response.ok) {
-        router.push(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=true`);
+        router.push(`/otpscreen?phoneNumber=${normalizedPhone}&isSignIn=true`);
       } else {
         setError(data.message || 'Unregistered phone number, Please signup');
       }
