@@ -39,8 +39,10 @@ const useSignup = () => {
 
       const normalizedPhone = normalizePhoneNumber(phoneNumber);
 
-      if (normalizedPhone.length !== 12) {
-        setError('Phone number must be 9 digits.');
+      if (normalizedPhone.length < 11 || normalizedPhone.length > 12) {
+        setError(
+          'Phone number must be between 9 and 10 digits (e.g., 0761112222).',
+        );
         setIsLoading(false);
         return;
       }

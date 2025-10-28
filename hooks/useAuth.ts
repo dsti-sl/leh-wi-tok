@@ -39,8 +39,10 @@ const useAuth = () => {
 
     const normalizedPhone = normalizePhoneNumber(phoneNumber);
 
-    if (normalizedPhone.length !== 12) {
-      setError('Phone number must be 9 digits (e.g., 076879133)');
+    if (normalizedPhone.length < 11 || normalizedPhone.length > 12) {
+      setError(
+        'Phone number must be between 9 and 10 digits (e.g., 076XXXXXX).',
+      );
       return;
     }
 
