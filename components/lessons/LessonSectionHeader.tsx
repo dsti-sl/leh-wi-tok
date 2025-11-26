@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 
 interface LessonSectionHeaderProps {
   lessonTitle: string;
@@ -85,13 +86,12 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    ...typography.subheading,
     color: '#333',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    ...typography.body,
     color: '#666',
     marginBottom: 8,
   },
@@ -113,9 +113,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   progressText: {
-    fontSize: 12,
+    ...typography.caption,
     color: '#666',
-    fontWeight: '500',
     minWidth: 35,
     textAlign: 'right',
   },

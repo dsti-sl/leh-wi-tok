@@ -18,6 +18,7 @@ import { Feather } from '@expo/vector-icons';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 import useAuth from '@/hooks/useAuth';
 
 const SignInScreen = () => {
@@ -107,8 +108,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   welcomeText: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    ...typography.headingLg,
     color: Colors.primary,
     textAlign: 'center',
     paddingLeft: 10,
@@ -121,14 +121,14 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   subText: {
-    fontSize: 14,
+    ...typography.body,
     color: '#727374',
     textAlign: 'center',
     marginBottom: 20,
   },
   // Removed unused oauth and icon styles
   label: {
-    fontSize: 12,
+    ...typography.label,
     color: '#000',
   },
   inputContainer: {
@@ -149,12 +149,12 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 40,
-    fontSize: 14,
+    ...typography.body,
     color: '#333',
   },
   error: {
     color: 'red',
-    fontSize: 14,
+    ...typography.body,
     marginVertical: 5,
   },
   requestOtpButton: {
@@ -166,6 +166,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   footerText: {
+    ...typography.body,
     position: 'absolute',
     bottom: 20,
     width: '100%',
@@ -174,8 +175,7 @@ const styles = StyleSheet.create({
   },
   signUpLink: {
     color: Colors.primary,
-    fontWeight: 'bold',
-    fontSize: 14,
+    ...typography.bodyStrong,
     marginBottom: -3,
   },
 });

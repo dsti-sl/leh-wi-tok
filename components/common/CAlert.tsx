@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 
 import Button from './Button';
 import CModal from './CModal';
@@ -75,12 +76,13 @@ const styles = StyleSheet.create({
     alignContent: 'center',
   },
   title: {
-    fontSize: 16,
-    fontWeight: '500',
+    ...typography.subheading,
+    textAlign: 'center',
   },
   message: {
-    fontSize: 12,
-    opacity: 0.8,
+    ...typography.body,
+    color: '#333',
+    opacity: 0.9,
     textAlign: 'center',
   },
   image: {

@@ -18,6 +18,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 import { getBaseUrl, setToken } from '@/utils';
 
 const OtpScreen = () => {
@@ -227,15 +228,14 @@ const styles = StyleSheet.create({
     marginTop: -50,
   },
   headerText: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    ...typography.headingLg,
     color: Colors.primary,
     textAlign: 'center',
     marginBottom: 10,
     marginTop: 20,
   },
   subText: {
-    fontSize: 14,
+    ...typography.body,
     color: '#727374',
     textAlign: 'center',
     marginBottom: 20,
@@ -252,13 +252,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eaeff5',
     textAlign: 'center',
-    fontSize: 14,
+    ...typography.body,
     color: Colors.primary,
     backgroundColor: '#f5f9fe',
   },
   error: {
     color: 'red',
-    fontSize: 12,
+    ...typography.body,
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   resendText: {
-    fontSize: 14,
+    ...typography.bodyStrong,
     color: Colors.primary,
     marginBottom: 0,
   },

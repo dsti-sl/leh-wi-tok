@@ -130,7 +130,6 @@ const useLastLesson = () => {
           `lesson_${lesson.lesson.id}_position`,
         );
 
-
         setLastLesson({
           id: lesson.lesson.id,
           title: lesson.lesson.title,

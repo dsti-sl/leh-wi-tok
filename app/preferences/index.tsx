@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 import { Record } from '@/lib/types';
 import { getBaseUrl } from '@/utils';
 
@@ -106,8 +107,7 @@ const styles = StyleSheet.create({
     marginTop: -100,
   },
   welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    ...typography.headingMd,
     textAlign: 'center',
   },
   getStartedButton: {

@@ -35,7 +35,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const BASE_URL = getBaseUrl();
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
 
-
   useEffect(() => {
     const fetchToken = async () => {
       try {

@@ -15,7 +15,9 @@ export const tutorialsData = [
   },
 ];
 
-export const getDummyLessons = async (size: number = 60) => {
+export const getDummyLessons = async (
+  size: number = 60,
+): Promise<AppRecord[]> => {
   const levels = ['Beginner', 'Basic Elementary', 'Intermediate', 'Advanced'];
   const categories = [
     'Alphabet',
@@ -58,8 +60,8 @@ export const getDummyLessons = async (size: number = 60) => {
 
   const statuses = ['pending', 'started', 'completed'];
 
-  const getRandomElement = (arr: string[]) =>
-    arr[Math.floor(Math.random() * arr.length)];
+  const getRandomElement = (arr: string[]): string =>
+    arr[Math.floor(Math.random() * arr.length)] ?? arr[0] ?? '';
   const getRandomDuration = () => `${Math.floor(Math.random() * 18) + 3}:00`;
 
   const generateRandomTutorial = async (id: number) => {
@@ -90,7 +92,7 @@ export const getDummyLessons = async (size: number = 60) => {
     generateRandomTutorial(i + 1),
   );
 
-  return await Promise.all(tutorialsData);
+  return (await Promise.all(tutorialsData)) as AppRecord[];
 };
 
 export const getLevelLessons = async (level: string) => {
@@ -119,3 +121,4 @@ export const getLevelLessons = async (level: string) => {
     progress: index === 0 ? 100 : 0,
   }));
 };
+import { Record as AppRecord } from './types';

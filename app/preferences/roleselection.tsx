@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 import { getBaseUrl } from '@/utils';
 
 const roles = [
@@ -142,14 +143,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerText: {
-    fontSize: 24,
-    fontWeight: '700',
+    ...typography.headingMd,
     color: Colors.primary,
     textAlign: 'left',
     marginBottom: 5,
   },
   subText: {
-    fontSize: 12,
+    ...typography.body,
     color: '#727374',
     textAlign: 'left',
     marginBottom: 20,
@@ -173,13 +173,12 @@ const styles = StyleSheet.create({
     paddingRight: 90,
   },
   bannerHeader: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    ...typography.bodyStrong,
     color: '#fff',
     marginBottom: 5,
   },
   bannerSubText: {
-    fontSize: 12,
+    ...typography.body,
     color: '#fff',
   },
 
@@ -220,7 +219,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#004D40',
   },
   roleText: {
-    fontSize: 14,
+    ...typography.body,
     color: '#333',
   },
   nextButton: {

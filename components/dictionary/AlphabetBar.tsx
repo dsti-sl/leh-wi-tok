@@ -10,10 +10,11 @@ import {
 } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 
 interface AlphabetBarProps {
   onPressLetter?: (letter: string) => void;
-  activeLetter?: string;
+  activeLetter?: string | undefined;
 }
 
 const alphabetImages: { [key: string]: any } = {
@@ -78,7 +79,7 @@ const AlphabetBar: React.FC<AlphabetBarProps> = ({ onPressLetter }) => {
 
 const styles = StyleSheet.create({
   container: {
-    width: 40,
+    width: 48,
     backgroundColor: 'fff',
     paddingVertical: 10,
     alignItems: 'center',
@@ -89,20 +90,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   letterButton: {
-    width: 20,
-    height: 20,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 4,
+    borderRadius: 16,
   },
   letterImage: {
     width: '100%',
     height: '100%',
   },
   letterText: {
-    fontSize: 10,
+    ...typography.label,
     color: Colors.primary,
-    fontWeight: 'bold',
   },
 });
 

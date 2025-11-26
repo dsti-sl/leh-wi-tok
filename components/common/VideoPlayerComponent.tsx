@@ -13,6 +13,7 @@ import {
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { Ionicons } from '@expo/vector-icons';
+
 import NetInfo from '@react-native-community/netinfo';
 
 import { Colors } from '@/constants/Colors';

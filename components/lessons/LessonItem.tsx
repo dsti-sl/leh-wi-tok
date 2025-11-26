@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import ImagePlayerComponent from '@/components/common/ImageViewerComponent';
+import { typography } from '@/constants/Typography';
 import { LessonTag } from '@/hooks/useLessonData';
 
 interface LessonItemProps {
@@ -130,11 +131,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   lessonTitle: {
-    fontSize: 16,
+    ...typography.bodyStrong,
     color: '#333',
   },
   lessonDuration: {
-    fontSize: 14,
+    ...typography.body,
     color: '#888',
   },
   activeLesson: {
@@ -151,9 +152,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
   },
   detailParagraph: {
-    fontSize: 14,
+    ...typography.body,
     color: '#555',
-    lineHeight: 20,
     marginBottom: 8,
   },
   illustrationContainer: {
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   illustrationCaption: {
-    fontSize: 12,
+    ...typography.caption,
     color: '#666',
     marginTop: 6,
     fontStyle: 'italic',

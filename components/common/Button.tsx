@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 
 interface ButtonProps {
   buttonStyle?: TextStyle;
@@ -57,6 +58,7 @@ export default C_Button;
 
 const styles = StyleSheet.create({
   base: {
+    ...typography.button,
     borderWidth: 1,
     borderColor: Colors.primary,
     backgroundColor: Colors.primary,

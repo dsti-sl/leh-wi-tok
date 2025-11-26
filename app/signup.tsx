@@ -18,6 +18,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 import useSignup from '@/hooks/useSignup';
 
 const SignUpScreen = () => {
@@ -153,8 +154,7 @@ const styles = StyleSheet.create({
     marginTop: Platform.OS === 'ios' ? -200 : 0,
   },
   headerText: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    ...typography.headingLg,
     color: Colors.primary,
     textAlign: 'center',
     paddingLeft: 10,
@@ -167,14 +167,14 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   subText: {
-    fontSize: 14,
+    ...typography.body,
     color: '#727374',
     textAlign: 'center',
     marginBottom: 20,
   },
   // Removed unused oauth styles
   label: {
-    fontSize: 12,
+    ...typography.label,
     color: '#000',
     paddingTop: 5,
   },
@@ -196,12 +196,12 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 40,
-    fontSize: 14,
+    ...typography.body,
     color: '#333',
   },
   error: {
     color: 'red',
-    fontSize: 14,
+    ...typography.body,
     textAlign: 'center',
     marginTop: 5,
   },
@@ -223,10 +223,10 @@ const styles = StyleSheet.create({
   },
   loginText: {
     color: '#727374',
-    fontSize: 14,
+    ...typography.body,
   },
   loginLinkText: {
+    ...typography.bodyStrong,
     color: Colors.primary,
-    fontWeight: 'bold',
   },
 });

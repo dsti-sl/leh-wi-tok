@@ -1,11 +1,13 @@
 import React from 'react';
 
-import { StyleSheet, Text, ViewStyle } from 'react-native';
+import { StyleSheet, Text, TextStyle } from 'react-native';
+
+import { typography } from '@/constants/Typography';
 
 interface WordCounterProps {
   value: string;
   maxCount: number;
-  counterStyle?: ViewStyle;
+  counterStyle?: TextStyle;
 }
 const WordCounter: React.FC<WordCounterProps> = ({
   value,
@@ -21,8 +23,7 @@ export default WordCounter;
 
 const styles = StyleSheet.create({
   container: {
-    fontSize: 14,
-    fontWeight: '400',
+    ...typography.body,
     backgroundColor: '#f5f5f5',
     padding: 10,
     borderRadius: 5,

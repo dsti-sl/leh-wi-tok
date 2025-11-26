@@ -15,6 +15,7 @@ import { Href, router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
+import { typography } from '@/constants/Typography';
 
 interface HomeItemProps {
   title: string;
@@ -86,14 +87,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
+    ...typography.subheading,
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   subtitle: {
+    ...typography.body,
     color: '#FFFFFF',
     opacity: 0.7,
-    fontSize: 14,
   },
   arrowContainer: {
     width: 40,

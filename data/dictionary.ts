@@ -39,7 +39,7 @@ const doesWordExist = async (word: string): Promise<boolean> => {
       'SELECT COUNT(*) as count FROM dictionary WHERE word = ?',
       [word],
     );
-    return result[0]?.count > 0;
+    return (result[0]?.count ?? 0) > 0;
   } catch (error) {
     console.error(`Error checking if word "${word}" exists:`, error);
     return false;
@@ -110,13 +110,24 @@ export const insertDictionaryData = async (
         const wordExists = await doesWordExist(item.word);
 
         if (wordExists) {
-          await updateWord(item.word, {
+          const updateData: Parameters<typeof updateWord>[1] = {
             definition: item.definition,
-            illustration: item.illustration,
-            image: item.image,
-            partOfSpeech: item.partOfSpeech ?? undefined,
-            categories: item.categories,
-          });
+          };
+
+          if (item.illustration !== undefined) {
+            updateData.illustration = item.illustration;
+          }
+          if (item.image !== undefined) {
+            updateData.image = item.image;
+          }
+          if (item.partOfSpeech !== null) {
+            updateData.partOfSpeech = item.partOfSpeech ?? undefined;
+          }
+          if (item.categories !== undefined) {
+            updateData.categories = item.categories;
+          }
+
+          await updateWord(item.word, updateData);
         } else {
           // Insert the new word
           await db.runAsync(

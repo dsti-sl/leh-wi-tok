@@ -33,8 +33,9 @@ const ProfileImagePicker: React.FC<ProfileImagePickerProps> = ({
         quality: 1,
       });
 
-      if (!result.canceled && result.assets && result.assets[0].uri) {
-        setProfileImage(result.assets[0].uri);
+      const pickedUri = result.assets?.[0]?.uri;
+      if (!result.canceled && pickedUri) {
+        setProfileImage(pickedUri);
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to pick an image. Please try again.');

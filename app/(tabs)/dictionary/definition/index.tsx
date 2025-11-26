@@ -16,6 +16,7 @@ import {
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import { typography } from '@/constants/Typography';
 import {
   LocalDictionaryEntry as DictionaryEntry,
   fetchDictionaryData,
@@ -357,24 +358,23 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   partOfSpeech: {
-    fontSize: 16,
+    ...typography.body,
     color: '#666',
     fontStyle: 'italic',
     marginBottom: 8,
   },
   definitionText: {
-    fontSize: 18,
+    ...typography.subheading,
     color: '#333',
-    lineHeight: 24,
   },
   errorText: {
     color: '#FF3B30',
-    fontSize: 14,
+    ...typography.body,
     marginTop: 8,
     textAlign: 'center',
   },
   loadingText: {
-    fontSize: 18,
+    ...typography.subheading,
     color: '#333',
     textAlign: 'center',
     marginTop: 10,
@@ -386,11 +386,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
   },
   FlatlistItemText: {
-    fontSize: 16,
+    ...typography.body,
     color: '#555',
   },
   emptyText: {
-    fontSize: 16,
+    ...typography.body,
     color: '#999',
     textAlign: 'center',
     marginTop: 20,
