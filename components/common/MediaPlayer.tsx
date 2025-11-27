@@ -20,6 +20,7 @@ interface MediaPlayerProps {
   gestureInfo: GestureInfo;
   autoPlay?: boolean;
   useAdaptiveStreaming?: boolean; // New prop to enable adaptive streaming
+  onEnd?: () => void;
 }
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
@@ -27,6 +28,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   gestureInfo,
   autoPlay = false,
   useAdaptiveStreaming = false,
+  onEnd,
 }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +36,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   const BASE_URL = getBaseUrl();
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
-
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -99,6 +100,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           accessibilityLabel={`Video gesture: ${gestureInfo.name || 'gesture'}`}
           onLoad={handleMediaLoad}
           onError={handleMediaError}
+          onEnd={onEnd}
           shouldLoop={false}
         />
       </View>
@@ -154,7 +156,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  loadingText: { color: '#666', marginTop: 10, fontSize: 16 },
   errorContainer: {
     justifyContent: 'center',
     alignItems: 'center',

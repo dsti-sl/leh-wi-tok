@@ -13,6 +13,7 @@ import {
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { Ionicons } from '@expo/vector-icons';
+
 import NetInfo from '@react-native-community/netinfo';
 
 import { Colors } from '@/constants/Colors';
@@ -44,6 +45,7 @@ interface VideoPlayerComponentProps {
   accessibilityLabel?: string;
   onLoad?: () => void;
   onError?: (_error: unknown) => void;
+  onEnd?: () => void;
   shouldLoop?: boolean;
   autoPlay?: boolean;
   enableAdaptiveStreaming?: boolean;
@@ -84,6 +86,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   accessibilityLabel = 'Video player',
   onLoad,
   onError,
+  onEnd,
   shouldLoop = false,
   autoPlay = false,
   enableAdaptiveStreaming = false,
@@ -104,7 +107,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   const [usingFallback, setUsingFallback] = useState(false);
   const [showControls, setShowControls] = useState(true);
 
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<React.ComponentRef<typeof VideoView> | null>(null);
 
   useEffect(() => {
     if (enableAdaptiveStreaming) {
@@ -186,6 +189,22 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     };
   }, [player, videoId, currentStreamUrl, headers, enableAdaptiveStreaming]);
 
+  useEffect(() => {
+    if (!player || !onEnd) return;
+
+    const endSubscription = player.addListener('playToEnd', () => {
+      onEnd();
+    });
+
+    return () => {
+      try {
+        endSubscription?.remove();
+      } catch (error) {
+        console.warn('Error removing end listener:', error);
+      }
+    };
+  }, [player, onEnd]);
+
   const loadVideoInfo = useCallback(async () => {
     if (!videoId || !token || !enableAdaptiveStreaming) return;
 
@@ -226,7 +245,12 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           }
           return;
         }
-      } catch (adaptiveError) {}
+      } catch (adaptiveError) {
+        console.warn(
+          'Adaptive streaming lookup failed, falling back.',
+          adaptiveError,
+        );
+      }
 
       setCurrentStreamUrl(uri);
       setUsingFallback(true);
@@ -442,7 +466,9 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         } else {
           try {
             player.pause();
-          } catch (error) {}
+          } catch (error) {
+            console.warn('Video pause failed:', error);
+          }
         }
         onLoad?.();
       }
@@ -454,7 +480,9 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           if (!hasLoaded && player.duration > 0) {
             handleLoad();
           }
-        } catch (error) {}
+        } catch (error) {
+          console.warn('Status polling failed:', error);
+        }
       }
     }, 250);
 
@@ -642,21 +670,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   );
 };
 
-// ============= HELPER Functions to handle adaptive streaming for the video player =============
-
-function getNetworkDotStyle(type: string) {
-  if (type.includes('wifi') || type.includes('ethernet')) {
-    return { backgroundColor: '#34C759' };
-  }
-  if (type.includes('4g') || type.includes('lte')) {
-    return { backgroundColor: '#007AFF' };
-  }
-  if (type.includes('3g')) {
-    return { backgroundColor: '#FF9500' };
-  }
-  return { backgroundColor: '#FF3B30' };
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000', position: 'relative' },
   video: { flex: 1, width: '100%', height: '100%' },
@@ -765,19 +778,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   qualitySubtext: { color: '#AAA', fontSize: 11 },
-  networkIndicator: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 60 : 50,
-    left: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  networkDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  networkText: { color: '#FFF', fontSize: 11, fontWeight: '600' },
 });
 
 export default memo(VideoPlayerComponent);
