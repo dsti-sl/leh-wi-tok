@@ -1,15 +1,26 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   ActivityIndicator,
   Platform,
   SectionList,
   StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import MediaPlayer from '@/components/common/MediaPlayer';
 import LessonItem from '@/components/lessons/LessonItem';
@@ -28,6 +39,20 @@ import {
   useLessonData,
 } from '@/hooks/useLessonData';
 import { useLessonUtils } from '@/hooks/useLessonUtils';
+
+const AUTOPLAY_ENABLED_KEY = 'lesson_autoplay_enabled';
+const AUTOPLAY_DELAY_KEY = 'lesson_autoplay_delay';
+const MIN_AUTOPLAY_DELAY = 3;
+const MAX_AUTOPLAY_DELAY = 15;
+
+type FlattenedLesson = {
+  lesson: LessonTag;
+  sectionId: string;
+  sectionTitle: string;
+  sectionIndex: number;
+  itemIndex: number;
+  sectionLessons: LessonTag[];
+};
 
 const Level: React.FC = () => {
   const { assessment } = useLocalSearchParams<{ assessment: string }>();
@@ -59,10 +84,38 @@ const Level: React.FC = () => {
   const [selectedGestureId, setSelectedGestureId] = useState<string | null>(
     null,
   );
+  const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
   const [lessonGestureInfo, setLessonGestureInfo] =
     useState<GestureInfo | null>(null);
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
+  const [autoPlayEnabled, setAutoPlayEnabled] = useState<boolean>(true);
+  const [autoPlayDelay, setAutoPlayDelay] = useState<number>(5);
+  const [countdownRemaining, setCountdownRemaining] = useState<number | null>(
+    null,
+  );
+  const [nextLessonEntry, setNextLessonEntry] =
+    useState<FlattenedLesson | null>(null);
+  const [showFullList, setShowFullList] = useState<boolean>(false);
   const sectionListRef = useRef<SectionList<LessonTag, LessonSection>>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
+  const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  const clearAutoPlayTimers = useCallback(() => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    if (countdownTimeoutRef.current) {
+      clearTimeout(countdownTimeoutRef.current);
+      countdownTimeoutRef.current = null;
+    }
+    setCountdownRemaining(null);
+    setNextLessonEntry(null);
+  }, []);
 
   const handleBackPress = useCallback(() => {
     router.back();
@@ -71,6 +124,65 @@ const Level: React.FC = () => {
   const handleRetry = useCallback(() => {
     refetch();
   }, [refetch]);
+
+  useEffect(() => {
+    const loadAutoPlayPreferences = async () => {
+      try {
+        const [storedEnabled, storedDelay] = await Promise.all([
+          AsyncStorage.getItem(AUTOPLAY_ENABLED_KEY),
+          AsyncStorage.getItem(AUTOPLAY_DELAY_KEY),
+        ]);
+
+        if (storedEnabled !== null) {
+          setAutoPlayEnabled(storedEnabled === 'true');
+        }
+
+        if (storedDelay !== null) {
+          const parsedDelay = parseInt(storedDelay, 10);
+          if (!Number.isNaN(parsedDelay)) {
+            setAutoPlayDelay(
+              Math.min(
+                MAX_AUTOPLAY_DELAY,
+                Math.max(MIN_AUTOPLAY_DELAY, parsedDelay),
+              ),
+            );
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load auto-play settings:', error);
+      }
+    };
+
+    loadAutoPlayPreferences();
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem(
+      AUTOPLAY_ENABLED_KEY,
+      autoPlayEnabled ? 'true' : 'false',
+    ).catch(error =>
+      console.warn('Failed to persist auto-play enabled:', error),
+    );
+  }, [autoPlayEnabled]);
+
+  useEffect(() => {
+    AsyncStorage.setItem(AUTOPLAY_DELAY_KEY, `${autoPlayDelay}`).catch(error =>
+      console.warn('Failed to persist auto-play delay:', error),
+    );
+  }, [autoPlayDelay]);
+
+  useEffect(() => {
+    if (!autoPlayEnabled) {
+      clearAutoPlayTimers();
+    }
+  }, [autoPlayEnabled, clearAutoPlayTimers]);
+
+  useEffect(
+    () => () => {
+      clearAutoPlayTimers();
+    },
+    [clearAutoPlayTimers],
+  );
 
   const scrollToSection = useCallback((sectionIndex: number) => {
     if (sectionListRef.current) {
@@ -89,7 +201,22 @@ const Level: React.FC = () => {
     }
   }, []);
 
-  const handleLessonClick = useMemo(
+  const flattenedLessons = useMemo(
+    () =>
+      sectionsData.flatMap((section, sectionIndex) =>
+        section.data.map((lesson, itemIndex) => ({
+          lesson,
+          sectionId: section.id,
+          sectionTitle: section.title,
+          sectionIndex,
+          itemIndex,
+          sectionLessons: section.data,
+        })),
+      ),
+    [sectionsData],
+  );
+
+  const baseLessonClickHandler = useMemo(
     () =>
       createHandleLessonClick({
         setExpandedLessonId,
@@ -99,6 +226,145 @@ const Level: React.FC = () => {
       }),
     [createHandleLessonClick, scrollToSection],
   );
+
+  const nextPlayableLesson = useMemo(() => {
+    if (!flattenedLessons.length) return null;
+
+    const startIndex = currentLessonId
+      ? flattenedLessons.findIndex(
+          entry => entry.lesson.id === currentLessonId,
+        ) + 1
+      : 0;
+
+    const ordered = [
+      ...flattenedLessons.slice(startIndex),
+      ...flattenedLessons.slice(0, startIndex),
+    ];
+
+    return (
+      ordered.find(entry => {
+        const locked = isLessonLocked(
+          entry.lesson,
+          entry.itemIndex,
+          entry.sectionLessons,
+          completedLessons,
+        );
+        return entry.lesson.gesture?.id && !locked;
+      }) || null
+    );
+  }, [flattenedLessons, currentLessonId, completedLessons, isLessonLocked]);
+
+  const handleDelayChange = useCallback((delta: number) => {
+    setAutoPlayDelay(prevDelay =>
+      Math.min(
+        MAX_AUTOPLAY_DELAY,
+        Math.max(MIN_AUTOPLAY_DELAY, prevDelay + delta),
+      ),
+    );
+  }, []);
+
+  const handleLessonSelect = useCallback(
+    (lesson: LessonTag) => {
+      clearAutoPlayTimers();
+      setCurrentLessonId(lesson.id);
+      setNextLessonEntry(null);
+      baseLessonClickHandler(lesson);
+    },
+    [baseLessonClickHandler, clearAutoPlayTimers],
+  );
+
+  const startNextLesson = useCallback(
+    (entry: FlattenedLesson) => {
+      if (!entry?.lesson?.gesture?.id) {
+        clearAutoPlayTimers();
+        return;
+      }
+
+      const isLockedLesson = isLessonLocked(
+        entry.lesson,
+        entry.itemIndex,
+        entry.sectionLessons,
+        completedLessons,
+      );
+
+      if (isLockedLesson) {
+        clearAutoPlayTimers();
+        return;
+      }
+
+      if (!expandedSections.has(entry.sectionId)) {
+        toggleSectionExpansion(entry.sectionId);
+      }
+
+      clearAutoPlayTimers();
+      handleLessonSelect(entry.lesson);
+    },
+    [
+      clearAutoPlayTimers,
+      completedLessons,
+      expandedSections,
+      handleLessonSelect,
+      isLessonLocked,
+      toggleSectionExpansion,
+    ],
+  );
+
+  const scheduleNextLesson = useCallback(
+    (finishedLessonId: string | null) => {
+      clearAutoPlayTimers();
+
+      if (!autoPlayEnabled || !finishedLessonId) return;
+
+      const currentIndex = flattenedLessons.findIndex(
+        entry => entry.lesson.id === finishedLessonId,
+      );
+
+      if (currentIndex === -1) return;
+
+      const upcoming = flattenedLessons
+        .slice(currentIndex + 1)
+        .find(entry => entry.lesson.gesture?.id);
+
+      if (!upcoming) return;
+
+      const isLockedLesson = isLessonLocked(
+        upcoming.lesson,
+        upcoming.itemIndex,
+        upcoming.sectionLessons,
+        completedLessons,
+      );
+
+      if (isLockedLesson) return;
+
+      setNextLessonEntry(upcoming);
+      setCountdownRemaining(autoPlayDelay);
+
+      countdownIntervalRef.current = setInterval(() => {
+        setCountdownRemaining(prev => (prev && prev > 0 ? prev - 1 : prev));
+      }, 1000);
+
+      countdownTimeoutRef.current = setTimeout(() => {
+        startNextLesson(upcoming);
+      }, autoPlayDelay * 1000);
+    },
+    [
+      autoPlayDelay,
+      autoPlayEnabled,
+      clearAutoPlayTimers,
+      completedLessons,
+      flattenedLessons,
+      isLessonLocked,
+      startNextLesson,
+    ],
+  );
+
+  const handleVideoEnd = useCallback(() => {
+    scheduleNextLesson(currentLessonId);
+  }, [currentLessonId, scheduleNextLesson]);
+
+  const handleAutoPlayCancel = useCallback(() => {
+    clearAutoPlayTimers();
+  }, [clearAutoPlayTimers]);
 
   const renderSectionHeader = useCallback(
     ({ section }: { section: LessonSection }) => {
@@ -151,7 +417,7 @@ const Level: React.FC = () => {
           index={index}
           isLocked={locked}
           isActive={isActive}
-          onPress={() => handleLessonClick(item)}
+          onPress={() => handleLessonSelect(item)}
           parsedDetails={parsedDetails}
           illustrationUrl={illustrationUrl}
           isSupportedImageFormat={isSupportedImageFormat}
@@ -163,7 +429,7 @@ const Level: React.FC = () => {
       expandedSections,
       completedLessons,
       expandedLessonId,
-      handleLessonClick,
+      handleLessonSelect,
       isLessonLocked,
       parseWysiwygContent,
       getIllustrationUrl,
@@ -204,15 +470,98 @@ const Level: React.FC = () => {
       )}
       <View style={styles.videoContainer}>
         <LessonHeader onBackPress={handleBackPress} />
-        {selectedGestureId && lessonGestureInfo?.contentType && (
-          <MediaPlayer
-            key={selectedGestureId}
-            gestureInfo={lessonGestureInfo}
-            gestureId={selectedGestureId}
-            autoPlay={true}
-            useAdaptiveStreaming={true}
-          />
-        )}
+        <View style={styles.playerWrapper}>
+          {selectedGestureId && lessonGestureInfo?.contentType ? (
+            <MediaPlayer
+              key={selectedGestureId}
+              gestureInfo={lessonGestureInfo}
+              gestureId={selectedGestureId}
+              autoPlay={true}
+              useAdaptiveStreaming={true}
+              onEnd={handleVideoEnd}
+            />
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>
+                Choose a lesson to get started
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                Auto-play will queue the next video with a short countdown.
+              </Text>
+            </View>
+          )}
+
+          {nextLessonEntry && countdownRemaining !== null && (
+            <View style={styles.countdownBanner}>
+              <View style={styles.countdownTextWrap}>
+                <Text style={styles.countdownLabel}>Up next</Text>
+                <Text style={styles.countdownLesson} numberOfLines={2}>
+                  {nextLessonEntry.lesson.title}
+                </Text>
+                <Text style={styles.countdownTimer}>
+                  Starting in {countdownRemaining}s
+                </Text>
+              </View>
+              <View style={styles.countdownActions}>
+                <TouchableOpacity
+                  onPress={handleAutoPlayCancel}
+                  style={styles.countdownSecondary}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.countdownSecondaryText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => startNextLesson(nextLessonEntry)}
+                  style={styles.countdownPrimary}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.countdownPrimaryText}>Play now</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.autoPlayControls}>
+          <View style={styles.autoPlayRow}>
+            <View style={styles.autoPlayTextGroup}>
+              <Text style={styles.autoPlayLabel}>Auto-play next lesson</Text>
+              <Text style={styles.autoPlayHelper}>
+                {autoPlayEnabled
+                  ? 'Countdown leaves room to pause or read notes.'
+                  : 'Stay in control by tapping lessons manually.'}
+              </Text>
+            </View>
+            <Switch
+              value={autoPlayEnabled}
+              onValueChange={setAutoPlayEnabled}
+              thumbColor={autoPlayEnabled ? '#fff' : '#f4f4f4'}
+              trackColor={{ false: '#d6d6d6', true: Colors.primary }}
+            />
+          </View>
+
+          <View style={styles.delayRow}>
+            <Text style={styles.delayLabel}>
+              Delay before auto-play: {autoPlayDelay}s
+            </Text>
+            <View style={styles.delayButtons}>
+              <TouchableOpacity
+                onPress={() => handleDelayChange(-1)}
+                style={styles.delayButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.delayButtonText}>-1s</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDelayChange(1)}
+                style={[styles.delayButton, styles.delayButtonSpacer]}
+                accessibilityRole="button"
+              >
+                <Text style={styles.delayButtonText}>+1s</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </View>
 
       {/* Lesson Info */}
@@ -222,23 +571,73 @@ const Level: React.FC = () => {
         lessonCount={lessonCount}
       />
 
+      {/* Compact Lesson Preview */}
+      {!showFullList && (
+        <View style={styles.compactList}>
+          <View style={styles.compactHeader}>
+            <Text style={styles.compactTitle}>Lessons</Text>
+            <TouchableOpacity
+              onPress={() => setShowFullList(true)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.compactLink}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          {nextPlayableLesson ? (
+            <TouchableOpacity
+              style={styles.compactCard}
+              onPress={() => handleLessonSelect(nextPlayableLesson.lesson)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.compactLabel}>Up next</Text>
+              <Text style={styles.compactLesson} numberOfLines={2}>
+                {nextPlayableLesson.lesson.title}
+              </Text>
+              <Text style={styles.compactHint}>
+                Tap to start or swipe to sign
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.compactEmpty}>
+              <Text style={styles.compactLesson}>No more lessons ready.</Text>
+              <Text style={styles.compactHint}>
+                You can review from the list.
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Lesson List */}
-      <SectionList<LessonTag, LessonSection>
-        ref={sectionListRef}
-        sections={sectionsData}
-        keyExtractor={keyExtractor}
-        renderItem={renderLessonItem}
-        renderSectionHeader={renderSectionHeader}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={21}
-        removeClippedSubviews
-        onEndReached={loadMoreData}
-        onEndReachedThreshold={0.3}
-        ListFooterComponent={ListFooterComponent}
-        showsVerticalScrollIndicator={false}
-        stickySectionHeadersEnabled={false}
-      />
+      {showFullList && (
+        <View style={styles.listContainer}>
+          <View style={styles.listHeaderRow}>
+            <Text style={styles.listTitle}>All lessons</Text>
+            <TouchableOpacity
+              onPress={() => setShowFullList(false)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.compactLink}>Hide list</Text>
+            </TouchableOpacity>
+          </View>
+          <SectionList<LessonTag, LessonSection>
+            ref={sectionListRef}
+            sections={sectionsData}
+            keyExtractor={keyExtractor}
+            renderItem={renderLessonItem}
+            renderSectionHeader={renderSectionHeader}
+            initialNumToRender={10}
+            maxToRenderPerBatch={10}
+            windowSize={21}
+            removeClippedSubviews
+            onEndReached={loadMoreData}
+            onEndReachedThreshold={0.3}
+            ListFooterComponent={ListFooterComponent}
+            showsVerticalScrollIndicator={false}
+            stickySectionHeadersEnabled={false}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -246,110 +645,221 @@ const Level: React.FC = () => {
 export default React.memo(Level);
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  iosStatusBar: {
-    height: 50,
-    backgroundColor: Colors.primary,
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  iosStatusBar: { height: 50, backgroundColor: Colors.primary },
   videoContainer: {
-    height: 300,
-    backgroundColor: '#2d2d2d',
+    backgroundColor: '#1f1f1f',
+    paddingBottom: 12,
   },
-  video: {
+  playerWrapper: {
+    minHeight: 240,
+    backgroundColor: '#000',
+    marginHorizontal: 12,
+    marginTop: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  emptyState: {
     flex: 1,
-  },
-  lessonItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    justifyContent: 'center',
+    padding: 24,
   },
-  lockedLesson: {
-    backgroundColor: '#f9f9f9',
-  },
-  iconContainer: {
-    marginRight: 12,
-  },
-  lessonDetails: {
-    flex: 1,
-  },
-  lessonTitle: {
-    fontSize: 16,
-    color: '#333',
-  },
-  lessonDuration: {
-    fontSize: 14,
-    color: '#888',
-  },
-  activeLesson: {
-    backgroundColor: '#f5f5f5',
-  },
-  progressBar: {
-    height: 2,
-    backgroundColor: '#eee',
-    marginTop: 4,
-    borderRadius: 1,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#4682B4',
-    borderRadius: 1,
-  },
-
-  playAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    padding: 8,
-    borderRadius: 20,
-    gap: 4,
-  },
-  playAllActive: {
-    backgroundColor: '#4682B4',
-  },
-  playAllText: {
-    fontSize: 14,
-    color: '#4682B4',
-  },
-  playAllTextActive: {
+  emptyTitle: {
     color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 6,
   },
-  accordionIcon: {
-    marginLeft: 8,
+  emptySubtitle: {
+    color: '#d9d9d9',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
-  accordionContent: {
-    backgroundColor: '#f8f9fa',
+  countdownBanner: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 12,
+    backgroundColor: 'rgba(15, 76, 92, 0.9)',
+    padding: 12,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  countdownTextWrap: { flex: 1 },
+  countdownLabel: {
+    color: '#d1f0ff',
+    fontSize: 12,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  countdownLesson: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  countdownTimer: {
+    color: '#f0f8ff',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  countdownActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countdownSecondary: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#b6dce7',
+    marginRight: 8,
+  },
+  countdownSecondaryText: {
+    color: '#e3f6ff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  countdownPrimary: {
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: Colors.secondary,
+  },
+  countdownPrimaryText: {
+    color: '#0a1f26',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  autoPlayControls: {
+    marginTop: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#f6f8fa',
+    borderTopWidth: 1,
+    borderTopColor: '#d9d9d9',
   },
-  detailParagraph: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  illustrationContainer: {
+  autoPlayRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 2,
   },
-  illustrationImage: {
-    width: '100%',
-    height: 200,
+  autoPlayTextGroup: { flex: 1 },
+  autoPlayLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  autoPlayHelper: {
+    fontSize: 13,
+    color: '#4b5563',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  delayRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  delayLabel: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '600',
+  },
+  delayButtons: {
+    flexDirection: 'row',
+  },
+  delayButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#e5e7eb',
   },
-  illustrationCaption: {
+  delayButtonSpacer: {
+    marginLeft: 8,
+  },
+  delayButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  compactList: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  compactHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  compactTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  compactLink: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  compactCard: {
+    backgroundColor: '#f6f8fa',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  compactLabel: {
     fontSize: 12,
-    color: '#666',
-    marginTop: 6,
-    fontStyle: 'italic',
-    textAlign: 'center',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  compactLesson: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    marginTop: 4,
+  },
+  compactHint: {
+    fontSize: 13,
+    color: '#4b5563',
+    marginTop: 4,
+  },
+  compactEmpty: {
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fafafa',
+  },
+  listContainer: {
+    flex: 1,
+    paddingTop: 6,
+    backgroundColor: '#fff',
+  },
+  listHeaderRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  listTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f172a',
   },
   loadingFooter: {
     padding: 16,

@@ -39,7 +39,7 @@ const doesWordExist = async (word: string): Promise<boolean> => {
       'SELECT COUNT(*) as count FROM dictionary WHERE word = ?',
       [word],
     );
-    return result[0]?.count > 0;
+    return (result[0]?.count ?? 0) > 0;
   } catch (error) {
     console.error(`Error checking if word "${word}" exists:`, error);
     return false;
@@ -114,7 +114,7 @@ export const insertDictionaryData = async (
             definition: item.definition,
             illustration: item.illustration,
             image: item.image,
-            partOfSpeech: item.partOfSpeech ?? undefined,
+            partOfSpeech: item.partOfSpeech ?? '',
             categories: item.categories,
           });
         } else {

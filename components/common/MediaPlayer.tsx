@@ -1,7 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import * as FileSystem from 'expo-file-system';
+
+import { FontSizes, FontWeights } from '@/constants/Typography';
 import { getBaseUrl, getToken } from '@/utils';
 
 import ImageViewerComponent from './ImageViewerComponent';
@@ -20,6 +23,7 @@ interface MediaPlayerProps {
   gestureInfo: GestureInfo;
   autoPlay?: boolean;
   useAdaptiveStreaming?: boolean; // New prop to enable adaptive streaming
+  onEnd?: () => void;
 }
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
@@ -27,14 +31,18 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   gestureInfo,
   autoPlay = false,
   useAdaptiveStreaming = false,
+  onEnd,
 }) => {
+  const BASE_URL = getBaseUrl();
+  const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-
-  const BASE_URL = getBaseUrl();
-  const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
-
+  const [resolvedUri, setResolvedUri] = useState<string>(fileUrl);
+  const headers = useMemo(
+    () => (token ? { authorization: `Bearer ${token}` } : {}),
+    [token],
+  );
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -53,6 +61,57 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     fetchToken();
   }, []);
+
+  // Cache media locally so previously played lessons remain available offline
+  useEffect(() => {
+    let isCancelled = false;
+
+    const cacheMedia = async () => {
+      if (!token) return;
+
+      try {
+        const cacheDir = `${FileSystem.cacheDirectory}lessons/`;
+        const cachedPath = `${cacheDir}${gestureId}`;
+        const info = await FileSystem.getInfoAsync(cachedPath);
+
+        if (info.exists && info.size) {
+          if (!isCancelled) {
+            setResolvedUri(info.uri);
+          }
+          return;
+        }
+
+        await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
+
+        const downloader = FileSystem.createDownloadResumable(
+          fileUrl,
+          cachedPath,
+          { headers },
+        );
+
+        const result = await downloader.downloadAsync();
+
+        if (!isCancelled) {
+          if (result?.status === 200 && result.uri) {
+            setResolvedUri(result.uri);
+          } else {
+            setResolvedUri(fileUrl);
+          }
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          console.warn('Media cache skipped, streaming instead:', error);
+          setResolvedUri(fileUrl);
+        }
+      }
+    };
+
+    cacheMedia();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [fileUrl, gestureId, headers, token]);
 
   const handleMediaLoad = useCallback(() => {}, []);
 
@@ -84,13 +143,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     );
   }
 
-  const headers = { authorization: `Bearer ${token}` };
-
   if (gestureInfo?.contentType === 'video/mp4' && fileUrl) {
     return (
       <View style={styles.container}>
         <VideoPlayerComponent
-          uri={fileUrl}
+          uri={resolvedUri}
           videoId={gestureId}
           enableAdaptiveStreaming={useAdaptiveStreaming}
           autoPlay={autoPlay}
@@ -99,6 +156,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           accessibilityLabel={`Video gesture: ${gestureInfo.name || 'gesture'}`}
           onLoad={handleMediaLoad}
           onError={handleMediaError}
+          {...(onEnd ? { onEnd } : {})}
           shouldLoop={false}
         />
       </View>
@@ -109,7 +167,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     return (
       <View style={styles.container}>
         <ImageViewerComponent
-          uri={fileUrl}
+          uri={resolvedUri}
           headers={headers}
           style={styles.media}
           accessibilityLabel={`GIF gesture: ${gestureInfo.name || 'gesture'}`}
@@ -154,7 +212,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  loadingText: { color: '#666', marginTop: 10, fontSize: 16 },
   errorContainer: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -164,8 +221,9 @@ const styles = StyleSheet.create({
     margin: 20,
   },
   errorText: {
-    color: '#666',
-    fontSize: 16,
+    color: '#333',
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.semiBold,
     textAlign: 'center',
     lineHeight: 22,
   },

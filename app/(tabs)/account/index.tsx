@@ -13,8 +13,8 @@ import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
-import useAccount from '@/hooks/useAccount';
 import { fetchAndInsertTranslations } from '@/data/dictionary';
+import useAccount from '@/hooks/useAccount';
 
 const Account = () => {
   const { userInfo, isLoggingOut, confirmLogout, confirmAccountDeletion } =

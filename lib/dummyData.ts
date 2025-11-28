@@ -59,12 +59,13 @@ export const getDummyLessons = async (size: number = 60) => {
   const statuses = ['pending', 'started', 'completed'];
 
   const getRandomElement = (arr: string[]) =>
-    arr[Math.floor(Math.random() * arr.length)];
+    arr[Math.floor(Math.random() * arr.length)] || 'Lesson';
   const getRandomDuration = () => `${Math.floor(Math.random() * 18) + 3}:00`;
 
   const generateRandomTutorial = async (id: number) => {
     const level = getRandomElement(levels);
-    const title = getRandomElement(titles[level as keyof typeof titles]);
+    const levelTitles = titles[level as keyof typeof titles] || ['Lesson'];
+    const title = getRandomElement(levelTitles);
     const category = title.includes('Introduction')
       ? 'General'
       : getRandomElement(categories);

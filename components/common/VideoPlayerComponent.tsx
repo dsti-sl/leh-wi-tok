@@ -13,6 +13,7 @@ import {
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { Ionicons } from '@expo/vector-icons';
+
 import NetInfo from '@react-native-community/netinfo';
 
 import { Colors } from '@/constants/Colors';
@@ -44,6 +45,7 @@ interface VideoPlayerComponentProps {
   accessibilityLabel?: string;
   onLoad?: () => void;
   onError?: (_error: unknown) => void;
+  onEnd?: () => void;
   shouldLoop?: boolean;
   autoPlay?: boolean;
   enableAdaptiveStreaming?: boolean;
@@ -84,6 +86,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   accessibilityLabel = 'Video player',
   onLoad,
   onError,
+  onEnd,
   shouldLoop = false,
   autoPlay = false,
   enableAdaptiveStreaming = false,
@@ -104,7 +107,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   const [usingFallback, setUsingFallback] = useState(false);
   const [showControls, setShowControls] = useState(true);
 
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<React.ComponentRef<typeof VideoView> | null>(null);
 
   useEffect(() => {
     if (enableAdaptiveStreaming) {
@@ -186,6 +189,22 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     };
   }, [player, videoId, currentStreamUrl, headers, enableAdaptiveStreaming]);
 
+  useEffect(() => {
+    if (!player || !onEnd) return;
+
+    const endSubscription = player.addListener('playToEnd', () => {
+      onEnd();
+    });
+
+    return () => {
+      try {
+        endSubscription?.remove();
+      } catch (error) {
+        console.warn('Error removing end listener:', error);
+      }
+    };
+  }, [player, onEnd]);
+
   const loadVideoInfo = useCallback(async () => {
     if (!videoId || !token || !enableAdaptiveStreaming) return;
 
@@ -226,7 +245,12 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           }
           return;
         }
-      } catch (adaptiveError) {}
+      } catch (adaptiveError) {
+        console.warn(
+          'Adaptive streaming lookup failed, falling back.',
+          adaptiveError,
+        );
+      }
 
       setCurrentStreamUrl(uri);
       setUsingFallback(true);
@@ -442,7 +466,9 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         } else {
           try {
             player.pause();
-          } catch (error) {}
+          } catch (error) {
+            console.warn('Video pause failed:', error);
+          }
         }
         onLoad?.();
       }
@@ -454,7 +480,9 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           if (!hasLoaded && player.duration > 0) {
             handleLoad();
           }
-        } catch (error) {}
+        } catch (error) {
+          console.warn('Status polling failed:', error);
+        }
       }
     }, 250);
 
@@ -528,14 +556,14 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="small" color={Colors.primary} />
         </View>
       )}
 
       {enableAdaptiveStreaming && isBuffering && (
         <View style={styles.bufferingOverlay}>
           <ActivityIndicator size="small" color="#FFFFFF" />
-          <Text style={styles.bufferingText}>Buffering...</Text>
+          <Text style={styles.bufferingText}>Buffering…</Text>
         </View>
       )}
 
@@ -543,9 +571,9 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         !usingFallback &&
         videoInfo?.hasQualities &&
         showControls && (
-          <View style={styles.qualityControls}>
+          <View style={styles.bottomControls}>
             <TouchableOpacity
-              style={styles.qualityButton}
+              style={styles.qualityButtonInline}
               onPress={handleQualityButtonPress}
               activeOpacity={0.7}
             >
@@ -553,7 +581,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             </TouchableOpacity>
 
             {showQualityMenu && (
-              <View style={styles.qualityMenu}>
+              <View style={styles.qualityMenuInline}>
                 <TouchableOpacity
                   style={[
                     styles.qualityOption,
@@ -625,47 +653,22 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             )}
           </View>
         )}
-
-      {/* Network Indicator (Adaptive Streaming) for now, this is not 
-      visible to the user */}
-      {/*       {enableAdaptiveStreaming && (
-        <View style={styles.networkIndicator}>
-          <View
-            style={[styles.networkDot, getNetworkDotStyle(connectionType)]}
-          />
-          <Text style={styles.networkText}>
-            {usingFallback ? 'FALLBACK' : connectionType.toUpperCase()}
-          </Text>
-        </View>
-      )} */}
     </View>
   );
 };
-
-// ============= HELPER Functions to handle adaptive streaming for the video player =============
-
-function getNetworkDotStyle(type: string) {
-  if (type.includes('wifi') || type.includes('ethernet')) {
-    return { backgroundColor: '#34C759' };
-  }
-  if (type.includes('4g') || type.includes('lte')) {
-    return { backgroundColor: '#007AFF' };
-  }
-  if (type.includes('3g')) {
-    return { backgroundColor: '#FF9500' };
-  }
-  return { backgroundColor: '#FF3B30' };
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000', position: 'relative' },
   video: { flex: 1, width: '100%', height: '100%' },
   videoTouchArea: { flex: 1, width: '100%', height: '100%' },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
     zIndex: 10,
   },
   loadingContainer: {
@@ -705,35 +708,39 @@ const styles = StyleSheet.create({
   retryText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   bufferingOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    borderRadius: 10,
     pointerEvents: 'none',
   },
-  bufferingText: { color: '#FFF', marginTop: 8, fontSize: 14 },
-  qualityControls: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 40 : 50,
-    right: 15,
-    zIndex: 1000,
-  },
-  qualityButton: {
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    paddingHorizontal: 14,
+  bufferingText: { color: '#FFF', fontSize: 13, marginLeft: 6 },
+  bottomControls: {
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 6,
+    backgroundColor: '#0b1c22',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  qualityButtonInline: {
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgba(255,255,255,0.25)',
   },
   qualityButtonText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
-  qualityMenu: {
+  qualityMenuInline: {
     position: 'absolute',
-    top: 45,
-    right: 0,
+    bottom: 60,
+    right: 12,
     backgroundColor: 'rgba(0,0,0,0.95)',
     borderRadius: 10,
     minWidth: 220,
@@ -765,19 +772,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   qualitySubtext: { color: '#AAA', fontSize: 11 },
-  networkIndicator: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 60 : 50,
-    left: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  networkDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  networkText: { color: '#FFF', fontSize: 11, fontWeight: '600' },
 });
 
 export default memo(VideoPlayerComponent);
