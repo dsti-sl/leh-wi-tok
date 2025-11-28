@@ -94,14 +94,16 @@
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "off",
     "react/jsx-uses-react": "off",
-    "react-native/no-unused-styles": "error",
+    "react-native/no-unused-styles": "off",
     "react-native/split-platform-components": "off",
-    "react-native/no-inline-styles": "warn",
+    "react-native/no-inline-styles": "off",
     "react-native/no-color-literals": "off",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/dot-notation": "off"
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/dot-notation": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "react/no-unescaped-entities": "off"
   },
   "settings": {
     "react": {

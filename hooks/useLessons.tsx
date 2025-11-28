@@ -46,7 +46,7 @@ const useLessons = () => {
     setLoading(true);
     try {
       const lessons = await getDummyLessons(60);
-      setLessons(lessons);
+      setLessons(lessons as Record[]);
     } catch (error) {
       console.log('Error fetching lessons', error);
     } finally {

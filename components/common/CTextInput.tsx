@@ -19,7 +19,7 @@ interface CTextInputProps extends TextInputProps {
   multiline: boolean;
   showCounter?: boolean;
   setValue: (_value: string) => void;
-  inputStyle?: ViewStyle;
+  inputStyle?: TextStyle;
   inputContainerStyle?: ViewStyle;
   counterStyle?: TextStyle;
 }
@@ -28,9 +28,9 @@ const CTextInput: React.FC<CTextInputProps> = ({
   placeholder,
   value,
   setValue,
-  inputContainerStyle = {},
-  inputStyle = {},
-  counterStyle = {},
+  inputContainerStyle = {} as ViewStyle,
+  inputStyle = {} as TextStyle,
+  counterStyle = {} as TextStyle,
 
   multiline = false,
   showCounter = false,
