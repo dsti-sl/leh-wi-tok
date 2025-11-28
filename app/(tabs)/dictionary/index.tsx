@@ -135,7 +135,7 @@ const index = () => {
     <View style={styles.outerContainer}>
       <AlphabetBar
         onPressLetter={handleAlphabetletterPress}
-        activeLetter={activeLetter ?? undefined}
+        activeLetter={activeLetter ?? ''}
       />
       <View style={styles.viewContainer}>
         <View style={styles.searchBarContainer}>
@@ -253,16 +253,6 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 6,
     marginLeft: 6,
-  },
-  searchBar: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 16,
-    marginTop: 16,
-    fontSize: 16,
   },
   searchResultItem: {
     padding: 10,

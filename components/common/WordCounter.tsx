@@ -1,16 +1,16 @@
 import React from 'react';
 
-import { StyleSheet, Text, ViewStyle } from 'react-native';
+import { StyleSheet, Text, TextStyle } from 'react-native';
 
 interface WordCounterProps {
   value: string;
   maxCount: number;
-  counterStyle?: ViewStyle;
+  counterStyle?: TextStyle;
 }
 const WordCounter: React.FC<WordCounterProps> = ({
   value,
   maxCount,
-  counterStyle = {},
+  counterStyle = {} as TextStyle,
 }) => (
   <Text
     style={[styles.container, counterStyle]}
