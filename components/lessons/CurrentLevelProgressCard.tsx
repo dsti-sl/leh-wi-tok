@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { FontSizes, FontWeights } from '@/constants/Typography';
 import { Record } from '@/lib/types';
 import { LessonCount, OverallData, accumulateLessonCounts } from '@/utils';
 
@@ -27,12 +28,14 @@ const CurrentLevelProgressCard: React.FC<CurrentLevelProgressCardProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.titleContent}>
-        <Text>My Progress</Text>
-        <Text>{`${accumulatedData?.accumulatedCompletedLessons} / ${completedLessons}`}</Text>
+        <Text style={styles.headingText}>My Progress</Text>
+        <Text
+          style={styles.headingText}
+        >{`${accumulatedData?.accumulatedCompletedLessons} / ${completedLessons}`}</Text>
       </View>
       {/* <ProgressBar progress={0} /> */}
       <ProgressBar progress={progress} />
-      <Text>{`${progress}% Complete`}</Text>
+      <Text style={styles.subText}>{`${progress}% Complete`}</Text>
     </View>
   );
 };
@@ -69,13 +72,23 @@ const styles = StyleSheet.create({
     gap: 10,
     color: Colors.primary,
   },
+  headingText: {
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.bold,
+    color: '#1f2937',
+  },
+  subText: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.medium,
+    color: '#374151',
+  },
   txtBold: {
-    fontWeight: '400',
-    fontSize: 20,
+    fontWeight: FontWeights.semiBold,
+    fontSize: FontSizes.lg,
   },
   playTxt: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.medium,
     color: Colors.primary,
   },
 });

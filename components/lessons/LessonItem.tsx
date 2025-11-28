@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import ImagePlayerComponent from '@/components/common/ImageViewerComponent';
+import { FontSizes, FontWeights } from '@/constants/Typography';
 import { LessonTag } from '@/hooks/useLessonData';
 
 interface LessonItemProps {
@@ -130,11 +131,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   lessonTitle: {
-    fontSize: 16,
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.semiBold,
     color: '#333',
   },
   lessonDuration: {
-    fontSize: 14,
+    fontSize: FontSizes.sm,
     color: '#888',
   },
   activeLesson: {
