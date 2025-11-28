@@ -10,6 +10,8 @@ import {
   ViewStyle,
 } from 'react-native';
 
+import { FontSizes, FontWeights } from '@/constants/Typography';
+
 import WordCounter from './WordCounter';
 
 interface CTextInputProps extends TextInputProps {
@@ -38,7 +40,7 @@ const CTextInput: React.FC<CTextInputProps> = ({
 }) => {
   return (
     <View style={[styles.container, inputContainerStyle]}>
-      <Text>{inputLabel}</Text>
+      <Text style={styles.label}>{inputLabel}</Text>
       <TextInput
         placeholder={placeholder}
         value={value}
@@ -72,10 +74,17 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   input: {
-    padding: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#B0C4DE',
     borderRadius: 8,
     flexWrap: 'wrap',
+    fontSize: FontSizes.sm,
+    fontWeight: FontWeights.regular,
+  },
+  label: {
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.medium,
+    color: '#1f2937',
   },
 });

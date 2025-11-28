@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import * as FileSystem from 'expo-file-system';
 
+import { FontSizes, FontWeights } from '@/constants/Typography';
 import { getBaseUrl, getToken } from '@/utils';
 
 import ImageViewerComponent from './ImageViewerComponent';
@@ -220,8 +221,9 @@ const styles = StyleSheet.create({
     margin: 20,
   },
   errorText: {
-    color: '#666',
-    fontSize: 16,
+    color: '#333',
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.semiBold,
     textAlign: 'center',
     lineHeight: 22,
   },

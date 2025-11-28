@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
+import { FontSizes, FontWeights } from '@/constants/Typography';
 
 export const LessonHeader = memo(
   ({ onBackPress }: { onBackPress: () => void }) => (
@@ -84,13 +85,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: FontSizes.xl,
+    fontWeight: FontWeights.bold,
     color: '#333',
   },
   subtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: FontSizes.md,
+    color: '#4a4a4a',
     marginTop: 4,
   },
   loadingContainer: {
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: FontSizes.md,
     color: '#d32f2f',
     textAlign: 'center',
     marginBottom: 16,
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.semiBold,
   },
 });
