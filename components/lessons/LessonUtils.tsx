@@ -85,12 +85,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: FontSizes.xl,
+    fontSize: FontSizes.md,
     fontWeight: FontWeights.bold,
-    color: '#333',
+    color: Colors.primary,
   },
   subtitle: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.sm,
     color: '#4a4a4a',
     marginTop: 4,
   },
