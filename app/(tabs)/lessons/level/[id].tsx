@@ -539,28 +539,6 @@ const Level: React.FC = () => {
               trackColor={{ false: '#d6d6d6', true: Colors.primary }}
             />
           </View>
-
-          <View style={styles.delayRow}>
-            <Text style={styles.delayLabel}>
-              Delay before auto-play: {autoPlayDelay}s
-            </Text>
-            <View style={styles.delayButtons}>
-              <TouchableOpacity
-                onPress={() => handleDelayChange(-1)}
-                style={styles.delayButton}
-                accessibilityRole="button"
-              >
-                <Text style={styles.delayButtonText}>-1s</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleDelayChange(1)}
-                style={[styles.delayButton, styles.delayButtonSpacer]}
-                accessibilityRole="button"
-              >
-                <Text style={styles.delayButtonText}>+1s</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
       </View>
 
@@ -648,13 +626,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   iosStatusBar: { height: 50, backgroundColor: Colors.primary },
   videoContainer: {
-    backgroundColor: '#1f1f1f',
-    paddingBottom: 12,
+    // backgroundColor: '#1f1f1f',
+    // paddingBottom: 12,
   },
   playerWrapper: {
     minHeight: 240,
     backgroundColor: '#000',
-    marginHorizontal: 12,
+    marginHorizontal: 0,
     marginTop: 8,
     borderRadius: 12,
     overflow: 'hidden',
@@ -737,7 +715,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   autoPlayControls: {
-    marginTop: 10,
+    marginTop: 5,
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#f6f8fa',
