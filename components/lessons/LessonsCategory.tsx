@@ -131,11 +131,6 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
       assessment: 'Beginner',
     },
     {
-      key: 'Basic Elementary',
-      color: '#1b6c82',
-      assessment: 'Basic Elementary',
-    },
-    {
       key: 'Intermediate',
       color: '#2e6270',
       assessment: 'Intermediate',

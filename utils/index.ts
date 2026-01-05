@@ -135,3 +135,23 @@ export function getBaseUrl(): string {
 
   return url;
 }
+
+/**
+ * Normalizes Sierra Leone phone numbers to international format (232XXXXXXXXX)
+ * Handles various input formats: 0XXX, 232XXXXXXX, +232XXXXXXX
+ * @param phoneNumber - The input phone number
+ * @returns Normalized phone number starting with 232
+ */
+export function normalizePhoneNumber(phoneNumber: string): string {
+  let normalized = phoneNumber.replace(/\s+/g, '').replace(/^\+/, '');
+  
+  if (normalized.startsWith('0')) {
+    normalized = '232' + normalized.substring(1);
+  }
+
+  else if (!normalized.startsWith('232')) {
+    normalized = '232' + normalized;
+  }
+  
+  return normalized;
+}

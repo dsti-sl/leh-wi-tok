@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 
 import { router } from 'expo-router';
 
-import { getBaseUrl } from '@/utils';
+import { getBaseUrl, normalizePhoneNumber } from '@/utils';
 
 const useSignup = () => {
   const [fullName, setFullName] = useState('');
@@ -36,10 +36,21 @@ const useSignup = () => {
         setIsLoading(false);
         return;
       }
+
+      const normalizedPhone = normalizePhoneNumber(phoneNumber);
+
+      if (normalizedPhone.length < 11 || normalizedPhone.length > 12) {
+        setError(
+          'Phone number must be between 9 and 10 digits (e.g., 0761112222).',
+        );
+        setIsLoading(false);
+        return;
+      }
+
       const userData = {
         name: fullName,
-        phone: phoneNumber,
-        user: phoneNumber,
+        phone: normalizedPhone,
+        user: normalizedPhone,
       };
       const registerResponse = await fetch(
         `${EXPO_PUBLIC_BASE_URL}/user/register`,
@@ -59,16 +70,17 @@ const useSignup = () => {
         setIsLoading(false);
         return;
       }
-      // Auto-login (get OTP)
       const loginResponse = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: phoneNumber }),
+        body: JSON.stringify({ user: normalizedPhone }),
       });
       const loginData = await loginResponse.json().catch(() => ({}));
       if (loginResponse.ok) {
         Alert.alert('Success', loginData?.meta?.message || 'OTP sent!');
-        router.replace(`/otpscreen?phoneNumber=${phoneNumber}&isSignIn=false`);
+        router.replace(
+          `/otpscreen?phoneNumber=${normalizedPhone}&isSignIn=false`,
+        );
       } else {
         const loginErrMsg =
           loginData?.meta?.message ||
