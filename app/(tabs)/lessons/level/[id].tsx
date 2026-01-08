@@ -254,15 +254,6 @@ const Level: React.FC = () => {
     );
   }, [flattenedLessons, currentLessonId, completedLessons, isLessonLocked]);
 
-  const handleDelayChange = useCallback((delta: number) => {
-    setAutoPlayDelay(prevDelay =>
-      Math.min(
-        MAX_AUTOPLAY_DELAY,
-        Math.max(MIN_AUTOPLAY_DELAY, prevDelay + delta),
-      ),
-    );
-  }, []);
-
   const handleLessonSelect = useCallback(
     (lesson: LessonTag) => {
       clearAutoPlayTimers();
@@ -633,8 +624,8 @@ const styles = StyleSheet.create({
     minHeight: 240,
     backgroundColor: '#000',
     marginHorizontal: 0,
-    marginTop: 8,
-    borderRadius: 12,
+    // marginTop: 8,
+    borderRadius: 0,
     overflow: 'hidden',
     justifyContent: 'center',
   },
