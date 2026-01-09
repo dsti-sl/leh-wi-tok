@@ -102,7 +102,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   );
 
   // Pagination page size
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 25;
 
   const BASE_URL = getBaseUrl();
 

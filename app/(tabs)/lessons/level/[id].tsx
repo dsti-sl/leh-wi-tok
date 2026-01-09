@@ -1050,10 +1050,10 @@ const styles = StyleSheet.create({
   },
   compactNuggetScroll: {
     maxHeight: 320,
-    paddingBottom: 4,
+    paddingBottom: 10,
   },
   compactNuggetContent: {
-    paddingBottom: 4,
+    paddingBottom: 10,
   },
   listContainer: {
     flex: 1,
