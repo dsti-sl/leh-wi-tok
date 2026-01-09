@@ -9,6 +9,7 @@ import React, {
 import {
   ActivityIndicator,
   Platform,
+  ScrollView,
   SectionList,
   StyleSheet,
   Switch,
@@ -44,6 +45,8 @@ const AUTOPLAY_ENABLED_KEY = 'lesson_autoplay_enabled';
 const AUTOPLAY_DELAY_KEY = 'lesson_autoplay_delay';
 const MIN_AUTOPLAY_DELAY = 3;
 const MAX_AUTOPLAY_DELAY = 15;
+const GESTURE_POSITION_PREFIX = 'lesson_gesture_position_';
+const LAST_LESSON_PREFIX = 'lesson_last_selected_';
 
 type FlattenedLesson = {
   lesson: LessonTag;
@@ -69,6 +72,7 @@ const Level: React.FC = () => {
     error,
     loadMoreData,
     toggleSectionExpansion,
+    expandOnlySection,
     getSectionProgress,
     refetch,
     createHandleLessonClick,
@@ -96,6 +100,7 @@ const Level: React.FC = () => {
   const [nextLessonEntry, setNextLessonEntry] =
     useState<FlattenedLesson | null>(null);
   const [showFullList, setShowFullList] = useState<boolean>(false);
+  const [resumeTime, setResumeTime] = useState<number>(0);
   const sectionListRef = useRef<SectionList<LessonTag, LessonSection>>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
@@ -103,6 +108,12 @@ const Level: React.FC = () => {
   const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const resumeKeyRef = useRef<string | null>(null);
+  const resumeSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const pendingResumeTimeRef = useRef<number | null>(null);
+  const hasRestoredLastLessonRef = useRef(false);
 
   const clearAutoPlayTimers = useCallback(() => {
     if (countdownIntervalRef.current) {
@@ -184,6 +195,118 @@ const Level: React.FC = () => {
     [clearAutoPlayTimers],
   );
 
+  const findSectionIdForLesson = useCallback(
+    (lessonId: string) => {
+      for (const section of sectionsData) {
+        const match = section.data.some(item => item.id === lessonId);
+        if (match) return section.id;
+      }
+      return null;
+    },
+    [sectionsData],
+  );
+
+  useEffect(() => {
+    if (!assessment) return;
+    if (hasRestoredLastLessonRef.current) return;
+    if (currentLessonId) return;
+    if (!lessonNuggets.length) return;
+
+    let isMounted = true;
+
+    const restoreLastLesson = async () => {
+      try {
+        const storageKey = `${LAST_LESSON_PREFIX}${assessment}`;
+        const storedId = await AsyncStorage.getItem(storageKey);
+        if (!storedId || !isMounted) return;
+
+        const match = lessonNuggets.find(lesson => lesson.id === storedId);
+        if (!match) return;
+
+        setCurrentLessonId(match.id);
+        setExpandedLessonId(match.id);
+        setSelectedGestureId(match.gesture?.id || null);
+        setLessonGestureInfo(match.gesture || null);
+
+        const sectionId = findSectionIdForLesson(match.id);
+        if (sectionId) {
+          expandOnlySection(sectionId);
+        }
+      } catch (error) {
+        console.warn('Failed to restore last lesson:', error);
+      } finally {
+        if (isMounted) {
+          hasRestoredLastLessonRef.current = true;
+        }
+      }
+    };
+
+    restoreLastLesson();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    assessment,
+    currentLessonId,
+    expandOnlySection,
+    findSectionIdForLesson,
+    lessonNuggets,
+  ]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadResumePosition = async () => {
+      if (!selectedGestureId) {
+        setResumeTime(0);
+        resumeKeyRef.current = null;
+        pendingResumeTimeRef.current = null;
+        return;
+      }
+
+      try {
+        setResumeTime(0);
+        const storageKey = `${GESTURE_POSITION_PREFIX}${selectedGestureId}`;
+        resumeKeyRef.current = storageKey;
+        const storedValue = await AsyncStorage.getItem(storageKey);
+        const parsed = storedValue ? parseFloat(storedValue) : 0;
+        const safeValue = Number.isFinite(parsed) ? parsed : 0;
+
+        if (isMounted) {
+          setResumeTime(safeValue);
+          pendingResumeTimeRef.current = safeValue;
+        }
+      } catch (error) {
+        console.warn('Failed to load resume position:', error);
+      }
+    };
+
+    loadResumePosition();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedGestureId]);
+
+  useEffect(
+    () => () => {
+      if (resumeSaveTimeoutRef.current) {
+        clearTimeout(resumeSaveTimeoutRef.current);
+        resumeSaveTimeoutRef.current = null;
+      }
+
+      const storageKey = resumeKeyRef.current;
+      const pendingTime = pendingResumeTimeRef.current;
+      if (!storageKey || pendingTime === null) return;
+
+      AsyncStorage.setItem(storageKey, pendingTime.toString()).catch(error =>
+        console.warn('Failed to persist resume position:', error),
+      );
+    },
+    [],
+  );
+
   const scrollToSection = useCallback((sectionIndex: number) => {
     if (sectionListRef.current) {
       try {
@@ -254,14 +377,66 @@ const Level: React.FC = () => {
     );
   }, [flattenedLessons, currentLessonId, completedLessons, isLessonLocked]);
 
+  const currentLessonSection = useMemo(() => {
+    if (!currentLessonId) return null;
+    return (
+      sectionsData.find(section =>
+        section.data.some(item => item.id === currentLessonId),
+      ) || null
+    );
+  }, [currentLessonId, sectionsData]);
+
+  const currentLessonNuggets = useMemo(
+    () => currentLessonSection?.data || [],
+    [currentLessonSection],
+  );
+
+  const handleTimeUpdate = useCallback(
+    (currentTime: number) => {
+      if (!selectedGestureId || !Number.isFinite(currentTime)) return;
+
+      pendingResumeTimeRef.current = currentTime;
+
+      if (resumeSaveTimeoutRef.current) return;
+
+      resumeSaveTimeoutRef.current = setTimeout(() => {
+        resumeSaveTimeoutRef.current = null;
+        const storageKey = resumeKeyRef.current;
+        const pendingTime = pendingResumeTimeRef.current;
+        if (!storageKey || pendingTime === null) return;
+
+        AsyncStorage.setItem(storageKey, pendingTime.toString()).catch(error =>
+          console.warn('Failed to persist resume position:', error),
+        );
+      }, 1000);
+    },
+    [selectedGestureId],
+  );
+
   const handleLessonSelect = useCallback(
     (lesson: LessonTag) => {
       clearAutoPlayTimers();
       setCurrentLessonId(lesson.id);
       setNextLessonEntry(null);
+      const sectionId = findSectionIdForLesson(lesson.id);
+      if (sectionId) {
+        expandOnlySection(sectionId);
+      }
+      if (assessment) {
+        AsyncStorage.setItem(
+          `${LAST_LESSON_PREFIX}${assessment}`,
+          lesson.id,
+        ).catch(error => console.warn('Failed to persist last lesson:', error));
+      }
       baseLessonClickHandler(lesson);
     },
-    [baseLessonClickHandler, clearAutoPlayTimers],
+    [
+      assessment,
+      baseLessonClickHandler,
+      clearAutoPlayTimers,
+      expandOnlySection,
+      findSectionIdForLesson,
+    ],
   );
 
   const startNextLesson = useCallback(
@@ -470,6 +645,8 @@ const Level: React.FC = () => {
               autoPlay={true}
               useAdaptiveStreaming={true}
               onEnd={handleVideoEnd}
+              initialTime={resumeTime}
+              onTimeUpdate={handleTimeUpdate}
             />
           ) : (
             <View style={styles.emptyState}>
@@ -552,7 +729,17 @@ const Level: React.FC = () => {
               <Text style={styles.compactLink}>See all</Text>
             </TouchableOpacity>
           </View>
-          {nextPlayableLesson ? (
+          {currentLessonSection ? (
+            <View style={styles.compactCard}>
+              <Text style={styles.compactLabel}>Current lesson</Text>
+              <Text style={styles.compactLesson} numberOfLines={2}>
+                {currentLessonSection.title}
+              </Text>
+              <Text style={styles.compactHint}>
+                Continue where you left off or pick another nugget.
+              </Text>
+            </View>
+          ) : nextPlayableLesson ? (
             <TouchableOpacity
               style={styles.compactCard}
               onPress={() => handleLessonSelect(nextPlayableLesson.lesson)}
@@ -572,6 +759,45 @@ const Level: React.FC = () => {
               <Text style={styles.compactHint}>
                 You can review from the list.
               </Text>
+            </View>
+          )}
+
+          {!!currentLessonNuggets.length && (
+            <View style={styles.compactNuggetList}>
+              <ScrollView
+                style={styles.compactNuggetScroll}
+                contentContainerStyle={styles.compactNuggetContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {currentLessonNuggets.map((item, index) => {
+                  const locked = isLessonLocked(
+                    item,
+                    index,
+                    currentLessonNuggets,
+                    completedLessons,
+                  );
+                  const isActive = expandedLessonId === item.id;
+                  const parsedDetails = parseWysiwygContent(
+                    item.detail || '[]',
+                  );
+                  const illustrationUrl = getIllustrationUrl(item.illustration);
+
+                  return (
+                    <LessonItem
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      isLocked={locked}
+                      isActive={isActive}
+                      onPress={() => handleLessonSelect(item)}
+                      parsedDetails={parsedDetails}
+                      illustrationUrl={illustrationUrl}
+                      isSupportedImageFormat={isSupportedImageFormat}
+                      token={token}
+                    />
+                  );
+                })}
+              </ScrollView>
             </View>
           )}
         </View>
@@ -812,6 +1038,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
     backgroundColor: '#fafafa',
+  },
+  compactNuggetList: {
+    marginTop: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fff',
+    paddingBottom: 4,
+  },
+  compactNuggetScroll: {
+    maxHeight: 320,
+    paddingBottom: 4,
+  },
+  compactNuggetContent: {
+    paddingBottom: 4,
   },
   listContainer: {
     flex: 1,

@@ -24,6 +24,8 @@ interface MediaPlayerProps {
   autoPlay?: boolean;
   useAdaptiveStreaming?: boolean; // New prop to enable adaptive streaming
   onEnd?: () => void;
+  initialTime?: number;
+  onTimeUpdate?: (_currentTime: number) => void;
 }
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
@@ -32,6 +34,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   autoPlay = false,
   useAdaptiveStreaming = false,
   onEnd,
+  initialTime,
+  onTimeUpdate,
 }) => {
   const BASE_URL = getBaseUrl();
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
@@ -157,6 +161,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           onLoad={handleMediaLoad}
           onError={handleMediaError}
           {...(onEnd ? { onEnd } : {})}
+          {...(initialTime !== undefined ? { initialTime } : {})}
+          {...(onTimeUpdate ? { onTimeUpdate } : {})}
           shouldLoop={false}
         />
       </View>
