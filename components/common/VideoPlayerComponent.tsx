@@ -50,6 +50,8 @@ interface VideoPlayerComponentProps {
   autoPlay?: boolean;
   enableAdaptiveStreaming?: boolean;
   videoId?: string;
+  initialTime?: number;
+  onTimeUpdate?: (_currentTime: number) => void;
 }
 
 // ============= CONSTANTS =============
@@ -91,6 +93,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   autoPlay = false,
   enableAdaptiveStreaming = false,
   videoId,
+  initialTime,
+  onTimeUpdate,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -108,6 +112,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   const [showControls, setShowControls] = useState(true);
 
   const playerRef = useRef<React.ComponentRef<typeof VideoView> | null>(null);
+  const hasAppliedInitialTimeRef = useRef(false);
 
   useEffect(() => {
     if (enableAdaptiveStreaming) {
@@ -174,6 +179,10 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   );
 
   useEffect(() => {
+    hasAppliedInitialTimeRef.current = false;
+  }, [videoId, uri]);
+
+  useEffect(() => {
     if (!player || !enableAdaptiveStreaming) return;
 
     const subscription = player.addListener('statusChange', status => {
@@ -204,6 +213,45 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       }
     };
   }, [player, onEnd]);
+
+  const applyInitialTime = useCallback(() => {
+    if (!player || hasAppliedInitialTimeRef.current) return;
+    if (!initialTime || initialTime <= 0) return;
+
+    try {
+      const duration = player.duration;
+      const maxTime =
+        Number.isFinite(duration) && duration > 1
+          ? duration - 0.5
+          : initialTime;
+      player.currentTime = Math.min(initialTime, maxTime);
+      hasAppliedInitialTimeRef.current = true;
+    } catch (error) {
+      console.warn('Failed to apply initial playback time:', error);
+    }
+  }, [player, initialTime]);
+
+  useEffect(() => {
+    if (!player || !onTimeUpdate) return;
+
+    player.timeUpdateEventInterval = 1;
+    const subscription = player.addListener('timeUpdate', payload => {
+      onTimeUpdate(payload.currentTime);
+    });
+
+    return () => {
+      try {
+        subscription?.remove();
+      } catch (error) {
+        console.warn('Error removing time update listener:', error);
+      }
+    };
+  }, [player, onTimeUpdate]);
+
+  useEffect(() => {
+    if (!player || onTimeUpdate) return;
+    player.timeUpdateEventInterval = 0;
+  }, [player, onTimeUpdate]);
 
   const loadVideoInfo = useCallback(async () => {
     if (!videoId || !token || !enableAdaptiveStreaming) return;
@@ -456,6 +504,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
         if (autoPlay && player) {
           try {
+            applyInitialTime();
             player.play();
           } catch (error) {
             console.error('Video player play error:', error);
@@ -465,6 +514,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           }
         } else {
           try {
+            applyInitialTime();
             player.pause();
           } catch (error) {
             console.warn('Video pause failed:', error);
@@ -489,7 +539,20 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     return () => {
       clearInterval(statusInterval);
     };
-  }, [player, shouldLoop, onError, onLoad, hasLoaded, autoPlay]);
+  }, [
+    player,
+    shouldLoop,
+    onError,
+    onLoad,
+    hasLoaded,
+    autoPlay,
+    applyInitialTime,
+  ]);
+
+  useEffect(() => {
+    if (!player || !hasLoaded) return;
+    applyInitialTime();
+  }, [player, hasLoaded, applyInitialTime]);
 
   useEffect(() => {
     if (enableAdaptiveStreaming && currentStreamUrl) {

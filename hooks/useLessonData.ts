@@ -73,6 +73,7 @@ interface UseLessonDataReturn {
   loadMoreData: () => void;
   markLessonCompleted: (_lessonId: string) => Promise<void>;
   toggleSectionExpansion: (_sectionId: string) => void;
+  expandOnlySection: (_sectionId: string) => void;
   getSectionProgress: (_section: LessonSection) => {
     completedCount: number;
     totalCount: number;
@@ -101,7 +102,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   );
 
   // Pagination page size
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 25;
 
   const BASE_URL = getBaseUrl();
 
@@ -384,6 +385,10 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
     });
   }, []);
 
+  const expandOnlySection = useCallback((sectionId: string) => {
+    setExpandedSections(new Set([sectionId]));
+  }, []);
+
   // Get section progress information
   const getSectionProgress = useCallback(
     (section: LessonSection) => {
@@ -465,6 +470,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
     loadMoreData,
     markLessonCompleted,
     toggleSectionExpansion,
+    expandOnlySection,
     getSectionProgress,
     refetch,
     createHandleLessonClick,
