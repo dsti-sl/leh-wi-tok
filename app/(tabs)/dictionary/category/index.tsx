@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingTop: 20,
   },
   searchResultsContainer: {
     paddingTop: Platform.OS === 'ios' ? 0 : 10,
