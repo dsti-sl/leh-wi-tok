@@ -14,8 +14,6 @@ import {
 import { useRouter } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
-
-import AlphabetBar from '@/components/dictionary/AlphabetBar';
 import CategoryCard from '@/components/dictionary/CategoryCard';
 import { Colors } from '@/constants/Colors';
 import {
@@ -107,14 +105,6 @@ const index = () => {
     searchKey: 'word',
   });
 
-  const handleAlphabetletterPress = useCallback(
-    (letter: string) => {
-      console.log(`Sign language letter pressed: ${letter}`);
-      setActiveLetter(letter);
-    },
-    [setQuery],
-  );
-
   if (loading) {
     return (
       <View style={styles.viewContainer}>
@@ -133,10 +123,6 @@ const index = () => {
 
   return (
     <View style={styles.outerContainer}>
-      <AlphabetBar
-        onPressLetter={handleAlphabetletterPress}
-        activeLetter={activeLetter ?? ''}
-      />
       <View style={styles.viewContainer}>
         <View style={styles.searchBarContainer}>
           <Ionicons
