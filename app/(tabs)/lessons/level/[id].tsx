@@ -543,11 +543,11 @@ const Level: React.FC = () => {
           nuggetCount={totalCount}
           completedCount={completedCount}
           isExpanded={isExpanded}
-          onToggle={() => toggleSectionExpansion(section.id)}
+          onToggle={() => expandOnlySection(section.id)}
         />
       );
     },
-    [expandedSections, getSectionProgress, toggleSectionExpansion],
+    [expandedSections, expandOnlySection, getSectionProgress],
   );
 
   const renderLessonItem = useCallback(
