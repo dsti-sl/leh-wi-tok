@@ -46,7 +46,7 @@ const styles = StyleSheet.create<{
   container: ViewStyle;
   titleContent: ViewStyle;
   txtDescription: ViewStyle;
-  playBtn: ViewStyle;
+  playBtn: TextStyle;
   headingText: TextStyle;
   subText: TextStyle;
   txtBold: TextStyle;
