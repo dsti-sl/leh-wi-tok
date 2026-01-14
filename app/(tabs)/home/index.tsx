@@ -110,7 +110,7 @@ const HomeScreen = () => {
               description="Get Started with our progress driven Le Wi Tok ASL lessons."
               image={lessonFillSeconday as ImageSourcePropType}
               bgColor="#0f4c5c"
-              routeName={`/(tabs)/lessons/level/${'Beginner'}?assessment=${'Beginner'}`}
+              routeName={`/(tabs)/lessons`}
             />
             <HomeItem
               title="Common Words & Dictionary"
