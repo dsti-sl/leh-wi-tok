@@ -144,14 +144,12 @@ export function getBaseUrl(): string {
  */
 export function normalizePhoneNumber(phoneNumber: string): string {
   let normalized = phoneNumber.replace(/\s+/g, '').replace(/^\+/, '');
-  
+
   if (normalized.startsWith('0')) {
     normalized = '232' + normalized.substring(1);
-  }
-
-  else if (!normalized.startsWith('232')) {
+  } else if (!normalized.startsWith('232')) {
     normalized = '232' + normalized;
   }
-  
+
   return normalized;
 }

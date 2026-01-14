@@ -57,7 +57,6 @@ const useLastLesson = () => {
           return;
         }
 
-        const userData = JSON.parse(user);
         const lessons = completedLessons
           ? JSON.parse(completedLessons).lessons
           : [];
@@ -129,7 +128,6 @@ const useLastLesson = () => {
         const lastPosition = await AsyncStorage.getItem(
           `lesson_${lesson.lesson.id}_position`,
         );
-
 
         setLastLesson({
           id: lesson.lesson.id,
