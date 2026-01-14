@@ -68,7 +68,11 @@ const CTextInput: React.FC<CTextInputProps> = ({
 
 export default CTextInput;
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  container: ViewStyle;
+  input: TextStyle;
+  label: TextStyle;
+}>({
   container: {
     flex: 1,
     gap: 5,

@@ -1,6 +1,14 @@
 import React, { memo } from 'react';
 
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+  ImageStyle,
+} from 'react-native';
 
 import { FontAwesome5 } from '@expo/vector-icons';
 
@@ -113,7 +121,21 @@ const LessonItem: React.FC<LessonItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  lessonItem: ViewStyle;
+  lockedLesson: ViewStyle;
+  iconContainer: ViewStyle;
+  lessonDetails: ViewStyle;
+  lessonTitle: TextStyle;
+  lessonDuration: TextStyle;
+  activeLesson: ViewStyle;
+  accordionIcon: ViewStyle;
+  accordionContent: ViewStyle;
+  detailParagraph: TextStyle;
+  illustrationContainer: ViewStyle;
+  illustrationImage: ImageStyle;
+  illustrationCaption: TextStyle;
+}>({
   lessonItem: {
     flexDirection: 'row',
     alignItems: 'center',

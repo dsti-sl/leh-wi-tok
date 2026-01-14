@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { FontSizes, FontWeights } from '@/constants/Typography';
@@ -42,7 +42,16 @@ const CurrentLevelProgressCard: React.FC<CurrentLevelProgressCardProps> = ({
 
 export default CurrentLevelProgressCard;
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  container: ViewStyle;
+  titleContent: ViewStyle;
+  txtDescription: ViewStyle;
+  playBtn: ViewStyle;
+  headingText: TextStyle;
+  subText: TextStyle;
+  txtBold: TextStyle;
+  playTxt: TextStyle;
+}>({
   container: {
     backgroundColor: '#fff',
     padding: 20,
