@@ -32,4 +32,5 @@ tsconfig.tsbuildinfo
 android
 ios
 
-build**
+build
+build**.apk
