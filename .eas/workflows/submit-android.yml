@@ -1,0 +1,46 @@
+name: Submit Android Only
+
+# Manual trigger only - use to submit an existing build
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        type: string
+        required: true
+        description: 'Build ID to submit (from a previous build)'
+      profile:
+        type: choice
+        options:
+          - production
+        required: false
+        default: 'production'
+        description: 'Submit profile'
+
+jobs:
+  submit_android:
+    name: 📦 Submit to Google Play Store
+    type: submit
+    params:
+      build_id: ${{ inputs.build_id }}
+      profile: ${{ inputs.profile || 'production' }}
+
+  confirmation:
+    name: 📋 Submission Confirmation
+    needs: [submit_android]
+    type: doc
+    params:
+      md: |
+        # ✅ Android Submission Complete
+
+        ## Submission Details
+        - **Build ID**: `${{ inputs.build_id }}`
+        - **Package ID**: ${{ needs.submit_android.outputs.android_package_id || 'N/A' }}
+
+        ---
+
+        ## Next Steps
+        1. Go to [Google Play Console](https://play.google.com/console)
+        2. Navigate to your app → **Release** → **Testing** → **Internal testing**
+        3. Review the uploaded build
+        4. Add testers or promote to another track
+        5. When ready, promote to Production

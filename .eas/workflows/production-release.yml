@@ -1,0 +1,105 @@
+name: Production Release Pipeline
+
+# Trigger on push to main/release branches OR manual trigger
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  workflow_dispatch:
+    inputs:
+      changelog:
+        type: string
+        required: false
+        description: 'Changelog for this release'
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  cancel_in_progress: true
+  group: ${{ workflow.filename }}-${{ github.ref }}
+
+jobs:
+  # ==================== Build Phase ====================
+  build_ios:
+    name: 🍎 Build iOS
+    type: build
+    params:
+      platform: ios
+      profile: production
+      message: 'Release build - ${{ github.ref_name }}'
+
+  build_android:
+    name: 🤖 Build Android
+    type: build
+    params:
+      platform: android
+      profile: production
+      message: 'Release build - ${{ github.ref_name }}'
+
+  # ==================== Submit Phase ====================
+  submit_ios:
+    name: 📱 Submit iOS to TestFlight
+    needs: [build_ios]
+    type: submit
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
+
+  submit_android:
+    name: 📦 Submit Android to Play Store
+    needs: [build_android]
+    type: submit
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: production
+
+  # ==================== Documentation ====================
+  release_notes:
+    name: 📝 Release Notes
+    after: [submit_ios, submit_android]
+    type: doc
+    params:
+      md: |
+        # 🎉 Release Complete
+
+        **Branch**: ${{ github.ref_name }}
+        **Commit**: ${{ github.sha }}
+        **Triggered by**: ${{ github.triggering_actor || 'Manual' }}
+
+        ---
+
+        ## Builds
+
+        ### iOS 🍎
+        | Property | Value |
+        |----------|-------|
+        | Build ID | `${{ needs.build_ios.outputs.build_id }}` |
+        | Version | ${{ needs.build_ios.outputs.app_version }} |
+        | Build Number | ${{ needs.build_ios.outputs.app_build_version }} |
+        | Bundle ID | ${{ needs.build_ios.outputs.app_identifier }} |
+        | Distribution | ${{ needs.build_ios.outputs.distribution }} |
+        | Submit Status | ${{ after.submit_ios.status }} |
+
+        ### Android 🤖
+        | Property | Value |
+        |----------|-------|
+        | Build ID | `${{ needs.build_android.outputs.build_id }}` |
+        | Version | ${{ needs.build_android.outputs.app_version }} |
+        | Build Number | ${{ needs.build_android.outputs.app_build_version }} |
+        | Package | ${{ needs.build_android.outputs.app_identifier }} |
+        | Distribution | ${{ needs.build_android.outputs.distribution }} |
+        | Submit Status | ${{ after.submit_android.status }} |
+
+        ---
+
+        ## Changelog
+        ${{ inputs.changelog || github.commit_message || 'No changelog provided' }}
+
+        ---
+
+        ## Next Steps
+        1. ✅ iOS build submitted to TestFlight
+        2. ✅ Android build submitted to Play Store (internal track)
+        3. ⏳ Wait for processing and review
+        4. 🧪 Test on TestFlight / Internal Testing
+        5. 🚀 Promote to production when ready

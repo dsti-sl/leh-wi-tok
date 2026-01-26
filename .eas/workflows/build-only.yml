@@ -1,0 +1,65 @@
+name: Build Only (No Submission)
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+        required: false
+        default: 'all'
+        description: 'Platform to build'
+      profile:
+        type: choice
+        options:
+          - production
+          - preview
+          - development
+        required: false
+        default: 'production'
+        description: 'Build profile'
+
+jobs:
+  build_ios:
+    name: Build iOS
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'ios' }}
+    type: build
+    params:
+      platform: ios
+      profile: ${{ inputs.profile || 'production' }}
+
+  build_android:
+    name: Build Android
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+    type: build
+    params:
+      platform: android
+      profile: ${{ inputs.profile || 'production' }}
+
+  summary:
+    name: Build Summary
+    after: [build_ios, build_android]
+    type: doc
+    params:
+      md: |
+        # Build Summary
+
+        | Platform | Build ID | Version | Build Number | Status |
+        |----------|----------|---------|--------------|--------|
+        | iOS | ${{ needs.build_ios.outputs.build_id || 'Skipped' }} | ${{ needs.build_ios.outputs.app_version || 'N/A' }} | ${{ needs.build_ios.outputs.app_build_version || 'N/A' }} | ${{ after.build_ios.status || 'Skipped' }} |
+        | Android | ${{ needs.build_android.outputs.build_id || 'Skipped' }} | ${{ needs.build_android.outputs.app_version || 'N/A' }} | ${{ needs.build_android.outputs.app_build_version || 'N/A' }} | ${{ after.build_android.status || 'Skipped' }} |
+
+        ## Build Details
+
+        ### iOS
+        - **Fingerprint**: ${{ needs.build_ios.outputs.fingerprint_hash || 'N/A' }}
+        - **Distribution**: ${{ needs.build_ios.outputs.distribution || 'N/A' }}
+        - **Runtime Version**: ${{ needs.build_ios.outputs.runtime_version || 'N/A' }}
+
+        ### Android
+        - **Fingerprint**: ${{ needs.build_android.outputs.fingerprint_hash || 'N/A' }}
+        - **Distribution**: ${{ needs.build_android.outputs.distribution || 'N/A' }}
+        - **Runtime Version**: ${{ needs.build_android.outputs.runtime_version || 'N/A' }}
