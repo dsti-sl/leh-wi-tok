@@ -13,9 +13,9 @@ import {
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import { fetchAndInsertTranslations } from '@/data/dictionary';
 import { fetchDictionaryData } from '@/db/retrivedata';
 import useSearch from '@/hooks/useSearch';
-import { fetchAndInsertTranslations } from '@/data/dictionary';
 
 interface DictionaryEntry {
   word: string;

@@ -23,7 +23,6 @@ import { getBaseUrl } from '@/utils';
 
 import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
 import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
-import questionMarkCircular from '../../../assets/images/question-mark-circular.png';
 import usersOutlineFillSeconday from '../../../assets/images/users-outline-fill-secondary.png';
 
 const HomeScreen = () => {
@@ -111,7 +110,7 @@ const HomeScreen = () => {
               description="Get Started with our progress driven Le Wi Tok ASL lessons."
               image={lessonFillSeconday as ImageSourcePropType}
               bgColor="#0f4c5c"
-              routeName={`/(tabs)/lessons/level/${'Beginner'}?assessment=${'Beginner'}`}
+              routeName={`/(tabs)/lessons`}
             />
             <HomeItem
               title="Common Words & Dictionary"

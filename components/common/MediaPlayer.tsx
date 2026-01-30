@@ -1,6 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 import * as FileSystem from 'expo-file-system';
 
@@ -200,7 +207,14 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  container: ViewStyle;
+  media: ViewStyle;
+  loadingContainer: ViewStyle;
+  errorContainer: ViewStyle;
+  errorText: TextStyle;
+  subErrorText: TextStyle;
+}>({
   container: {
     flex: 1,
     justifyContent: 'center',

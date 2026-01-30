@@ -21,7 +21,9 @@ const WordCounter: React.FC<WordCounterProps> = ({
 
 export default WordCounter;
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  container: TextStyle;
+}>({
   container: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.medium,

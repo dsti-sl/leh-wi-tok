@@ -4,8 +4,10 @@ import {
   ActivityIndicator,
   StyleSheet,
   Text,
+  TextStyle,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -68,7 +70,18 @@ export const ErrorView = memo(
 );
 ErrorView.displayName = 'ErrorView';
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  headerContainer: ViewStyle;
+  lessonInfo: ViewStyle;
+  lessonHeader: ViewStyle;
+  title: TextStyle;
+  subtitle: TextStyle;
+  loadingContainer: ViewStyle;
+  errorContainer: ViewStyle;
+  errorText: TextStyle;
+  retryButton: ViewStyle;
+  retryText: TextStyle;
+}>({
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -416,6 +416,7 @@ const Level: React.FC = () => {
   const handleLessonSelect = useCallback(
     (lesson: LessonTag) => {
       clearAutoPlayTimers();
+      setShowFullList(false);
       setCurrentLessonId(lesson.id);
       setNextLessonEntry(null);
       const sectionId = findSectionIdForLesson(lesson.id);
@@ -436,6 +437,7 @@ const Level: React.FC = () => {
       clearAutoPlayTimers,
       expandOnlySection,
       findSectionIdForLesson,
+      setShowFullList,
     ],
   );
 
@@ -543,11 +545,22 @@ const Level: React.FC = () => {
           nuggetCount={totalCount}
           completedCount={completedCount}
           isExpanded={isExpanded}
-          onToggle={() => toggleSectionExpansion(section.id)}
+          onToggle={() => {
+            if (isExpanded) {
+              toggleSectionExpansion(section.id);
+              return;
+            }
+            expandOnlySection(section.id);
+          }}
         />
       );
     },
-    [expandedSections, getSectionProgress, toggleSectionExpansion],
+    [
+      expandedSections,
+      expandOnlySection,
+      getSectionProgress,
+      toggleSectionExpansion,
+    ],
   );
 
   const renderLessonItem = useCallback(
