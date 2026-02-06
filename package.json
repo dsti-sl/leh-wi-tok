@@ -2,8 +2,10 @@
   "name": "leh-wi-tok",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "engines": {
+    "node": "22.10.0"
+  },
   "scripts": {
-    "preinstall": "npm run enforce-node-version",
     "enforce-node-version": "node -v | grep -q 'v22.10.0' || (echo 'Explicit node version is required. Expected v22.10.0' && exit 1)",
     "start": "expo start",
     "start:clear": "expo start --clear",
