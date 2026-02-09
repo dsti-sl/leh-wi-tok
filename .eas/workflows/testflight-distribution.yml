@@ -1,0 +1,78 @@
+name: TestFlight Distribution
+
+on:
+  workflow_dispatch:
+    inputs:
+      changelog:
+        type: string
+        required: true
+        description: 'What to test in this build'
+      internal_groups:
+        type: string
+        required: false
+        description: 'Internal TestFlight group name'
+        default: 'QA Team'
+      submit_for_review:
+        type: boolean
+        required: false
+        default: false
+        description: 'Submit for Beta App Review (required for external testers)'
+
+jobs:
+  build_ios:
+    name: 🍎 Build iOS for TestFlight
+    type: build
+    params:
+      platform: ios
+      profile: production
+      message: 'TestFlight build - ${{ inputs.changelog }}'
+
+  distribute_testflight:
+    name: 🚀 Distribute to TestFlight
+    needs: [build_ios]
+    type: testflight
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      changelog: ${{ inputs.changelog }}
+      internal_groups:
+        - ${{ inputs.internal_groups || 'QA Team' }}
+      submit_beta_review: ${{ inputs.submit_for_review || false }}
+      wait_processing_timeout_seconds: 2400
+
+  instructions:
+    name: 📋 Distribution Instructions
+    needs: [distribute_testflight]
+    type: doc
+    params:
+      md: |
+        # ✅ TestFlight Distribution Complete
+
+        ## Build Information
+        - **Build ID**: `${{ needs.build_ios.outputs.build_id }}`
+        - **Version**: ${{ needs.build_ios.outputs.app_version }}
+        - **Build Number**: ${{ needs.build_ios.outputs.app_build_version }}
+        - **Bundle ID**: ${{ needs.build_ios.outputs.app_identifier }}
+
+        ---
+
+        ## What to Test
+        ${{ inputs.changelog }}
+
+        ---
+
+        ## Access the Build
+
+        ### For Internal Testers
+        1. Open **TestFlight** on your iOS device
+        2. Look for the latest build of "**Leh Wi Tok**"
+        3. Tap **Install** or **Update**
+        4. Test according to the changelog above
+
+        ### For External Testers
+        ${{ inputs.submit_for_review && '⏳ Build submitted for Beta App Review. External testers will be notified once approved.' || '⚠️ External distribution was not enabled. Run workflow again with "Submit for Review" enabled.' }}
+
+        ---
+
+        ## Useful Links
+        - [App Store Connect](https://appstoreconnect.apple.com)
+        - [TestFlight App](https://apps.apple.com/app/testflight/id899247664)

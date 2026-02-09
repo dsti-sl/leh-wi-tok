@@ -15,6 +15,10 @@
     - [EAS Development Build](#eas-development-build)
     - [EAS Preview Build (Staging)](#eas-preview-build-staging)
     - [EAS Production Build](#eas-production-build)
+    - [EAS Workflows (Automated Build \& Submit)](#eas-workflows-automated-build--submit)
+      - [Available Workflows](#available-workflows)
+      - [Running Workflows](#running-workflows)
+      - [Monitoring Workflows](#monitoring-workflows)
   - [Development Options](#development-options)
   - [Project Reset](#project-reset)
   - [Development Workflow](#development-workflow)
@@ -176,6 +180,53 @@ eas build --profile production --platform ios     # For iOS
 # Optional: Submit to app stores
 eas submit --platform android # For Android
 eas submit --platform ios     # For iOS
+```
+
+### EAS Workflows (Automated Build & Submit)
+
+The project includes automated workflows for building and submitting to app stores. See [.eas/workflows/README.md](.eas/workflows/README.md) for full setup instructions.
+
+#### Available Workflows
+
+| Workflow                      | Description                           | Trigger        |
+| ----------------------------- | ------------------------------------- | -------------- |
+| `build-and-submit-all.yml`    | Build iOS & Android, submit to stores | Manual         |
+| `build-only.yml`              | Build without submission              | Manual         |
+| `production-release.yml`      | Full release pipeline                 | Push to `main` |
+| `submit-ios.yml`              | Submit existing build to App Store    | Manual         |
+| `submit-android.yml`          | Submit existing build to Play Store   | Manual         |
+| `testflight-distribution.yml` | Build and distribute via TestFlight   | Manual         |
+
+#### Running Workflows
+
+```bash
+# Build and submit both platforms
+eas workflow:run build-and-submit-all.yml
+
+# Build only (no submission)
+eas workflow:run build-only.yml
+
+# Build only with specific options
+eas workflow:run build-only.yml -F platform=ios -F profile=preview
+
+# Submit an existing iOS build to App Store
+eas workflow:run submit-ios.yml -F build_id=<BUILD_ID>
+
+# Submit an existing Android build to Play Store
+eas workflow:run submit-android.yml -F build_id=<BUILD_ID>
+
+# TestFlight distribution with changelog
+eas workflow:run testflight-distribution.yml -F changelog="Bug fixes and improvements"
+```
+
+#### Monitoring Workflows
+
+```bash
+# List recent workflow runs
+eas workflow:list
+
+# View specific workflow run details
+eas workflow:view <workflow-run-id>
 ```
 
 ---

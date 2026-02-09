@@ -6,10 +6,12 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "node": "22.10.0"
     },
     "preview": {
       "distribution": "internal",
+      "node": "22.10.0",
       "ios": {
         "simulator": true
       },
@@ -19,7 +21,8 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "node": "22.10.0"
     }
   },
   "submit": {

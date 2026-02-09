@@ -1,0 +1,89 @@
+name: Build and Submit to Stores
+
+# Manual trigger with optional inputs
+on:
+  workflow_dispatch:
+    inputs:
+      skip_ios:
+        type: boolean
+        required: false
+        default: false
+        description: 'Skip iOS build and submission'
+      skip_android:
+        type: boolean
+        required: false
+        default: false
+        description: 'Skip Android build and submission'
+      build_profile:
+        type: choice
+        options:
+          - production
+          - preview
+        required: false
+        default: 'production'
+        description: 'Build profile to use'
+
+jobs:
+  # ==================== iOS Jobs ====================
+  build_ios:
+    name: Build iOS App
+    if: ${{ !inputs.skip_ios }}
+    type: build
+    params:
+      platform: ios
+      profile: ${{ inputs.build_profile || 'production' }}
+      message: 'Production build for App Store submission'
+
+  submit_ios:
+    name: Submit to App Store (TestFlight)
+    needs: [build_ios]
+    if: ${{ !inputs.skip_ios }}
+    type: submit
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
+
+  # ==================== Android Jobs ====================
+  build_android:
+    name: Build Android App
+    if: ${{ !inputs.skip_android }}
+    type: build
+    params:
+      platform: android
+      profile: ${{ inputs.build_profile || 'production' }}
+      message: 'Production build for Play Store submission'
+
+  submit_android:
+    name: Submit to Google Play Store
+    needs: [build_android]
+    if: ${{ !inputs.skip_android }}
+    type: submit
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: production
+
+  # ==================== Summary ====================
+  notify_completion:
+    name: Build & Submit Summary
+    after: [submit_ios, submit_android]
+    type: doc
+    params:
+      md: |
+        # 🚀 Build & Submit Complete
+
+        ## iOS
+        - **Build ID**: ${{ needs.build_ios.outputs.build_id || 'Skipped' }}
+        - **App Version**: ${{ needs.build_ios.outputs.app_version || 'N/A' }}
+        - **Build Number**: ${{ needs.build_ios.outputs.app_build_version || 'N/A' }}
+        - **Bundle ID**: ${{ needs.build_ios.outputs.app_identifier || 'N/A' }}
+
+        ## Android
+        - **Build ID**: ${{ needs.build_android.outputs.build_id || 'Skipped' }}
+        - **App Version**: ${{ needs.build_android.outputs.app_version || 'N/A' }}
+        - **Build Number**: ${{ needs.build_android.outputs.app_build_version || 'N/A' }}
+        - **Package**: ${{ needs.build_android.outputs.app_identifier || 'N/A' }}
+
+        ## Next Steps
+        1. **iOS**: Check TestFlight in App Store Connect for the new build
+        2. **Android**: Check Google Play Console for the new build in the internal track
+        3. Test the builds before promoting to production
