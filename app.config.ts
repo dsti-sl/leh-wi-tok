@@ -16,7 +16,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     backgroundColor: '#0F4C5C',
   },
   ios: {
-    supportsTablet: true,
+    supportsTablet: false,
     infoPlist: {
       NSPhotoLibraryUsageDescription: 'Le Wi Tok access ',
     },
