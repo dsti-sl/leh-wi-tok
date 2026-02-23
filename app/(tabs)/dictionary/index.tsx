@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
+
 import CategoryCard from '@/components/dictionary/CategoryCard';
 import { Colors } from '@/constants/Colors';
 import {
@@ -66,7 +67,6 @@ const index = () => {
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeLetter, setActiveLetter] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
