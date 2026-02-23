@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 
 import {
   Image,
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,7 +11,11 @@ import {
   View,
 } from 'react-native';
 
+import * as ImagePicker from 'expo-image-picker';
+
 import { Feather, Ionicons } from '@expo/vector-icons';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import EditProfileModal from '@/components/account/EditProfileModal';
 import { Colors } from '@/constants/Colors';
@@ -28,6 +34,7 @@ const Account = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
   const EXPO_PUBLIC_BASE_URL: string = getBaseUrl();
   const initial = userInfo?.name?.[0]?.toUpperCase?.() ?? '';
 
@@ -63,6 +70,103 @@ const Account = () => {
     }
   };
 
+  const updateStoredUser = async (pictureId: string) => {
+    const stored = await AsyncStorage.getItem('user');
+    if (!stored) return;
+    const parsed = JSON.parse(stored);
+    const updated = { ...parsed, pictureId, picture: pictureId };
+    await AsyncStorage.setItem('user', JSON.stringify(updated));
+  };
+
+  const handlePickProfileImage = async () => {
+    if (!userInfo?.id || isUpdatingPhoto) return;
+
+    try {
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.status !== 'granted') {
+        Alert.alert(
+          'Permission needed',
+          'Please allow photo library access to update your profile image.',
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.9,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (!asset) {
+        return;
+      }
+      setIsUpdatingPhoto(true);
+
+      const profileImageData = {
+        contentType: asset.type ?? 'image/jpeg',
+        userId: userInfo.id,
+        path: asset.uri,
+        name:
+          asset.fileName ??
+          `${userInfo.handle || userInfo.name || 'user'}_profile.jpg`,
+        size: asset.fileSize ?? 1024000,
+      };
+
+      const uploadResponse = await fetch(`${EXPO_PUBLIC_BASE_URL}/file`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileImageData),
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.message || 'Failed to upload profile image.');
+      }
+
+      const uploadData = await uploadResponse.json();
+      const fileId = uploadData?.data?.[0]?.id;
+      if (!fileId) {
+        throw new Error('Profile image upload failed.');
+      }
+
+      const updateResponse = await fetch(
+        `${EXPO_PUBLIC_BASE_URL}/user?id=${userInfo.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ picture: fileId }),
+        },
+      );
+
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        throw new Error(errorText || 'Failed to update profile image.');
+      }
+
+      setProfileImageUrl(asset.uri);
+      await updateStoredUser(fileId);
+      await fetchUserInfo();
+      Alert.alert('Profile photo updated', 'Your new photo is saved.');
+    } catch (error) {
+      console.error('Profile image update failed:', error);
+      Alert.alert(
+        'Update failed',
+        error instanceof Error
+          ? error.message
+          : 'Could not update your profile photo.',
+      );
+    } finally {
+      setIsUpdatingPhoto(false);
+    }
+  };
+
   return (
     <ScrollView
       scrollEnabled={false}
@@ -82,12 +186,18 @@ const Account = () => {
             <TouchableOpacity
               accessibilityLabel="Change profile photo"
               style={styles.iconOverlay}
+              onPress={handlePickProfileImage}
+              disabled={isUpdatingPhoto}
             >
-              <Ionicons
-                name="camera-outline"
-                size={20}
-                color={Colors.primary}
-              />
+              {isUpdatingPhoto ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <Ionicons
+                  name="camera-outline"
+                  size={20}
+                  color={Colors.primary}
+                />
+              )}
             </TouchableOpacity>
           </View>
         </View>
