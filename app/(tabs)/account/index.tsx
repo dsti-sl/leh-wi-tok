@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,14 +16,36 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { fetchAndInsertTranslations } from '@/data/dictionary';
 import useAccount from '@/hooks/useAccount';
+import { getBaseUrl } from '@/utils';
 
 const Account = () => {
   const { userInfo, isLoggingOut, confirmLogout, confirmAccountDeletion } =
     useAccount();
   const router = useRouter();
   const [isSyncing, setIsSyncing] = useState(false);
-
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const EXPO_PUBLIC_BASE_URL: string = getBaseUrl();
   const initial = userInfo?.name?.[0]?.toUpperCase?.() ?? '';
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      try {
+        const imageUrl = `${EXPO_PUBLIC_BASE_URL}/file?id=eq.${userInfo?.pictureId}&select=path
+`;
+        const response = await fetch(imageUrl);
+        if (response.ok) {
+          const data = await response.json();
+          setProfileImageUrl(data?.data[0]?.path);
+          return;
+        }
+        setProfileImageUrl(null);
+      } catch (error) {
+        setProfileImageUrl(null);
+      }
+    };
+
+    fetchProfileImage();
+  }, [EXPO_PUBLIC_BASE_URL, userInfo?.pictureId]);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -44,7 +67,14 @@ const Account = () => {
       <View style={styles.banner}>
         <View style={styles.headerRow}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
+            {profileImageUrl ? (
+              <Image
+                source={{ uri: profileImageUrl }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Text style={styles.avatarText}>{initial}</Text>
+            )}
             <TouchableOpacity
               accessibilityLabel="Change profile photo"
               style={styles.iconOverlay}
@@ -119,7 +149,7 @@ const Account = () => {
           </View>
         </View>
 
-        <View style={styles.infoRow}>
+        {/* <View style={styles.infoRow}>
           <Feather name="book" size={20} color={Colors.primary} />
           <View style={styles.infoTextWrap}>
             <Text style={styles.infoLabel}>Role</Text>
@@ -131,7 +161,7 @@ const Account = () => {
                   : 'Viewer'}
             </Text>
           </View>
-        </View>
+        </View> */}
       </View>
 
       <View style={styles.divider} />
@@ -202,6 +232,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     borderWidth: 2,
     borderColor: '#fff',
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   iconOverlay: {
     position: 'absolute',
