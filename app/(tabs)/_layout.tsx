@@ -74,8 +74,8 @@ export default function Layout() {
             <TabBarIcon
               tabStyle={styles.circularIconContainer}
               activeStyle={styles.activeTab}
-              activeIcon={'book' as 'text'}
-              icon={'book-outline' as 'text'}
+              activeIcon={'library' as 'text'}
+              icon={'library-outline' as 'text'}
               color={color}
               focused={focused}
             />
