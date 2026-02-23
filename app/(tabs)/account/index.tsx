@@ -9,21 +9,25 @@ import {
   View,
 } from 'react-native';
 
-import { useRouter } from 'expo-router';
-
 import { Feather, Ionicons } from '@expo/vector-icons';
 
+import EditProfileModal from '@/components/account/EditProfileModal';
 import { Colors } from '@/constants/Colors';
 import { fetchAndInsertTranslations } from '@/data/dictionary';
 import useAccount from '@/hooks/useAccount';
 import { getBaseUrl } from '@/utils';
 
 const Account = () => {
-  const { userInfo, isLoggingOut, confirmLogout, confirmAccountDeletion } =
-    useAccount();
-  const router = useRouter();
+  const {
+    userInfo,
+    isLoggingOut,
+    confirmLogout,
+    confirmAccountDeletion,
+    fetchUserInfo,
+  } = useAccount();
   const [isSyncing, setIsSyncing] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const EXPO_PUBLIC_BASE_URL: string = getBaseUrl();
   const initial = userInfo?.name?.[0]?.toUpperCase?.() ?? '';
 
@@ -45,7 +49,7 @@ const Account = () => {
     };
 
     fetchProfileImage();
-  }, [EXPO_PUBLIC_BASE_URL, userInfo?.pictureId]);
+  }, [userInfo?.pictureId]);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -110,10 +114,9 @@ const Account = () => {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              disabled={true}
               accessibilityLabel="Edit profile"
               hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-              onPress={() => router.push('/account/edit-profile')}
+              onPress={() => setShowEditProfileModal(true)}
               style={{ ...styles.iconButton, backgroundColor: Colors.primary }}
             >
               <Feather name="edit" size={16} color={Colors.secondary} />
@@ -195,6 +198,13 @@ const Account = () => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      <EditProfileModal
+        open={showEditProfileModal}
+        setOpen={setShowEditProfileModal}
+        userInfo={userInfo}
+        onSaved={fetchUserInfo}
+      />
     </ScrollView>
   );
 };

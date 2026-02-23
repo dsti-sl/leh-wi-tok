@@ -3,8 +3,8 @@ import React from 'react';
 import {
   Modal,
   ModalProps,
+  Pressable,
   StyleSheet,
-  TouchableOpacity,
   View,
   ViewStyle,
 } from 'react-native';
@@ -15,6 +15,7 @@ interface CModalProps extends ModalProps {
   setOpen: (_open: boolean) => void;
   children: React.ReactNode;
   modalContainerStyle?: ViewStyle | undefined;
+  closeOnBackdropPress?: boolean;
 }
 const CModal: React.FC<CModalProps> = ({
   open,
@@ -23,6 +24,7 @@ const CModal: React.FC<CModalProps> = ({
   transparent = true,
   animationType = 'fade',
   modalContainerStyle = {},
+  closeOnBackdropPress = true,
   ...props
 }) => {
   return (
@@ -34,14 +36,19 @@ const CModal: React.FC<CModalProps> = ({
       {...props}
     >
       {transparent ? (
-        <TouchableOpacity
-          style={styles.modalBackground}
-          onPress={() => setOpen(false)}
-        >
+        <View style={styles.modalBackground}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => {
+              if (closeOnBackdropPress) {
+                setOpen(false);
+              }
+            }}
+          />
           <View style={[styles.modalContainer, modalContainerStyle]}>
             {children}
           </View>
-        </TouchableOpacity>
+        </View>
       ) : (
         <View style={[styles.fullScreenContainer, modalContainerStyle]}>
           {children}
