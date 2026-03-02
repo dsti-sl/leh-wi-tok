@@ -24,8 +24,9 @@ const LessonCard: React.FC<LessonCardProps> = ({
   onPress,
   backgroundColor,
 }) => {
+  const cappedCompleted = Math.min(completed, totalLesson);
   const progress =
-    totalLesson === 0 ? 0 : Math.round((completed / totalLesson) * 100);
+    totalLesson === 0 ? 0 : Math.round((cappedCompleted / totalLesson) * 100);
 
   return (
     <TouchableOpacity

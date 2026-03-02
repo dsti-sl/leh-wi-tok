@@ -18,6 +18,7 @@ import LessonsCategory from '@/components/lessons/LessonsCategory';
 import { Colors } from '@/constants/Colors';
 import useLessons from '@/hooks/useLessons';
 import {
+  calculateOverallDataForLevels,
   getBaseUrl,
   getStoredCompletedLessons,
   LessonCount,
@@ -25,6 +26,7 @@ import {
   LessonLevel,
   LEVELS,
   OverallData,
+  SUMMARY_LEVELS,
   storeCompletedLessons,
 } from '@/utils';
 
@@ -39,18 +41,6 @@ const fetchLessonProgress = async (baseUrl: string, userId: string) => {
   if (!response.ok) throw new Error('API error');
   const { data } = await response.json();
   return data as LessonData[] | undefined;
-};
-
-const calculateOverallData = (lessons: LessonData[]): OverallData => {
-  const accumulatedLessons = lessons.reduce(
-    (total, lesson) => total + (lesson.totalLessons || 0),
-    0,
-  );
-  const accumulatedCompletedLessons = lessons.reduce(
-    (total, lesson) => total + (lesson.totalCompleted || 0),
-    0,
-  );
-  return { accumulatedLessons, accumulatedCompletedLessons };
 };
 
 const fetchLessonCountForLevel = async (
@@ -115,7 +105,6 @@ const IndexScreen: React.FC = () => {
         const stored = await getStoredCompletedLessons();
         lessons = stored.lessons || [];
       }
-      setOverallData(calculateOverallData(lessons));
 
       // Fetch all lesson counts
       const counts: Partial<LessonCount> = {};
@@ -132,6 +121,13 @@ const IndexScreen: React.FC = () => {
         }),
       );
       setLessonCount(counts as LessonCount);
+      setOverallData(
+        calculateOverallDataForLevels(
+          lessons,
+          counts as LessonCount,
+          SUMMARY_LEVELS,
+        ),
+      );
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -170,10 +166,7 @@ const IndexScreen: React.FC = () => {
       ) : (
         <>
           <LessonsBanner />
-          <CurrentLevelProgressCard
-            lessonCount={lessonCount}
-            accumulatedData={overallData}
-          />
+          <CurrentLevelProgressCard accumulatedData={overallData} />
           {progressSummary && (
             <LessonsCategory
               lessonCount={lessonCount}

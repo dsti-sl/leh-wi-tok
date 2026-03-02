@@ -5,33 +5,31 @@ import { StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { FontSizes, FontWeights } from '@/constants/Typography';
 import { Record } from '@/lib/types';
-import { LessonCount, OverallData, accumulateLessonCounts } from '@/utils';
+import { OverallData } from '@/utils';
 
 import ProgressBar from '../common/ProgressBar';
 
 interface CurrentLevelProgressCardProps {
   defaultTutorial?: Record;
   accumulatedData: OverallData;
-  lessonCount: LessonCount;
 }
 const CurrentLevelProgressCard: React.FC<CurrentLevelProgressCardProps> = ({
   accumulatedData,
-  lessonCount,
 }) => {
-  const completedLessons =
-    accumulateLessonCounts(lessonCount) || accumulatedData?.accumulatedLessons;
+  const completedLessons = accumulatedData?.accumulatedLessons ?? 0;
+  const completed = accumulatedData?.accumulatedCompletedLessons ?? 0;
 
   const progress =
-    Math.round(
-      (accumulatedData?.accumulatedCompletedLessons / completedLessons) * 100,
-    ) || 0;
+    completedLessons === 0
+      ? 0
+      : Math.round((completed / completedLessons) * 100);
   return (
     <View style={styles.container}>
       <View style={styles.titleContent}>
         <Text style={styles.headingText}>My Progress</Text>
         <Text
           style={styles.headingText}
-        >{`${accumulatedData?.accumulatedCompletedLessons} / ${completedLessons}`}</Text>
+        >{`${completed} / ${completedLessons}`}</Text>
       </View>
       {/* <ProgressBar progress={0} /> */}
       <ProgressBar progress={progress} />
