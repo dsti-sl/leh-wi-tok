@@ -66,9 +66,8 @@ const OtpScreen = () => {
 
         // Sync translations after successful authentication
         try {
-          const { checkAndUpdateTranslations } = await import(
-            '@/data/dictionary'
-          );
+          const { checkAndUpdateTranslations } =
+            await import('@/data/dictionary');
           await checkAndUpdateTranslations();
           console.log('Translations synced after login');
         } catch (syncError) {
