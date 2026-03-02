@@ -106,6 +106,31 @@ export const LEVELS: LessonLevel[] = [
   'Intermediate',
   'Advanced',
 ];
+export const SUMMARY_LEVELS: LessonLevel[] = [
+  'Beginner',
+  'Intermediate',
+  'Advanced',
+];
+
+export const calculateOverallDataForLevels = (
+  lessons: LessonData[],
+  lessonCount: LessonCount,
+  levels: LessonLevel[] = SUMMARY_LEVELS,
+): OverallData => {
+  return levels.reduce(
+    (acc, level) => {
+      const lesson = lessons.find(item => item.level === level);
+      const totalLessons = lessonCount[level] ?? lesson?.totalLessons ?? 0;
+      const completed = lesson?.totalCompleted ?? 0;
+      const cappedCompleted = Math.min(completed, totalLessons);
+
+      acc.accumulatedLessons += totalLessons;
+      acc.accumulatedCompletedLessons += cappedCompleted;
+      return acc;
+    },
+    { accumulatedLessons: 0, accumulatedCompletedLessons: 0 },
+  );
+};
 
 export interface LessonsCategoryProps {
   progressSummary: C_Record;
