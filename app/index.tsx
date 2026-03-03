@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Colors } from '@/constants/Colors';
+import { getGuestMode, getStoredUserId } from '@/utils';
 //import { fetchAndInsertTranslations } from '@/data/dictionary';
 
 import slidesData from '../constants/OnboardingData.json';
@@ -37,7 +38,15 @@ const Onboarding = () => {
     const checkOnboardingStatus = async () => {
       const hasOnboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
       if (hasOnboarded) {
-        router.replace('/signin');
+        const [userId, isGuest] = await Promise.all([
+          getStoredUserId(),
+          getGuestMode(),
+        ]);
+        if (userId || isGuest) {
+          router.replace('/home');
+        } else {
+          router.replace('/signin');
+        }
       } else {
         setIsLoading(false);
       }

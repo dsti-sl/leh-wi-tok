@@ -59,12 +59,45 @@ export const LoadingView = memo(() => (
 LoadingView.displayName = 'LoadingView';
 
 export const ErrorView = memo(
-  ({ error, onRetry }: { error: string; onRetry: () => void }) => (
+  ({
+    title = 'Something went wrong',
+    message,
+    onRetry,
+    actionLabel,
+    onAction,
+  }: {
+    title?: string;
+    message: string;
+    onRetry: () => void;
+    actionLabel?: string;
+    onAction?: () => void;
+  }) => (
     <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>Error: {error}</Text>
-      <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
-        <Text style={styles.retryText}>Retry</Text>
-      </TouchableOpacity>
+      <View style={styles.errorCard}>
+        <Ionicons
+          name="alert-circle-outline"
+          size={44}
+          color={Colors.primary}
+        />
+        <Text style={styles.errorTitle}>{title}</Text>
+        <Text style={styles.errorText}>{message}</Text>
+        <View style={styles.errorActions}>
+          <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
+            <Ionicons name="refresh" size={18} color="#fff" />
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+          {actionLabel && onAction && (
+            <TouchableOpacity onPress={onAction} style={styles.secondaryButton}>
+              <Ionicons
+                name="log-in-outline"
+                size={18}
+                color={Colors.primary}
+              />
+              <Text style={styles.secondaryText}>{actionLabel}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </View>
   ),
 );
@@ -78,9 +111,14 @@ const styles = StyleSheet.create<{
   subtitle: TextStyle;
   loadingContainer: ViewStyle;
   errorContainer: ViewStyle;
+  errorCard: ViewStyle;
+  errorTitle: TextStyle;
   errorText: TextStyle;
+  errorActions: ViewStyle;
   retryButton: ViewStyle;
   retryText: TextStyle;
+  secondaryButton: ViewStyle;
+  secondaryText: TextStyle;
 }>({
   headerContainer: {
     flexDirection: 'row',
@@ -117,21 +155,71 @@ const styles = StyleSheet.create<{
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f6f7f9',
+  },
+  errorCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e6e8ee',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  errorTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.bold,
+    color: '#1f2937',
+    marginTop: 12,
+    textAlign: 'center',
   },
   errorText: {
     fontSize: FontSizes.md,
-    color: '#d32f2f',
+    color: '#5b6675',
     textAlign: 'center',
-    marginBottom: 16,
+    marginTop: 8,
+  },
+  errorActions: {
+    marginTop: 16,
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   retryButton: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   retryText: {
     color: '#fff',
+    fontSize: FontSizes.md,
+    fontWeight: FontWeights.semiBold,
+  },
+  secondaryButton: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#d8dee7',
+  },
+  secondaryText: {
+    color: Colors.primary,
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semiBold,
   },

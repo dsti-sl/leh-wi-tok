@@ -4,15 +4,17 @@ import {
   ActivityIndicator,
   StyleSheet,
   Text,
+  TouchableOpacity,
   TextStyle,
   View,
   ViewStyle,
 } from 'react-native';
 
 import * as FileSystem from 'expo-file-system';
+import { router } from 'expo-router';
 
 import { FontSizes, FontWeights } from '@/constants/Typography';
-import { getBaseUrl, getToken } from '@/utils';
+import { getBaseUrl, getGuestMode, getToken } from '@/utils';
 
 import ImageViewerComponent from './ImageViewerComponent';
 import VideoPlayerComponent from './VideoPlayerComponent';
@@ -47,11 +49,12 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const BASE_URL = getBaseUrl();
   const fileUrl = `${BASE_URL}/file/download?id=${gestureId}`;
   const [token, setToken] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [resolvedUri, setResolvedUri] = useState<string>(fileUrl);
   const headers = useMemo(
-    () => (token ? { authorization: `Bearer ${token}` } : {}),
+    () => (token ? { Authorization: `Token ${token}` } : {}),
     [token],
   );
 
@@ -60,8 +63,12 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       try {
         setIsLoading(true);
         setHasError(false);
-        const storedToken = await getToken();
+        const [storedToken, guestValue] = await Promise.all([
+          getToken(),
+          getGuestMode(),
+        ]);
         setToken(storedToken);
+        setIsGuest(guestValue);
       } catch (error) {
         console.error('Error fetching token:', error);
         setHasError(true);
@@ -78,7 +85,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     let isCancelled = false;
 
     const cacheMedia = async () => {
-      if (!token) return;
+      if (!token && !isGuest) return;
 
       try {
         const cacheDir = `${FileSystem.cacheDirectory}lessons/`;
@@ -122,7 +129,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [fileUrl, gestureId, headers, token]);
+  }, [fileUrl, gestureId, headers, token, isGuest]);
 
   const handleMediaLoad = useCallback(() => {}, []);
 
@@ -141,8 +148,30 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     );
   }
 
+  if (hasError) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            {isGuest
+              ? 'Create an account to view this content.'
+              : 'Failed to load media. Please try again.'}
+          </Text>
+          {isGuest && (
+            <TouchableOpacity
+              onPress={() => router.push('/signup')}
+              style={styles.errorAction}
+            >
+              <Text style={styles.errorActionText}>Create Account</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  }
+
   // Show error state if token fetch failed
-  if (hasError || !token) {
+  if (!token && !isGuest) {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
@@ -213,6 +242,8 @@ const styles = StyleSheet.create<{
   loadingContainer: ViewStyle;
   errorContainer: ViewStyle;
   errorText: TextStyle;
+  errorAction: ViewStyle;
+  errorActionText: TextStyle;
   subErrorText: TextStyle;
 }>({
   container: {
@@ -225,7 +256,6 @@ const styles = StyleSheet.create<{
     width: '100%',
     height: '100%',
     borderRadius: 8,
-    backgroundColor: '#000',
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -246,6 +276,18 @@ const styles = StyleSheet.create<{
     fontWeight: FontWeights.semiBold,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  errorAction: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#007AFF',
+    borderRadius: 6,
+  },
+  errorActionText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   subErrorText: {
     color: '#999',

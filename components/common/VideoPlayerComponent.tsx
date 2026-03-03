@@ -2,6 +2,7 @@ import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
 
 import {
   ActivityIndicator,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -107,6 +108,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [connectionType, setConnectionType] = useState<string>('unknown');
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
   const [showControls, setShowControls] = useState(true);
@@ -143,15 +145,15 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
   useEffect(() => {
     if (!showControls) return;
+    if (enableAdaptiveStreaming) return;
 
-    // Auto-hide controls after 5 seconds (increased from 3)
     const timer = setTimeout(() => {
       setShowControls(false);
       setShowQualityMenu(false);
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [showControls, showQualityMenu]);
+  }, [showControls, showQualityMenu, enableAdaptiveStreaming]);
 
   const player = useVideoPlayer(
     {
@@ -159,7 +161,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       headers: {
         ...headers,
         ...(enableAdaptiveStreaming &&
-          token && { authorization: `Bearer ${token}` }),
+          token && { Authorization: `Token ${token}` }),
       },
     },
     playerInstance => {
@@ -183,7 +185,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   }, [videoId, uri]);
 
   useEffect(() => {
-    if (!player || !enableAdaptiveStreaming) return;
+    if (!player) return;
 
     const subscription = player.addListener('statusChange', status => {
       setIsBuffering(status.status === 'loading');
@@ -196,7 +198,23 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         console.warn('Error removing player subscription:', error);
       }
     };
-  }, [player, videoId, currentStreamUrl, headers, enableAdaptiveStreaming]);
+  }, [player, videoId, currentStreamUrl, headers]);
+
+  useEffect(() => {
+    if (!player) return;
+
+    const subscription = player.addListener('playingChange', payload => {
+      setIsPlaying(payload.isPlaying);
+    });
+
+    return () => {
+      try {
+        subscription?.remove();
+      } catch (error) {
+        console.warn('Error removing playing listener:', error);
+      }
+    };
+  }, [player]);
 
   useEffect(() => {
     if (!player || !onEnd) return;
@@ -266,7 +284,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       try {
         const response = await fetch(`${baseUrl}/video/info?id=${videoId}`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Token ${token}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
             ...headers,
@@ -321,14 +339,14 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   }, [enableAdaptiveStreaming, token, loadVideoInfo]);
 
   useEffect(() => {
-    if (!enableAdaptiveStreaming) {
+    if (!enableAdaptiveStreaming || !token) {
       setCurrentStreamUrl(uri);
       setIsLoading(true);
       setHasLoaded(false);
       setHasError(false);
       setErrorMessage('');
     }
-  }, [uri, enableAdaptiveStreaming]);
+  }, [uri, enableAdaptiveStreaming, token]);
 
   const getRecommendedQuality = useCallback((): string => {
     const type = connectionType.toLowerCase();
@@ -475,15 +493,20 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   ]);
 
   const handleVideoTap = useCallback(() => {
+    if (enableAdaptiveStreaming) {
+      setShowControls(true);
+      setShowQualityMenu(false);
+      return;
+    }
+
     if (Platform.OS === 'android') {
       setShowControls(prev => !prev);
-
       setShowQualityMenu(false);
     } else {
       setShowControls(prev => !prev);
       setShowQualityMenu(false);
     }
-  }, [showControls, showQualityMenu]);
+  }, [enableAdaptiveStreaming]);
 
   const handleQualityButtonPress = useCallback(() => {
     setShowQualityMenu(prev => !prev);
@@ -493,6 +516,12 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       setShowControls(true);
     }
   }, [showQualityMenu]);
+
+  useEffect(() => {
+    if (enableAdaptiveStreaming) {
+      setShowControls(true);
+    }
+  }, [enableAdaptiveStreaming]);
 
   useEffect(() => {
     if (!player) return;
@@ -600,41 +629,44 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     <View style={[styles.container, style]}>
       <StatusBar hidden />
 
-      <TouchableOpacity
-        style={styles.videoTouchArea}
-        onPress={handleVideoTap}
-        activeOpacity={1}
-      >
-        <VideoView
-          ref={playerRef}
-          player={player}
-          style={styles.video}
-          allowsFullscreen
-          allowsPictureInPicture
-          contentFit="contain"
-          accessibilityLabel={accessibilityLabel}
-          nativeControls={true}
-        />
-      </TouchableOpacity>
+      <View style={styles.videoWrapper}>
+        <TouchableOpacity
+          style={styles.videoTouchArea}
+          onPress={handleVideoTap}
+          activeOpacity={1}
+        >
+          <VideoView
+            ref={playerRef}
+            player={player}
+            style={styles.video}
+            allowsFullscreen
+            allowsPictureInPicture
+            contentFit="cover"
+            accessibilityLabel={accessibilityLabel}
+            nativeControls={true}
+          />
+        </TouchableOpacity>
 
-      {isLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="small" color={Colors.primary} />
-        </View>
-      )}
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+          </View>
+        )}
 
-      {enableAdaptiveStreaming && isBuffering && (
-        <View style={styles.bufferingOverlay}>
-          <ActivityIndicator size="small" color="#FFFFFF" />
-          <Text style={styles.bufferingText}>Buffering…</Text>
-        </View>
-      )}
+        {enableAdaptiveStreaming && isBuffering && (
+          <View style={styles.bufferingOverlay}>
+            <ActivityIndicator size="small" color="#FFFFFF" />
+            <Text style={styles.bufferingText}>Buffering…</Text>
+          </View>
+        )}
+      </View>
 
       {enableAdaptiveStreaming &&
         !usingFallback &&
         videoInfo?.hasQualities &&
-        showControls && (
-          <View style={styles.bottomControls}>
+        showControls &&
+        !isPlaying && (
+          <View style={styles.qualityPanel}>
             <TouchableOpacity
               style={styles.qualityButtonInline}
               onPress={handleQualityButtonPress}
@@ -645,73 +677,80 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
             {showQualityMenu && (
               <View style={styles.qualityMenuInline}>
-                <TouchableOpacity
-                  style={[
-                    styles.qualityOption,
-                    selectedQuality === 'auto' && styles.selectedOption,
-                  ]}
-                  onPress={() => handleQualityChange('auto')}
+                <ScrollView
+                  style={styles.qualityMenuScroll}
+                  contentContainerStyle={styles.qualityMenuContent}
+                  showsVerticalScrollIndicator={true}
                 >
-                  <Text style={styles.qualityText}>Auto</Text>
-                  <Text style={styles.qualitySubtext}>
-                    Recommended for {connectionType.toUpperCase()}
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.qualityOption,
+                      selectedQuality === 'auto' && styles.selectedOption,
+                    ]}
+                    onPress={() => handleQualityChange('auto')}
+                  >
+                    <Text style={styles.qualityText}>Auto</Text>
+                    <Text style={styles.qualitySubtext}>
+                      Recommended for {connectionType.toUpperCase()}
+                    </Text>
+                  </TouchableOpacity>
 
-                {videoInfo.qualities
-                  ?.sort((a, b) => {
-                    const qualityOrder = [
-                      '1080p',
-                      '720p',
-                      '480p',
-                      '360p',
-                      '240p',
-                      '144p',
-                    ];
-                    const aIndex = qualityOrder.indexOf(a.quality);
-                    const bIndex = qualityOrder.indexOf(b.quality);
+                  {videoInfo.qualities
+                    ?.sort((a, b) => {
+                      const qualityOrder = [
+                        '1080p',
+                        '720p',
+                        '480p',
+                        '360p',
+                        '240p',
+                        '144p',
+                      ];
+                      const aIndex = qualityOrder.indexOf(a.quality);
+                      const bIndex = qualityOrder.indexOf(b.quality);
 
-                    if (aIndex !== -1 && bIndex !== -1) {
-                      return aIndex - bIndex;
-                    }
+                      if (aIndex !== -1 && bIndex !== -1) {
+                        return aIndex - bIndex;
+                      }
 
-                    if (aIndex !== -1) return -1;
-                    if (bIndex !== -1) return 1;
+                      if (aIndex !== -1) return -1;
+                      if (bIndex !== -1) return 1;
 
-                    return b.quality.localeCompare(a.quality);
-                  })
-                  ?.map(q => (
-                    <TouchableOpacity
-                      key={q.quality}
-                      style={[
-                        styles.qualityOption,
-                        selectedQuality === q.quality && styles.selectedOption,
-                      ]}
-                      onPress={() => handleQualityChange(q.quality)}
-                    >
-                      <Text style={styles.qualityText}>
-                        {QUALITY_LABELS[q.quality] || q.quality}
-                      </Text>
-                      <Text style={styles.qualitySubtext}>
-                        {q.resolution} • {q.bitrate} •{' '}
-                        {(q.size / 1024 / 1024).toFixed(1)}MB
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                      return b.quality.localeCompare(a.quality);
+                    })
+                    ?.map(q => (
+                      <TouchableOpacity
+                        key={q.quality}
+                        style={[
+                          styles.qualityOption,
+                          selectedQuality === q.quality &&
+                            styles.selectedOption,
+                        ]}
+                        onPress={() => handleQualityChange(q.quality)}
+                      >
+                        <Text style={styles.qualityText}>
+                          {QUALITY_LABELS[q.quality] || q.quality}
+                        </Text>
+                        <Text style={styles.qualitySubtext}>
+                          {q.resolution} • {q.bitrate} •{' '}
+                          {(q.size / 1024 / 1024).toFixed(1)}MB
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
 
-                <TouchableOpacity
-                  style={[
-                    styles.qualityOption,
-                    selectedQuality === 'original' && styles.selectedOption,
-                  ]}
-                  onPress={() => handleQualityChange('original')}
-                >
-                  <Text style={styles.qualityText}>Original</Text>
-                  <Text style={styles.qualitySubtext}>
-                    Best quality •{' '}
-                    {(videoInfo.originalSize / 1024 / 1024).toFixed(1)}MB
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.qualityOption,
+                      selectedQuality === 'original' && styles.selectedOption,
+                    ]}
+                    onPress={() => handleQualityChange('original')}
+                  >
+                    <Text style={styles.qualityText}>Original</Text>
+                    <Text style={styles.qualitySubtext}>
+                      Best quality •{' '}
+                      {(videoInfo.originalSize / 1024 / 1024).toFixed(1)}MB
+                    </Text>
+                  </TouchableOpacity>
+                </ScrollView>
               </View>
             )}
           </View>
@@ -722,7 +761,17 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000', position: 'relative' },
-  video: { flex: 1, width: '100%', height: '100%' },
+  videoWrapper: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  video: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
   videoTouchArea: { flex: 1, width: '100%', height: '100%' },
   loadingOverlay: {
     position: 'absolute',
@@ -782,28 +831,27 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   bufferingText: { color: '#FFF', fontSize: 13, marginLeft: 6 },
-  bottomControls: {
+  qualityPanel: {
+    width: '100%',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#0b1c22',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
+    paddingVertical: 10,
+    backgroundColor: 'transparent',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    zIndex: 30,
   },
   qualityButtonInline: {
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: 'transparent',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.25)',
+    alignSelf: 'flex-start',
   },
   qualityButtonText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
   qualityMenuInline: {
-    position: 'absolute',
-    bottom: 60,
-    right: 12,
+    marginTop: 8,
     backgroundColor: 'rgba(0,0,0,0.95)',
     borderRadius: 10,
     minWidth: 220,
@@ -811,6 +859,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
+    zIndex: 40,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -820,6 +869,12 @@ const styles = StyleSheet.create({
       },
       android: { elevation: 8 },
     }),
+  },
+  qualityMenuScroll: {
+    maxHeight: 360,
+  },
+  qualityMenuContent: {
+    paddingBottom: 4,
   },
   qualityOption: {
     paddingHorizontal: 16,

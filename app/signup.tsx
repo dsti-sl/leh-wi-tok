@@ -19,6 +19,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import useSignup from '@/hooks/useSignup';
+import { setGuestMode } from '@/utils';
 
 const SignUpScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -156,7 +157,10 @@ const SignUpScreen = () => {
         />
       )}
       <TouchableOpacity
-        onPress={() => router.push('/signin')}
+        onPress={async () => {
+          await setGuestMode(false);
+          router.replace('/signin');
+        }}
         style={styles.loginLink}
         disabled={isLoading}
       >

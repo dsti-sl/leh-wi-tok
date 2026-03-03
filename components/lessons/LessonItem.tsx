@@ -88,9 +88,7 @@ const LessonItem: React.FC<LessonItemProps> = ({
               <View style={styles.illustrationContainer}>
                 <ImagePlayerComponent
                   uri={illustrationUrl}
-                  headers={{
-                    authorization: `Token ${token || ''}`,
-                  }}
+                  headers={token ? { Authorization: `Token ${token}` } : {}}
                   style={styles.illustrationImage}
                   accessibilityLabel={
                     item.illustration.name

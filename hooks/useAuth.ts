@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 
 import {
   getBaseUrl,
+  getGuestMode,
   getStoredUserId,
   normalizePhoneNumber,
   setToken,
@@ -47,9 +48,13 @@ const useAuth = () => {
     const checkUser = async () => {
       const user = await getStoredUserId();
       if (user) {
-        router.push('/home');
-      } else {
-        router.push('/signin');
+        router.replace('/home');
+        return;
+      }
+
+      const isGuest = await getGuestMode();
+      if (isGuest) {
+        router.replace('/home');
       }
     };
     checkUser();

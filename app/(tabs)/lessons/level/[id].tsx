@@ -33,6 +33,7 @@ import {
   LoadingView,
 } from '@/components/lessons/LessonUtils';
 import { Colors } from '@/constants/Colors';
+import useGuestMode from '@/hooks/useGuestMode';
 import {
   GestureInfo,
   LessonSection,
@@ -59,6 +60,8 @@ type FlattenedLesson = {
 
 const Level: React.FC = () => {
   const { assessment } = useLocalSearchParams<{ assessment: string }>();
+  const { isGuest, promptCreateAccount } = useGuestMode();
+  const hasPromptedGuestRef = useRef(false);
 
   const {
     lessonNuggets,
@@ -166,6 +169,17 @@ const Level: React.FC = () => {
 
     loadAutoPlayPreferences();
   }, []);
+
+  useEffect(() => {
+    if (!isGuest || !assessment) return;
+    if (assessment === 'Beginner') return;
+    if (hasPromptedGuestRef.current) return;
+
+    hasPromptedGuestRef.current = true;
+    promptCreateAccount(
+      'Create an account to unlock Intermediate and Advanced lessons.',
+    );
+  }, [assessment, isGuest, promptCreateAccount]);
 
   useEffect(() => {
     AsyncStorage.setItem(
@@ -632,8 +646,67 @@ const Level: React.FC = () => {
     [],
   );
 
+  if (isGuest && assessment && assessment !== 'Beginner') {
+    return (
+      <View style={styles.guestLockContainer}>
+        <Text style={styles.guestLockTitle}>
+          Create an account to access this lesson level.
+        </Text>
+        <TouchableOpacity
+          onPress={() => promptCreateAccount()}
+          style={styles.guestPrimaryButton}
+        >
+          <Text style={styles.guestPrimaryText}>Create Account</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleBackPress}
+          style={styles.guestSecondaryButton}
+        >
+          <Text style={styles.guestSecondaryText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   if (error && !lessonNuggets.length) {
-    return <ErrorView error={error} onRetry={handleRetry} />;
+    const isAuthError =
+      error.toLowerCase().includes('sign in') ||
+      error.toLowerCase().includes('authenticated');
+
+    const actionLabel = isAuthError
+      ? isGuest
+        ? 'Create Account'
+        : 'Sign In'
+      : undefined;
+
+    const handleAction = () => {
+      if (!isAuthError) return;
+      if (isGuest) {
+        promptCreateAccount();
+      } else {
+        router.push('/signin');
+      }
+    };
+
+    return (
+      <View style={styles.container}>
+        {Platform.OS === 'ios' ? (
+          <View style={styles.iosStatusBar} />
+        ) : (
+          <StatusBar style="light" backgroundColor={Colors.primary} />
+        )}
+        <LessonHeader onBackPress={handleBackPress} />
+        <ErrorView
+          title={
+            isAuthError ? 'Authentication Required' : 'Something went wrong'
+          }
+          message={error}
+          onRetry={handleRetry}
+          {...(actionLabel ? { actionLabel } : {})}
+          {...(actionLabel ? { onAction: handleAction } : {})}
+        />
+      </View>
+    );
   }
 
   if (isLoading) {
@@ -1025,6 +1098,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f6f8fa',
     borderRadius: 12,
     padding: 14,
+    paddingBottom: 20,
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
@@ -1089,5 +1163,39 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  guestLockContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#fff',
+    gap: 12,
+  },
+  guestLockTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.primary,
+    textAlign: 'center',
+  },
+  guestPrimaryButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  guestPrimaryText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  guestSecondaryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  guestSecondaryText: {
+    color: '#4b5563',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

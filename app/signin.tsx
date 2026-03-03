@@ -1,8 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   ActivityIndicator,
-  Image,
   Platform,
   StyleSheet,
   Text,
@@ -12,16 +11,52 @@ import {
   View,
 } from 'react-native';
 
+import { Asset } from 'expo-asset';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { Feather } from '@expo/vector-icons';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import useAuth from '@/hooks/useAuth';
+import { setGuestMode } from '@/utils';
 
 const SignInScreen = () => {
+  const [assetsReady, setAssetsReady] = useState(false);
+
+  const logoSource = useMemo(
+    () => require('../assets/images/Auth_logo.png'),
+    [],
+  );
+  const handshakeSource = useMemo(
+    () => require('../assets/images/Handshake.png'),
+    [],
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+    const preloadAssets = async () => {
+      try {
+        await Asset.loadAsync([logoSource, handshakeSource]);
+      } finally {
+        if (isMounted) setAssetsReady(true);
+      }
+    };
+    preloadAssets();
+    return () => {
+      isMounted = false;
+    };
+  }, [logoSource, handshakeSource]);
+
+  const handleGuestLogin = async () => {
+    await AsyncStorage.multiRemove(['token', 'user']);
+    await setGuestMode(true);
+    router.replace('/home');
+  };
   const { height: screenHeight } = useWindowDimensions();
   const [loginMode, setLoginMode] = useState<'otp' | 'password'>('otp');
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -47,145 +82,168 @@ const SignInScreen = () => {
     <View style={styles.container}>
       <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
 
-      <View
-        style={styles.header}
-        onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}
-      >
+      {assetsReady && (
         <Image
-          source={require('../assets/images/Auth_logo.png')}
+          source={logoSource}
           style={styles.logo}
+          cachePolicy="memory-disk"
+          contentFit="cover"
         />
-        <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeText}>Hello Again</Text>
+      )}
+      <View style={styles.welcomeContainer}>
+        <Text style={styles.welcomeText}>Hello Again</Text>
+        {assetsReady && (
           <Image
-            source={require('../assets/images/Handshake.png')}
+            source={handshakeSource}
             style={styles.handWaveIcon}
+            cachePolicy="memory-disk"
+            contentFit="contain"
+          />
+        )}
+        <View
+          style={styles.header}
+          onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}
+        >
+          <Image
+            source={require('../assets/images/Auth_logo.png')}
+            style={styles.logo}
+          />
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>Hello Again</Text>
+            <Image
+              source={require('../assets/images/Handshake.png')}
+              style={styles.handWaveIcon}
+            />
+          </View>
+          <Text style={styles.subText}>Welcome back, you’ve been missed</Text>
+        </View>
+
+        <View style={[styles.tabContainer, { marginTop: tabOffset }]}>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              loginMode === 'otp' && styles.tabButtonActive,
+            ]}
+            onPress={() => {
+              setLoginMode('otp');
+              setPassword('');
+              setShowPassword(false);
+            }}
+            disabled={isLoading}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                loginMode === 'otp' && styles.tabTextActive,
+              ]}
+            >
+              OTP Code
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              loginMode === 'password' && styles.tabButtonActive,
+            ]}
+            onPress={() => setLoginMode('password')}
+            disabled={isLoading}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                loginMode === 'password' && styles.tabTextActive,
+              ]}
+            >
+              Password
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.label}>Phone / Email / Handle</Text>
+        <View style={styles.inputContainer}>
+          <Feather
+            name="user"
+            size={24}
+            color={Colors.primary}
+            style={styles.inputIcon}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your phone, email, or handle"
+            placeholderTextColor={'#ccc'}
+            keyboardType="default"
+            autoCapitalize="none"
+            onChangeText={text => setUser(text)}
+            value={user}
           />
         </View>
-        <Text style={styles.subText}>Welcome back, you’ve been missed</Text>
-      </View>
-
-      <View style={[styles.tabContainer, { marginTop: tabOffset }]}>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            loginMode === 'otp' && styles.tabButtonActive,
-          ]}
-          onPress={() => {
-            setLoginMode('otp');
-            setPassword('');
-            setShowPassword(false);
-          }}
-          disabled={isLoading}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              loginMode === 'otp' && styles.tabTextActive,
-            ]}
-          >
-            OTP Code
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            loginMode === 'password' && styles.tabButtonActive,
-          ]}
-          onPress={() => setLoginMode('password')}
-          disabled={isLoading}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              loginMode === 'password' && styles.tabTextActive,
-            ]}
-          >
-            Password
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.label}>Phone / Email / Handle</Text>
-      <View style={styles.inputContainer}>
-        <Feather
-          name="user"
-          size={24}
-          color={Colors.primary}
-          style={styles.inputIcon}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your phone, email, or handle"
-          placeholderTextColor={'#ccc'}
-          keyboardType="default"
-          autoCapitalize="none"
-          onChangeText={text => setUser(text)}
-          value={user}
-        />
-      </View>
-      {loginMode === 'password' && (
-        <>
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.inputContainer}>
-            <Feather
-              name="lock"
-              size={24}
-              color={Colors.primary}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              placeholderTextColor={'#ccc'}
-              secureTextEntry={!showPassword}
-              onChangeText={text => setPassword(text)}
-              value={password}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(prev => !prev)}
-              style={styles.eyeButton}
-              accessibilityLabel={
-                showPassword ? 'Hide password' : 'Show password'
-              }
-            >
+        {loginMode === 'password' && (
+          <>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.inputContainer}>
               <Feather
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={20}
-                color={Colors.secondary}
+                name="lock"
+                size={24}
+                color={Colors.primary}
+                style={styles.inputIcon}
               />
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your password"
+                placeholderTextColor={'#ccc'}
+                secureTextEntry={!showPassword}
+                onChangeText={text => setPassword(text)}
+                value={password}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(prev => !prev)}
+                style={styles.eyeButton}
+                accessibilityLabel={
+                  showPassword ? 'Hide password' : 'Show password'
+                }
+              >
+                <Feather
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color={Colors.secondary}
+                />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <C_Button
-        title={
-          isLoading
-            ? 'Please wait...'
-            : loginMode === 'otp'
-              ? 'Request OTP'
-              : 'Log In'
-        }
-        onPress={loginMode === 'otp' ? handleRequestOTP : handlePasswordLogin}
-        buttonStyle={styles.requestOtpButton}
-        disabled={isLoading}
-      />
-      {isLoading && (
-        <ActivityIndicator
-          size="large"
-          color={Colors.primary}
-          style={{ marginTop: 10 }}
+        <C_Button
+          title={
+            isLoading
+              ? 'Please wait...'
+              : loginMode === 'otp'
+                ? 'Request OTP'
+                : 'Log In'
+          }
+          onPress={loginMode === 'otp' ? handleRequestOTP : handlePasswordLogin}
+          buttonStyle={styles.requestOtpButton}
+          disabled={isLoading}
         />
-      )}
+        {isLoading && (
+          <ActivityIndicator
+            size="large"
+            color={Colors.primary}
+            style={{ marginTop: 10 }}
+          />
+        )}
 
-      <Text style={styles.footerText}>
-        Don’t have an account?{' '}
-        <TouchableOpacity onPress={() => router.push('/signup')}>
-          <Text style={styles.signUpLink}>Sign Up</Text>
+        <TouchableOpacity onPress={handleGuestLogin} style={styles.guestLink}>
+          <Text style={styles.guestLinkText}>Login as Guest</Text>
         </TouchableOpacity>
-      </Text>
+
+        <Text style={styles.footerText}>
+          Don’t have an account?{' '}
+          <TouchableOpacity onPress={() => router.push('/signup')}>
+            <Text style={styles.signUpLink}>Sign Up</Text>
+          </TouchableOpacity>
+        </Text>
+      </View>
     </View>
   );
 };
@@ -316,5 +374,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
     marginBottom: -3,
+  },
+  guestLink: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  guestLinkText: {
+    color: Colors.primary,
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

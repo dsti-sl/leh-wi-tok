@@ -19,7 +19,7 @@ import InitialVideoCard from '@/components/home/InitialVideoCard';
 import { Colors } from '@/constants/Colors';
 import useLastLesson from '@/hooks/useLastLesson';
 import { Record } from '@/lib/types';
-import { getBaseUrl } from '@/utils';
+import { getBaseUrl, getGuestMode } from '@/utils';
 
 import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
 import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
@@ -29,10 +29,28 @@ const HomeScreen = () => {
   const { lastLesson, loading: lessonLoading } = useLastLesson();
   const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
 
   const BASE_URL = getBaseUrl();
 
   useEffect(() => {
+    const loadGuestState = async () => {
+      const guestValue = await getGuestMode();
+      setIsGuest(guestValue);
+      if (guestValue) {
+        setUser({
+          name: 'Guest',
+          location: { id: 'guest' },
+        } as Record);
+      }
+    };
+
+    loadGuestState();
+  }, []);
+
+  useEffect(() => {
+    if (isGuest) return;
+
     const fetchUserDetails = async () => {
       try {
         setIsLoading(true);
@@ -50,15 +68,15 @@ const HomeScreen = () => {
     };
 
     fetchUserDetails();
-  }, [BASE_URL]);
+  }, [BASE_URL, isGuest]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || isGuest) return;
 
     if (!user.location) {
       router.replace('/preferences');
     }
-  }, [user]);
+  }, [user, isGuest]);
 
   const handleVideoPlay = (
     lessonId: string,
