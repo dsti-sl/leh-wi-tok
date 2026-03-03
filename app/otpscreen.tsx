@@ -21,7 +21,18 @@ import { Colors } from '@/constants/Colors';
 import { getBaseUrl, setToken } from '@/utils';
 
 const OtpScreen = () => {
-  const { isSignIn = true, phoneNumber = '' } = useLocalSearchParams();
+  const {
+    isSignIn = true,
+    phoneNumber = '',
+    user = '',
+    password = '',
+  } = useLocalSearchParams();
+
+  const toStringParam = (value: string | string[]) =>
+    Array.isArray(value) ? value[0] : value;
+
+  const loginUser = toStringParam(user || phoneNumber);
+  const loginPassword = toStringParam(password) || '';
 
   const [otp, setOtp] = useState<string[]>(new Array(6).fill(''));
   const [error, setError] = useState('');
@@ -49,7 +60,11 @@ const OtpScreen = () => {
     setError('');
     setIsVerifying(true);
 
-    const verifiedData = { user: phoneNumber, verificationCode: otp.join('') };
+    const verifiedData = {
+      user: loginUser,
+      verificationCode: otp.join(''),
+      ...(loginPassword ? { password: loginPassword } : {}),
+    };
 
     try {
       const response = await fetch(`${BASE_URL}/user/login`, {
@@ -97,13 +112,16 @@ const OtpScreen = () => {
       const response = await fetch(`${BASE_URL}/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: phoneNumber }),
+        body: JSON.stringify({
+          user: loginUser,
+          ...(loginPassword ? { password: loginPassword } : {}),
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', 'A new OTP has been sent to your phone.');
+        Alert.alert('Success', 'A new OTP has been sent to your account.');
         //localStorage.setItem('token', data[0].token);
       } else {
         setError(data.message || 'Failed to resend OTP. Please try again.');

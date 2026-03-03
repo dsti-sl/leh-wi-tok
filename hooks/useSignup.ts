@@ -4,12 +4,13 @@ import { Alert } from 'react-native';
 
 import { router } from 'expo-router';
 
-import { getBaseUrl, normalizePhoneNumber } from '@/utils';
+import { getBaseUrl, normalizePhoneNumber, setToken } from '@/utils';
 
 const useSignup = () => {
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -51,6 +52,8 @@ const useSignup = () => {
         name: fullName,
         phone: normalizedPhone,
         user: normalizedPhone,
+        ...(email ? { email } : {}),
+        ...(password ? { password } : {}),
       };
       const registerResponse = await fetch(
         `${EXPO_PUBLIC_BASE_URL}/user/register`,
@@ -73,13 +76,35 @@ const useSignup = () => {
       const loginResponse = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: normalizedPhone }),
+        body: JSON.stringify({
+          user: normalizedPhone,
+          ...(password ? { password } : {}),
+        }),
       });
       const loginData = await loginResponse.json().catch(() => ({}));
+      if (loginResponse.ok && password) {
+        const token = loginData?.data?.[0]?.token || loginData?.token;
+        if (token) {
+          await setToken(token);
+          router.replace('/home');
+          return;
+        }
+
+        const loginErrMsg =
+          loginData?.meta?.message ||
+          loginData?.errors?.[0]?.detail ||
+          'Password signup could not be completed. Please try logging in.';
+        setError(loginErrMsg);
+        Alert.alert('Login Error', loginErrMsg);
+        return;
+      }
+
       if (loginResponse.ok) {
         Alert.alert('Success', loginData?.meta?.message || 'OTP sent!');
         router.replace(
-          `/otpscreen?phoneNumber=${normalizedPhone}&isSignIn=false`,
+          `/otpscreen?user=${encodeURIComponent(
+            normalizedPhone,
+          )}&isSignIn=false`,
         );
       } else {
         const loginErrMsg =
@@ -120,6 +145,8 @@ const useSignup = () => {
     setPhoneNumber,
     email,
     setEmail,
+    password,
+    setPassword,
     error,
     isLoading,
     handleSignUp,
