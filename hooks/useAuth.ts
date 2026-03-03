@@ -7,17 +7,38 @@ import {
   getGuestMode,
   getStoredUserId,
   normalizePhoneNumber,
+  setToken,
 } from '@/utils';
 
 const useAuth = () => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [user, setUser] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const validatePhoneNumber = (): string => {
-    if (!phoneNumber) return 'Phone number is required';
-    if (!/^\d+$/.test(phoneNumber))
-      return 'Phone number can only contain digits';
+  const normalizeUserInput = (value: string) => {
+    const trimmed = value.trim();
+    const compact = trimmed.replace(/\s+/g, '');
+    const withoutPlus = compact.replace(/^\+/, '');
+    const isPhone = /^\d+$/.test(withoutPlus);
+    const normalizedPhone = isPhone ? normalizePhoneNumber(withoutPlus) : '';
+    return {
+      isPhone,
+      isEmail: /\S+@\S+\.\S+/.test(trimmed),
+      normalizedUser: isPhone ? normalizedPhone : trimmed,
+    };
+  };
+
+  const validateUser = (): string => {
+    if (!user.trim()) return 'Phone, email, or handle is required';
+    const { isPhone, isEmail, normalizedUser } = normalizeUserInput(user);
+    if (isPhone) {
+      if (normalizedUser.length < 11 || normalizedUser.length > 12) {
+        return 'Phone number must be between 9 and 10 digits (e.g., 076XXXXXX).';
+      }
+    } else if (user.includes('@') && !isEmail) {
+      return 'Invalid email format';
+    }
     return '';
   };
 
@@ -40,20 +61,13 @@ const useAuth = () => {
   }, []);
 
   const handleRequestOTP = async () => {
-    const validationError = validatePhoneNumber();
+    const validationError = validateUser();
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    const normalizedPhone = normalizePhoneNumber(phoneNumber);
-
-    if (normalizedPhone.length < 11 || normalizedPhone.length > 12) {
-      setError(
-        'Phone number must be between 9 and 10 digits (e.g., 076XXXXXX).',
-      );
-      return;
-    }
+    const { normalizedUser } = normalizeUserInput(user);
 
     setError('');
     setIsLoading(true);
@@ -61,13 +75,15 @@ const useAuth = () => {
       const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: normalizedPhone }),
+        body: JSON.stringify({ user: normalizedUser }),
       });
       const data = await response.json();
       if (response.ok) {
-        router.push(`/otpscreen?phoneNumber=${normalizedPhone}&isSignIn=true`);
+        router.push(
+          `/otpscreen?user=${encodeURIComponent(normalizedUser)}&isSignIn=true`,
+        );
       } else {
-        setError(data.message || 'Unregistered phone number, Please signup');
+        setError(data.message || 'Unregistered account. Please sign up.');
       }
     } catch (error) {
       setError(
@@ -78,15 +94,67 @@ const useAuth = () => {
     }
   };
 
+  const handlePasswordLogin = async () => {
+    const validationError = validateUser();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (!password) {
+      setError('Password is required');
+      return;
+    }
+
+    const { normalizedUser } = normalizeUserInput(user);
+
+    setError('');
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: normalizedUser, password }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      const token = data?.data?.[0]?.token || data?.token;
+      if (response.ok && token) {
+        await setToken(token);
+        router.replace('/home');
+        return;
+      }
+
+      if (response.ok && !token) {
+        setError('Password login could not be completed. Please try again.');
+        return;
+      }
+
+      setError(data.message || 'Invalid credentials. Please try again.');
+    } catch (error) {
+      setError(
+        'Network error: Unable to log in. Please check your connection.',
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
-    phoneNumber,
-    setPhoneNumber: (text: string) => {
-      setPhoneNumber(text);
+    user,
+    setUser: (text: string) => {
+      setUser(text);
+      setError('');
+    },
+    password,
+    setPassword: (text: string) => {
+      setPassword(text);
       setError('');
     },
     error,
     isLoading,
     handleRequestOTP,
+    handlePasswordLogin,
   };
 };
 

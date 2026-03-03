@@ -702,8 +702,8 @@ const Level: React.FC = () => {
           }
           message={error}
           onRetry={handleRetry}
-          actionLabel={actionLabel}
-          onAction={actionLabel ? handleAction : undefined}
+          {...(actionLabel ? { actionLabel } : {})}
+          {...(actionLabel ? { onAction: handleAction } : {})}
         />
       </View>
     );

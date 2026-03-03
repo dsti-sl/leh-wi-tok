@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import {
   ActivityIndicator,
@@ -22,6 +22,7 @@ import useSignup from '@/hooks/useSignup';
 import { setGuestMode } from '@/utils';
 
 const SignUpScreen = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const {
     fullName,
     setFullName,
@@ -29,6 +30,8 @@ const SignUpScreen = () => {
     setPhoneNumber,
     email,
     setEmail,
+    password,
+    setPassword,
     error,
     isLoading,
     handleSignUp,
@@ -106,6 +109,37 @@ const SignUpScreen = () => {
           autoCapitalize="none"
           editable={!isLoading}
         />
+      </View>
+      <Text style={styles.label}>Password (optional)</Text>
+      <View style={styles.inputContainer}>
+        <Feather
+          name="lock"
+          size={24}
+          color={Colors.secondary}
+          style={styles.inputIcon}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Create a password"
+          placeholderTextColor={'#ccc'}
+          secureTextEntry={!showPassword}
+          onChangeText={text => setPassword(text)}
+          value={password}
+          autoCapitalize="none"
+          editable={!isLoading}
+        />
+        <TouchableOpacity
+          onPress={() => setShowPassword(prev => !prev)}
+          style={styles.eyeButton}
+          accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+          disabled={isLoading}
+        >
+          <Feather
+            name={showPassword ? 'eye-off' : 'eye'}
+            size={20}
+            color={Colors.secondary}
+          />
+        </TouchableOpacity>
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -202,6 +236,9 @@ const styles = StyleSheet.create({
     height: 40,
     fontSize: 14,
     color: '#333',
+  },
+  eyeButton: {
+    paddingHorizontal: 8,
   },
   error: {
     color: 'red',

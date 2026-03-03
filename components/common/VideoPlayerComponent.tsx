@@ -189,7 +189,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
     const subscription = player.addListener('statusChange', status => {
       setIsBuffering(status.status === 'loading');
-      setIsPlaying(status.status === 'playing');
     });
 
     return () => {
@@ -200,6 +199,22 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       }
     };
   }, [player, videoId, currentStreamUrl, headers]);
+
+  useEffect(() => {
+    if (!player) return;
+
+    const subscription = player.addListener('playingChange', payload => {
+      setIsPlaying(payload.isPlaying);
+    });
+
+    return () => {
+      try {
+        subscription?.remove();
+      } catch (error) {
+        console.warn('Error removing playing listener:', error);
+      }
+    };
+  }, [player]);
 
   useEffect(() => {
     if (!player || !onEnd) return;
@@ -239,7 +254,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
     player.timeUpdateEventInterval = 1;
     const subscription = player.addListener('timeUpdate', payload => {
-      setIsPlaying(true);
       onTimeUpdate(payload.currentTime);
     });
 
