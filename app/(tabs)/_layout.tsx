@@ -1,9 +1,10 @@
 import React from 'react';
 
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Tabs, useSegments } from 'expo-router';
 
+import GuestStatusBanner from '@/components/common/GuestStatusBanner';
 import TabBarIcon from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 
@@ -22,103 +23,115 @@ export default function Layout() {
   );
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarShowLabel: true,
-        tabBarStyle: shouldHideTabBar ? { display: 'none' } : styles.tabBar,
-        tabBarItemStyle: styles.tabBarItemStyle,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: '#9E9E9E',
-        headerShown: false,
-        tabBarHideOnKeyboard: true,
-      }}
-    >
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              tabStyle={styles.iconContainer}
-              activeStyle={styles.activeTab}
-              activeIcon={'home' as 'text'}
-              icon={'home-outline' as 'text'}
-              color={color}
-              focused={focused}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="lessons"
-        options={{
-          title: 'Lessons',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              tabStyle={styles.iconContainer}
-              activeStyle={styles.activeTab}
-              activeIcon={'book' as 'text'}
-              icon={'book-outline' as 'text'}
-              color={color}
-              focused={focused}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="dictionary"
-        options={{
-          title: 'Dictionary',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              tabStyle={styles.circularIconContainer}
-              activeStyle={styles.activeTab}
-              activeIcon={'library' as 'text'}
-              icon={'library-outline' as 'text'}
-              color={color}
-              focused={focused}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="tok"
-        options={{
-          title: 'Tok',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              tabStyle={styles.iconContainer}
-              activeStyle={styles.activeTab}
-              activeIcon={'chatbubble' as 'text'}
-              icon={'chatbubble-outline' as 'text'}
-              color={color}
-              focused={focused}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="account"
-        options={{
-          title: 'Account',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              tabStyle={styles.iconContainer}
-              activeStyle={styles.activeTab}
-              activeIcon={'person' as 'text'}
-              icon={'person-outline' as 'text'}
-              color={color}
-              focused={focused}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+    <View style={styles.root}>
+      <GuestStatusBanner />
+      <View style={styles.tabsWrapper}>
+        <Tabs
+          screenOptions={{
+            tabBarShowLabel: true,
+            tabBarStyle: shouldHideTabBar ? { display: 'none' } : styles.tabBar,
+            tabBarItemStyle: styles.tabBarItemStyle,
+            tabBarLabelStyle: styles.tabLabel,
+            tabBarActiveTintColor: Colors.primary,
+            tabBarInactiveTintColor: '#9E9E9E',
+            headerShown: false,
+            tabBarHideOnKeyboard: true,
+          }}
+        >
+          <Tabs.Screen
+            name="home"
+            options={{
+              title: 'Home',
+              tabBarIcon: ({ color, focused }) => (
+                <TabBarIcon
+                  tabStyle={styles.iconContainer}
+                  activeStyle={styles.activeTab}
+                  activeIcon={'home' as 'text'}
+                  icon={'home-outline' as 'text'}
+                  color={color}
+                  focused={focused}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="lessons"
+            options={{
+              title: 'Lessons',
+              tabBarIcon: ({ color, focused }) => (
+                <TabBarIcon
+                  tabStyle={styles.iconContainer}
+                  activeStyle={styles.activeTab}
+                  activeIcon={'book' as 'text'}
+                  icon={'book-outline' as 'text'}
+                  color={color}
+                  focused={focused}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="dictionary"
+            options={{
+              title: 'Dictionary',
+              tabBarIcon: ({ color, focused }) => (
+                <TabBarIcon
+                  tabStyle={styles.circularIconContainer}
+                  activeStyle={styles.activeTab}
+                  activeIcon={'library' as 'text'}
+                  icon={'library-outline' as 'text'}
+                  color={color}
+                  focused={focused}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="tok"
+            options={{
+              title: 'Tok',
+              tabBarIcon: ({ color, focused }) => (
+                <TabBarIcon
+                  tabStyle={styles.iconContainer}
+                  activeStyle={styles.activeTab}
+                  activeIcon={'chatbubble' as 'text'}
+                  icon={'chatbubble-outline' as 'text'}
+                  color={color}
+                  focused={focused}
+                />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="account"
+            options={{
+              title: 'Account',
+              tabBarIcon: ({ color, focused }) => (
+                <TabBarIcon
+                  tabStyle={styles.iconContainer}
+                  activeStyle={styles.activeTab}
+                  activeIcon={'person' as 'text'}
+                  icon={'person-outline' as 'text'}
+                  color={color}
+                  focused={focused}
+                />
+              ),
+            }}
+          />
+        </Tabs>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  tabsWrapper: {
+    flex: 1,
+  },
   tabBar: {
     borderRadius: 10,
     height: 80,

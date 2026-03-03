@@ -49,7 +49,7 @@ export async function fileDownloads(
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
+          Authorization: token ? `Token ${token}` : '',
         },
       },
     );

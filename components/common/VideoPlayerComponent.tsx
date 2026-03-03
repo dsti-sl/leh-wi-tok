@@ -159,7 +159,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       headers: {
         ...headers,
         ...(enableAdaptiveStreaming &&
-          token && { authorization: `Bearer ${token}` }),
+          token && { Authorization: `Token ${token}` }),
       },
     },
     playerInstance => {
@@ -266,7 +266,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       try {
         const response = await fetch(`${baseUrl}/video/info?id=${videoId}`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Token ${token}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
             ...headers,

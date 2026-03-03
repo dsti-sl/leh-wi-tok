@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Record as C_Record } from '@/lib/types';
 
+import { clearGuestMode } from './guest';
+
 /**
  * @param arrStrings
  * @returns
@@ -56,6 +58,7 @@ export const getToken = async (): Promise<string | null> => {
 
 export const setToken = async (token: string): Promise<void> => {
   await AsyncStorage.setItem('token', token);
+  await clearGuestMode();
 };
 // ----- Helpers for AsyncStorage -----
 export type LessonData = {
@@ -178,3 +181,5 @@ export function normalizePhoneNumber(phoneNumber: string): string {
 
   return normalized;
 }
+
+export * from './guest';

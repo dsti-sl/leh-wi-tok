@@ -6,7 +6,9 @@ import {
   getBaseUrl,
   getStoredCompletedLessons,
   getStoredUserId,
+  getGuestMode,
   getToken,
+  GUEST_USER_ID,
   LessonData,
   storeCompletedLessons,
 } from '@/utils';
@@ -94,6 +96,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   );
   const [serverProgress, setServerProgress] = useState<LessonData[]>([]);
   const [token, setToken] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState<boolean | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreData, setHasMoreData] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,10 +113,15 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        const storedToken = await getToken();
+        const [storedToken, guestValue] = await Promise.all([
+          getToken(),
+          getGuestMode(),
+        ]);
         setToken(storedToken);
+        setIsGuest(guestValue);
       } catch (error) {
         console.error('Error fetching token:', error);
+        setIsGuest(false);
       }
     };
     fetchToken();
@@ -149,6 +157,8 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   // Main fetch function for lessons
   const fetchLessons = useCallback(
     async (page: number = 1, append: boolean = false) => {
+      if (isGuest === null) return;
+
       if (append) {
         setIsLoadingMore(true);
       } else {
@@ -157,7 +167,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
       setError(null);
 
       try {
-        const userId = await getStoredUserId();
+        const userId = isGuest ? GUEST_USER_ID : await getStoredUserId();
         if (!userId) {
           throw new Error('No user ID found');
         }
@@ -186,8 +196,11 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
         // Fetch progress only on initial load
         if (!append) {
-          let progressData: LessonData[] =
-            (await fetchLessonProgress(userId)) ?? [];
+          let progressData: LessonData[] = [];
+
+          if (!isGuest) {
+            progressData = (await fetchLessonProgress(userId)) ?? [];
+          }
 
           if (!progressData.length) {
             const stored = await getStoredCompletedLessons();
@@ -279,29 +292,31 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
         await storeCompletedLessons(updatedLessons);
 
-        // Sync progress to server
-        const matchedProgress = serverProgress.find(
-          p => p.level === assessment,
-        );
-        const levelExists = !!matchedProgress;
-
-        try {
-          await fetch(
-            `${BASE_URL}/lesson-progress${levelExists ? `/?id=${matchedProgress.id}` : ''}`,
-            {
-              method: levelExists ? 'PATCH' : 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId,
-                level: assessment,
-                totalCompleted: newCompleted.size,
-                totalLessons: lessonCount,
-                lessonsCompleted: Array.from(newCompleted),
-              }),
-            },
+        if (!isGuest) {
+          // Sync progress to server
+          const matchedProgress = serverProgress.find(
+            p => p.level === assessment,
           );
-        } catch (serverError) {
-          console.warn('Failed to sync to server:', serverError);
+          const levelExists = !!matchedProgress;
+
+          try {
+            await fetch(
+              `${BASE_URL}/lesson-progress${levelExists ? `/?id=${matchedProgress.id}` : ''}`,
+              {
+                method: levelExists ? 'PATCH' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId,
+                  level: assessment,
+                  totalCompleted: newCompleted.size,
+                  totalLessons: lessonCount,
+                  lessonsCompleted: Array.from(newCompleted),
+                }),
+              },
+            );
+          } catch (serverError) {
+            console.warn('Failed to sync to server:', serverError);
+          }
         }
 
         setCompletedLessons(newCompleted);
@@ -312,6 +327,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
     [
       assessment,
       completedLessons,
+      isGuest,
       lessonCount,
       serverProgress,
       BASE_URL,
@@ -451,8 +467,9 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
   // Initial data fetch
   useEffect(() => {
+    if (isGuest === null) return;
     fetchLessons(1, false);
-  }, [fetchLessons]);
+  }, [fetchLessons, isGuest]);
 
   return {
     lessonNuggets,

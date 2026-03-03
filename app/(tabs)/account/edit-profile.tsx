@@ -16,6 +16,7 @@ import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Colors } from '@/constants/Colors';
+import useGuestMode from '@/hooks/useGuestMode';
 
 interface UserInfo {
   createdAt: string;
@@ -30,6 +31,7 @@ interface UserInfo {
 }
 
 const EditProfile = () => {
+  const { isGuest, promptCreateAccount } = useGuestMode();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [name, setName] = useState('');
   const [handle, setHandle] = useState('');
@@ -37,6 +39,12 @@ const EditProfile = () => {
   const router = useRouter();
 
   useEffect(() => {
+    if (isGuest) {
+      promptCreateAccount('Create an account to edit your profile.');
+      router.replace('/account');
+      return;
+    }
+
     const loadUser = async () => {
       const stored = await AsyncStorage.getItem('user');
       if (stored) {
@@ -47,7 +55,7 @@ const EditProfile = () => {
       }
     };
     loadUser();
-  }, []);
+  }, [isGuest, promptCreateAccount, router]);
 
   const navigation = useNavigation();
 

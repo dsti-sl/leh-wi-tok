@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { clearGuestMode, getBaseUrl, getToken } from '@/utils';
 export interface AccountUserInfo {
   id: string;
   name: string;
@@ -33,6 +34,7 @@ const useAccount = (): UseAccountReturn => {
   const [userInfo, setUserInfo] = useState<AccountUserInfo | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
+  const BASE_URL = getBaseUrl();
 
   const fetchUserInfo = useCallback(async () => {
     const user = await AsyncStorage.getItem('user');
@@ -52,7 +54,21 @@ const useAccount = (): UseAccountReturn => {
   const performLogout = async () => {
     try {
       setIsLoggingOut(true);
+      setUserInfo(null);
+      try {
+        const token = await getToken();
+        await fetch(`${BASE_URL}/user/logout`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Token ${token}` } : {}),
+          },
+        });
+      } catch (error) {
+        console.warn('Logout request failed, clearing local session anyway.');
+      }
       await AsyncStorage.multiRemove(['token', 'user', 'completedLesson']);
+      await clearGuestMode();
       router.replace('/');
     } catch (error) {
       // Optionally handle error

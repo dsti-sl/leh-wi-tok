@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   ActivityIndicator,
-  Image,
   Platform,
   StyleSheet,
   Text,
@@ -11,33 +10,77 @@ import {
   View,
 } from 'react-native';
 
+import { Asset } from 'expo-asset';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { Feather } from '@expo/vector-icons';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import useAuth from '@/hooks/useAuth';
+import { setGuestMode } from '@/utils';
 
 const SignInScreen = () => {
   const { phoneNumber, setPhoneNumber, error, isLoading, handleRequestOTP } =
     useAuth();
+  const [assetsReady, setAssetsReady] = useState(false);
+
+  const logoSource = useMemo(
+    () => require('../assets/images/Auth_logo.png'),
+    [],
+  );
+  const handshakeSource = useMemo(
+    () => require('../assets/images/Handshake.png'),
+    [],
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+    const preloadAssets = async () => {
+      try {
+        await Asset.loadAsync([logoSource, handshakeSource]);
+      } finally {
+        if (isMounted) setAssetsReady(true);
+      }
+    };
+    preloadAssets();
+    return () => {
+      isMounted = false;
+    };
+  }, [logoSource, handshakeSource]);
+
+  const handleGuestLogin = async () => {
+    await AsyncStorage.multiRemove(['token', 'user']);
+    await setGuestMode(true);
+    router.replace('/home');
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
 
-      <Image
-        source={require('../assets/images/Auth_logo.png')}
-        style={styles.logo}
-      />
+      {assetsReady && (
+        <Image
+          source={logoSource}
+          style={styles.logo}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+        />
+      )}
       <View style={styles.welcomeContainer}>
         <Text style={styles.welcomeText}>Hello Again</Text>
-        <Image
-          source={require('../assets/images/Handshake.png')}
-          style={styles.handWaveIcon}
-        />
+        {assetsReady && (
+          <Image
+            source={handshakeSource}
+            style={styles.handWaveIcon}
+            cachePolicy="memory-disk"
+            contentFit="contain"
+          />
+        )}
       </View>
       <Text style={styles.subText}>Welcome back, you’ve been missed</Text>
       <Text style={styles.label}>Phone Number</Text>
@@ -72,6 +115,10 @@ const SignInScreen = () => {
           style={{ marginTop: 10 }}
         />
       )}
+
+      <TouchableOpacity onPress={handleGuestLogin} style={styles.guestLink}>
+        <Text style={styles.guestLinkText}>Login as Guest</Text>
+      </TouchableOpacity>
 
       <Text style={styles.footerText}>
         Don’t have an account?{' '}
@@ -177,5 +224,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
     marginBottom: -3,
+  },
+  guestLink: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  guestLinkText: {
+    color: Colors.primary,
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

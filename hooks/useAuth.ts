@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 
 import { router } from 'expo-router';
 
-import { getBaseUrl, getStoredUserId, normalizePhoneNumber } from '@/utils';
+import {
+  getBaseUrl,
+  getGuestMode,
+  getStoredUserId,
+  normalizePhoneNumber,
+} from '@/utils';
 
 const useAuth = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -22,9 +27,13 @@ const useAuth = () => {
     const checkUser = async () => {
       const user = await getStoredUserId();
       if (user) {
-        router.push('/home');
-      } else {
-        router.push('/signin');
+        router.replace('/home');
+        return;
+      }
+
+      const isGuest = await getGuestMode();
+      if (isGuest) {
+        router.replace('/home');
       }
     };
     checkUser();

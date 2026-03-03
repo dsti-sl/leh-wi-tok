@@ -6,6 +6,7 @@ import { router, useFocusEffect } from 'expo-router';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import useGuestMode from '@/hooks/useGuestMode';
 import { Record } from '@/lib/types';
 import {
   getBaseUrl,
@@ -49,6 +50,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   progressSummary,
   lessonCount,
 }) => {
+  const { isGuest, promptCreateAccount } = useGuestMode();
   const [userCompletionRate, setUserCompletionRate] =
     useState<LessonCompletionData>({
       lessons: [],
@@ -60,6 +62,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
   useEffect(() => {
     const fetchAndStoreLessonProgress = async () => {
       try {
+        if (isGuest) return;
         const userId = await getStoredUserId();
         if (!userId || !EXPO_PUBLIC_BASE_URL) return;
         const serverLessons = await fetchLessonProgress(
@@ -78,7 +81,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
       }
     };
     fetchAndStoreLessonProgress();
-  }, []);
+  }, [EXPO_PUBLIC_BASE_URL, isGuest]);
 
   // Local (possibly stale) state update
   const updateCompletionFromStorage = useCallback(async () => {
@@ -142,6 +145,19 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
     },
   ] as const;
 
+  const handleLessonPress = (assessment: LessonLevel) => {
+    if (isGuest && assessment !== 'Beginner') {
+      promptCreateAccount(
+        'Create an account to unlock Intermediate and Advanced lessons.',
+      );
+      return;
+    }
+
+    router.push(
+      `/(tabs)/lessons/level/${(progressSummary[assessment] as Record).title}?assessment=${assessment}`,
+    );
+  };
+
   return (
     <View style={styles.cardsContainer}>
       <View style={styles.cardRowContainer}>
@@ -151,11 +167,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
             title={(progressSummary[key] as Record).title as string}
             completed={lessonData[key]?.totalCompleted}
             totalLesson={lessonCount[key] ?? lessonData[key]?.totalLessons}
-            onPress={() =>
-              router.push(
-                `/(tabs)/lessons/level/${(progressSummary[key] as Record).title}?assessment=${assessment}`,
-              )
-            }
+            onPress={() => handleLessonPress(assessment)}
             backgroundColor={color}
           />
         ))}
@@ -175,11 +187,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
             // }
             completed={lessonData[key]?.totalCompleted}
             totalLesson={lessonCount[key] ?? lessonData[key]?.totalLessons}
-            onPress={() =>
-              router.push(
-                `/(tabs)/lessons/level/${(progressSummary[key] as Record).title}?assessment=${assessment}`,
-              )
-            }
+            onPress={() => handleLessonPress(assessment)}
             backgroundColor={color}
           />
         ))}

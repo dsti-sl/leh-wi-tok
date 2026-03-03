@@ -21,6 +21,7 @@ import EditProfileModal from '@/components/account/EditProfileModal';
 import { Colors } from '@/constants/Colors';
 import { fetchAndInsertTranslations } from '@/data/dictionary';
 import useAccount from '@/hooks/useAccount';
+import useGuestMode from '@/hooks/useGuestMode';
 import { getBaseUrl } from '@/utils';
 
 const Account = () => {
@@ -31,16 +32,22 @@ const Account = () => {
     confirmAccountDeletion,
     fetchUserInfo,
   } = useAccount();
+  const { isGuest, promptCreateAccount } = useGuestMode();
   const [isSyncing, setIsSyncing] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
   const EXPO_PUBLIC_BASE_URL: string = getBaseUrl();
-  const initial = userInfo?.name?.[0]?.toUpperCase?.() ?? '';
+  const displayName = userInfo?.name ?? (isGuest ? 'Guest' : '');
+  const initial = displayName?.[0]?.toUpperCase?.() ?? '';
 
   useEffect(() => {
     const fetchProfileImage = async () => {
       try {
+        if (!userInfo?.pictureId || isGuest) {
+          setProfileImageUrl(null);
+          return;
+        }
         const imageUrl = `${EXPO_PUBLIC_BASE_URL}/file?id=eq.${userInfo?.pictureId}&select=path
 `;
         const response = await fetch(imageUrl);
@@ -56,7 +63,7 @@ const Account = () => {
     };
 
     fetchProfileImage();
-  }, [userInfo?.pictureId]);
+  }, [userInfo?.pictureId, isGuest]);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -79,6 +86,10 @@ const Account = () => {
   };
 
   const handlePickProfileImage = async () => {
+    if (isGuest) {
+      promptCreateAccount('Create an account to update your profile.');
+      return;
+    }
     if (!userInfo?.id || isUpdatingPhoto) return;
 
     try {
@@ -187,7 +198,7 @@ const Account = () => {
               accessibilityLabel="Change profile photo"
               style={styles.iconOverlay}
               onPress={handlePickProfileImage}
-              disabled={isUpdatingPhoto}
+              disabled={isUpdatingPhoto || isGuest}
             >
               {isUpdatingPhoto ? (
                 <ActivityIndicator size="small" color={Colors.primary} />
@@ -226,8 +237,20 @@ const Account = () => {
             <TouchableOpacity
               accessibilityLabel="Edit profile"
               hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-              onPress={() => setShowEditProfileModal(true)}
-              style={{ ...styles.iconButton, backgroundColor: Colors.primary }}
+              onPress={() =>
+                isGuest
+                  ? promptCreateAccount(
+                      'Create an account to edit your profile.',
+                    )
+                  : setShowEditProfileModal(true)
+              }
+              style={[
+                styles.iconButton,
+                {
+                  backgroundColor: Colors.primary,
+                  opacity: isGuest ? 0.5 : 1,
+                },
+              ]}
             >
               <Feather name="edit" size={16} color={Colors.secondary} />
             </TouchableOpacity>
@@ -238,7 +261,7 @@ const Account = () => {
           <Feather name="user" size={20} color={Colors.primary} />
           <View style={styles.infoTextWrap}>
             <Text style={styles.infoLabel}>Name</Text>
-            <Text style={styles.infoValue}>{userInfo?.name ?? ''}</Text>
+            <Text style={styles.infoValue}>{displayName}</Text>
           </View>
         </View>
 
@@ -246,7 +269,9 @@ const Account = () => {
           <Feather name="at-sign" size={20} color={Colors.primary} />
           <View style={styles.infoTextWrap}>
             <Text style={styles.infoLabel}>Handle</Text>
-            <Text style={styles.infoValue}>{userInfo?.handle ?? ''}</Text>
+            <Text style={styles.infoValue}>
+              {userInfo?.handle ?? (isGuest ? 'guest' : '')}
+            </Text>
           </View>
         </View>
 
@@ -257,7 +282,9 @@ const Account = () => {
             <Text style={styles.infoValue}>
               {userInfo?.createdAt
                 ? new Date(userInfo.createdAt).toDateString()
-                : ''}
+                : isGuest
+                  ? 'Guest mode'
+                  : ''}
             </Text>
           </View>
         </View>
@@ -283,7 +310,14 @@ const Account = () => {
         <Text style={styles.sectionTitle}>Settings</Text>
         <TouchableOpacity
           style={[styles.itemRow, isLoggingOut && styles.itemRowDisabled]}
-          onPress={confirmLogout}
+          onPress={
+            isGuest
+              ? () =>
+                  promptCreateAccount(
+                    'Create an account to save your progress and unlock all features.',
+                  )
+              : confirmLogout
+          }
           disabled={isLoggingOut}
         >
           <Feather
@@ -294,7 +328,11 @@ const Account = () => {
           <Text
             style={[styles.itemText, isLoggingOut && styles.itemTextDisabled]}
           >
-            {isLoggingOut ? 'Logging out...' : 'Log out'}
+            {isGuest
+              ? 'Create Account'
+              : isLoggingOut
+                ? 'Logging out...'
+                : 'Log out'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -310,7 +348,7 @@ const Account = () => {
       </View>
 
       <EditProfileModal
-        open={showEditProfileModal}
+        open={showEditProfileModal && !isGuest}
         setOpen={setShowEditProfileModal}
         userInfo={userInfo}
         onSaved={fetchUserInfo}

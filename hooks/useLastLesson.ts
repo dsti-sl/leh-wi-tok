@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { getBaseUrl, getToken } from '@/utils';
+import { getBaseUrl, getGuestMode, getToken } from '@/utils';
 
 interface LastLessonData {
   id: string;
@@ -26,15 +26,21 @@ const useLastLesson = () => {
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState<boolean | null>(null);
 
   // Fetch token on component mount
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        const storedToken = await getToken();
+        const [storedToken, guestValue] = await Promise.all([
+          getToken(),
+          getGuestMode(),
+        ]);
         setToken(storedToken);
+        setIsGuest(guestValue);
       } catch (error) {
         console.error('Error fetching token:', error);
+        setIsGuest(false);
       }
     };
 
@@ -44,15 +50,20 @@ const useLastLesson = () => {
   useEffect(() => {
     const checkUserProgress = async () => {
       try {
+        if (isGuest === null) return;
+
         // Wait for token to be available
-        if (!token) return;
+        if (!token && !isGuest) {
+          setLoading(false);
+          return;
+        }
 
         // Checks if user has any completed lessons
         const completedLessons = await AsyncStorage.getItem('completedLesson');
         const user = await AsyncStorage.getItem('user');
         const hasOnboarded = await AsyncStorage.getItem('hasOnboarded');
 
-        if (!user || !hasOnboarded) {
+        if (!hasOnboarded || (!user && !isGuest)) {
           setIntroVideo();
           return;
         }
@@ -91,7 +102,7 @@ const useLastLesson = () => {
     };
 
     checkUserProgress();
-  }, [token]);
+  }, [token, isGuest]);
 
   const setIntroVideo = () => {
     const baseUrl = getBaseUrl();
@@ -106,7 +117,7 @@ const useLastLesson = () => {
       duration: '1:16',
       isFirstTimeUser: true,
       lastWatchedPosition: 0,
-      headers: token ? { authorization: `Token ${token}` } : undefined,
+      headers: token ? { Authorization: `Token ${token}` } : undefined,
     });
     setIsFirstTimeUser(true);
   };
@@ -139,7 +150,7 @@ const useLastLesson = () => {
           duration: '5:00',
           isFirstTimeUser: false,
           lastWatchedPosition: lastPosition ? parseFloat(lastPosition) : 0,
-          headers: token ? { authorization: `Token ${token}` } : undefined,
+          headers: token ? { Authorization: `Token ${token}` } : undefined,
         });
         setIsFirstTimeUser(false);
       } else {
