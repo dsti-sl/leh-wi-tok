@@ -21,6 +21,10 @@ interface CompletedLesson {
   updatedAt: string;
 }
 
+interface LessonTagInfo {
+  title?: string;
+}
+
 const useLastLesson = () => {
   const [lastLesson, setLastLesson] = useState<LastLessonData | null>(null);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
@@ -126,7 +130,7 @@ const useLastLesson = () => {
     try {
       const baseUrl = getBaseUrl();
       const response = await fetch(
-        `${baseUrl}/nugget?and=(lesson.id.eq.${lessonData.lessonId})&select=lesson(id,title,description,illustration),gesture(id,name,path,contentType)`,
+        `${baseUrl}/nugget?and=(lesson.id.eq.${lessonData.lessonId})&select=lesson(id,title,description,illustration,tags),gesture(id,name,path,contentType)`,
       );
 
       if (!response.ok) {
@@ -136,14 +140,29 @@ const useLastLesson = () => {
       const data = await response.json();
       if (data.data && data.data.length > 0) {
         const lesson = data.data[0];
+        const lessonTags = Array.isArray(lesson?.lesson?.tags)
+          ? (lesson.lesson.tags as LessonTagInfo[])
+          : [];
+        const isBeginner = lessonTags.some(tag => tag?.title === 'Beginner');
+
+        if (isGuest && !isBeginner) {
+          setIntroVideo();
+          return;
+        }
+
         const lastPosition = await AsyncStorage.getItem(
           `lesson_${lesson.lesson.id}_position`,
         );
 
+        const gestureId = lesson.gesture?.id;
+        const videoUrl = gestureId
+          ? `${baseUrl}/file/download?id=${gestureId}`
+          : lesson.gesture?.path || '';
+
         setLastLesson({
           id: lesson.lesson.id,
           title: lesson.lesson.title,
-          videoUrl: lesson.gesture?.path || '',
+          videoUrl,
           thumbnail:
             lesson.lesson.illustration ||
             require('../assets/images/adaptive-icon.png'),

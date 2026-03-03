@@ -669,7 +669,44 @@ const Level: React.FC = () => {
   }
 
   if (error && !lessonNuggets.length) {
-    return <ErrorView error={error} onRetry={handleRetry} />;
+    const isAuthError =
+      error.toLowerCase().includes('sign in') ||
+      error.toLowerCase().includes('authenticated');
+
+    const actionLabel = isAuthError
+      ? isGuest
+        ? 'Create Account'
+        : 'Sign In'
+      : undefined;
+
+    const handleAction = () => {
+      if (!isAuthError) return;
+      if (isGuest) {
+        promptCreateAccount();
+      } else {
+        router.push('/signin');
+      }
+    };
+
+    return (
+      <View style={styles.container}>
+        {Platform.OS === 'ios' ? (
+          <View style={styles.iosStatusBar} />
+        ) : (
+          <StatusBar style="light" backgroundColor={Colors.primary} />
+        )}
+        <LessonHeader onBackPress={handleBackPress} />
+        <ErrorView
+          title={
+            isAuthError ? 'Authentication Required' : 'Something went wrong'
+          }
+          message={error}
+          onRetry={handleRetry}
+          actionLabel={actionLabel}
+          onAction={actionLabel ? handleAction : undefined}
+        />
+      </View>
+    );
   }
 
   if (isLoading) {
@@ -1061,6 +1098,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f6f8fa',
     borderRadius: 12,
     padding: 14,
+    paddingBottom: 20,
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
