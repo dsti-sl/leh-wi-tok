@@ -22,10 +22,7 @@
     },
     "production": {
       "autoIncrement": true,
-      "node": "22.10.0",
-      "android": {
-        "enableProguardInReleaseBuilds": true
-      }
+      "node": "22.10.0"
     }
   },
   "submit": {
