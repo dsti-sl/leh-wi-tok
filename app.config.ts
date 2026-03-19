@@ -40,6 +40,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-image-picker',
     [
+      'expo-build-properties',
+      {
+        android: {
+          compileSdkVersion: 35,
+          targetSdkVersion: 35,
+        },
+      },
+    ],
+    [
       'expo-video',
       {
         supportsBackgroundPlayback: false,
