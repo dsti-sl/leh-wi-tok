@@ -1,6 +1,6 @@
 # Privacy Policy for Leh Wi Tok
 
-**Last Updated: February 6, 2026**
+**Last Updated: March 19, 2026**
 
 DSTI ("we," "our," or "us") operates the Leh Wi Tok mobile application (the "App"). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our App.
 
@@ -18,15 +18,29 @@ When you create an account or use certain features, we may collect:
 - **Location Information**: Your selected region/location for personalized content (e.g., learning level preferences)
 - **Learning Preferences**: Your selected learning goals and help-seeking reasons
 
-### 1.2 Information Collected Automatically
+### 1.2 Guest Mode
 
-When you use the App, we automatically collect:
+You may use the App without creating an account by choosing Guest Mode. When using Guest Mode:
+
+- **No personal information is collected** — we do not require a name, phone number, or any identifying details
+- **No account is created** on our servers — your guest status is stored only locally on your device using AsyncStorage
+- **Learning progress is not tracked or synced** — any browsing activity during a guest session is not persisted to our servers
+- **Dictionary, Lessons, and Translator features remain accessible** for browsing purposes
+- **You may create an account at any time** to unlock progress tracking, cross-device sync, and personalized features
+
+Guest Mode data is limited to a local flag on your device and is cleared if you uninstall the App or clear app data.
+
+### 1.3 Information Collected Automatically
+
+When you use the App with a registered account, we automatically collect:
 
 - **Usage Data**: Lesson progress, completed lessons, quiz scores, and learning statistics
 - **Device Information**: Device type, operating system version, and unique device identifiers
 - **Log Data**: App usage patterns, feature interactions, and error logs
 
-### 1.3 Information from Third-Party Services
+Note: In Guest Mode, usage data and learning statistics are not collected or transmitted to our servers.
+
+### 1.4 Information from Third-Party Services
 
 - **Sign Language Translator**: When you use the Tok (translator) feature, text you enter is processed by a third-party service (sign.mt) to generate sign language animations. We do not store this translated content.
 
@@ -184,4 +198,4 @@ California residents have additional rights:
 
 ---
 
-_This Privacy Policy is effective as of February 6, 2026._
+_This Privacy Policy is effective as of March 19, 2026._
