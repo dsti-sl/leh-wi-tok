@@ -1,0 +1,62 @@
+name: Build and Submit iOS to App Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_profile:
+        type: choice
+        options:
+          - production
+          - preview
+        required: false
+        default: 'production'
+        description: 'Build profile to use'
+      changelog:
+        type: string
+        required: false
+        description: 'Changelog for this release'
+
+jobs:
+  build_ios:
+    name: 🍎 Build iOS App
+    type: build
+    params:
+      platform: ios
+      profile: ${{ inputs.build_profile || 'production' }}
+      message: 'iOS build for App Store submission'
+
+  submit_ios:
+    name: 📱 Submit to App Store (TestFlight)
+    needs: [build_ios]
+    type: submit
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
+
+  confirmation:
+    name: 📋 iOS Build & Submit Summary
+    needs: [submit_ios]
+    type: doc
+    params:
+      md: |
+        # ✅ iOS Build & Submission Complete
+
+        ## Build Details
+        | Property | Value |
+        |----------|-------|
+        | Build ID | `${{ needs.build_ios.outputs.build_id }}` |
+        | Version | ${{ needs.build_ios.outputs.app_version }} |
+        | Build Number | ${{ needs.build_ios.outputs.app_build_version }} |
+        | Bundle ID | ${{ needs.build_ios.outputs.app_identifier }} |
+        | Distribution | ${{ needs.build_ios.outputs.distribution }} |
+        | Profile | ${{ inputs.build_profile || 'production' }} |
+
+        ## Changelog
+        ${{ inputs.changelog || 'No changelog provided' }}
+
+        ## Next Steps
+        1. Go to [App Store Connect](https://appstoreconnect.apple.com)
+        2. Navigate to your app → **TestFlight**
+        3. Wait for processing to complete
+        4. Test the build via TestFlight
+        5. When ready, submit for App Review
