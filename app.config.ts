@@ -46,6 +46,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           compileSdkVersion: 35,
           targetSdkVersion: 35,
           enableProguardInReleaseBuilds: true,
+          ndkVersion: '27.1.12297006',
         },
       },
     ],
