@@ -7,6 +7,11 @@
   - [Overview](#overview)
   - [Project Structure](#project-structure)
   - [Prerequisites](#prerequisites)
+  - [Environment Variables](#environment-variables)
+    - [How It's Resolved](#how-its-resolved)
+    - [Local Development](#local-development)
+    - [EAS Builds](#eas-builds)
+    - [Overriding the Base URL at Build Time](#overriding-the-base-url-at-build-time)
   - [Getting Started](#getting-started)
     - [Installation](#installation)
     - [Running the App](#running-the-app)
@@ -102,6 +107,49 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
   - Copy `.env.example` to `.env`
   - Fill in the required environment variables in `.env` file
   - Required variables are listed in `.env.example`
+
+---
+
+## Environment Variables
+
+All API URLs are provided via environment variables — no URLs are hardcoded in the codebase.
+
+| Variable               | Description          |
+| ---------------------- | -------------------- |
+| `EXPO_PUBLIC_BASE_URL` | Base URL for the API |
+
+### How It's Resolved
+
+The app resolves the API URL in the following priority order (highest to lowest):
+
+1. **Shell environment variable** set inline at build time
+2. **Expo dashboard** environment variables (per environment on [expo.dev](https://expo.dev))
+3. **`.env` file** (local development only)
+
+### Local Development
+
+Set `EXPO_PUBLIC_BASE_URL` in your `.env` file:
+
+```bash
+cp .env.example .env
+# Edit .env and set EXPO_PUBLIC_BASE_URL
+```
+
+### EAS Builds
+
+Environment variables are managed per environment (**development**, **preview**, **production**) on the [Expo dashboard](https://expo.dev). Each EAS build profile maps to its corresponding environment via the `"environment"` key in `eas.json`.
+
+### Overriding the Base URL at Build Time
+
+You can override the dashboard value for a single build by passing the variable inline:
+
+```bash
+# Override for an EAS cloud build
+EXPO_PUBLIC_BASE_URL=https://custom-api.example.com/api eas build --profile production --platform android
+
+# Override for a local build
+EXPO_PUBLIC_BASE_URL=https://custom-api.example.com/api eas build --profile production --local
+```
 
 ---
 
