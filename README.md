@@ -7,6 +7,7 @@
   - [Overview](#overview)
   - [Project Structure](#project-structure)
   - [Prerequisites](#prerequisites)
+  - [Environment Variables](#environment-variables)
   - [Getting Started](#getting-started)
     - [Installation](#installation)
     - [Running the App](#running-the-app)
@@ -102,6 +103,22 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
   - Copy `.env.example` to `.env`
   - Fill in the required environment variables in `.env` file
   - Required variables are listed in `.env.example`
+
+---
+
+## Environment Variables
+
+| Variable               | Description          |
+| ---------------------- | -------------------- |
+| `EXPO_PUBLIC_BASE_URL` | Base URL for the API |
+
+- **Local dev**: Set in `.env` file (`cp .env.example .env`), or override inline: `EXPO_PUBLIC_BASE_URL=... npx expo start`
+- **EAS cloud builds**: Managed per environment (**development**, **preview**, **production**) on the [Expo dashboard](https://expo.dev). Each build profile maps to an environment via the `"environment"` key in `eas.json`.
+- **Overriding for cloud builds**: Update the value on the [Expo dashboard](https://expo.dev) or via CLI: `eas env:update --name EXPO_PUBLIC_BASE_URL --value <url> --environment <env>`
+
+> **Note:** Shell variables prefixed before `eas build` do **not** reach the remote server. They only work locally.
+
+For more details, see the [Expo environment variables documentation](https://docs.expo.dev/eas/environment-variables/).
 
 ---
 

@@ -24,6 +24,8 @@ expo-env.d.ts
 tmp/
 temp/
 .env
+.env.*
+!.env.example
 
 tsconfig.tsbuildinfo
 

@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 
-import { getToken } from '.';
+import { getBaseUrl, getToken } from '.';
 
 /**
  * @param fileId gets the unique file ID
@@ -12,11 +12,7 @@ export async function fileDownloads(
   filename: string,
 ): Promise<string> {
   try {
-    // TODO: @vidallisk read var from expo constant
-    const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
-    if (!BASE_URL) {
-      throw new Error('BASE_URL is not defined in .env!');
-    }
+    const BASE_URL = getBaseUrl();
 
     const baseUrlClean = BASE_URL.endsWith('/')
       ? BASE_URL.slice(0, -1)
