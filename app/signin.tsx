@@ -19,12 +19,10 @@ import { StatusBar } from 'expo-status-bar';
 
 import { Feather } from '@expo/vector-icons';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import useAuth from '@/hooks/useAuth';
-import { setGuestMode } from '@/utils';
+import { enterGuestMode } from '@/utils';
 
 const SignInScreen = () => {
   const [assetsReady, setAssetsReady] = useState(false);
@@ -72,8 +70,7 @@ const SignInScreen = () => {
   } = useAuth();
 
   const handleGuestLogin = async () => {
-    await AsyncStorage.multiRemove(['token', 'user']);
-    await setGuestMode(true);
+    await enterGuestMode();
     router.replace('/home');
   };
 

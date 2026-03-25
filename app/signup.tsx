@@ -21,7 +21,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import useSignup from '@/hooks/useSignup';
-import { setGuestMode } from '@/utils';
+import { enterGuestMode, setGuestMode } from '@/utils';
 
 const SignUpScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +40,7 @@ const SignUpScreen = () => {
   } = useSignup();
 
   const handleGuestMode = async () => {
-    await setGuestMode(true);
+    await enterGuestMode();
     router.replace('/home');
   };
 
