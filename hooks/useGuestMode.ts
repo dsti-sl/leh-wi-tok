@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { getGuestMode } from '@/utils';
 
 const DEFAULT_GUEST_MESSAGE =
-  'You currently logged in as guest to view all feature please create account or login.';
+  'Guest access is limited (for example, Beginner lessons dictionary words are available). To gain full learning experience, create an account.';
 
 export const useGuestMode = () => {
   const [isGuest, setIsGuest] = useState(false);
