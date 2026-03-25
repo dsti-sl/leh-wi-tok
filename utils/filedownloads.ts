@@ -37,6 +37,7 @@ export async function fileDownloads(
     }
 
     const token = await getToken();
+    const authHeaders = token ? { Authorization: `Token ${token}` } : {};
 
     const { uri: downloadedFileUri } = await FileSystem.downloadAsync(
       downloadUrl,
@@ -45,7 +46,7 @@ export async function fileDownloads(
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          Authorization: token ? `Token ${token}` : '',
+          ...authHeaders,
         },
       },
     );
