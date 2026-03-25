@@ -81,6 +81,7 @@ const useAccount = (): UseAccountReturn => {
   const performAccountDeletion = async () => {
     try {
       await AsyncStorage.multiRemove(['token', 'user', 'completedLesson']);
+      await clearGuestMode();
       router.replace('/');
     } catch (error) {
       // Optionally handle error
