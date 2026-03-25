@@ -21,6 +21,7 @@ import {
   calculateOverallDataForLevels,
   getBaseUrl,
   getStoredCompletedLessons,
+  getToken,
   LessonCount,
   LessonData,
   LessonLevel,
@@ -46,8 +47,12 @@ const fetchLessonProgress = async (baseUrl: string, userId: string) => {
 const fetchLessonCountForLevel = async (
   baseUrl: string,
   level: LessonLevel,
+  anonymous: boolean,
 ) => {
-  const url = `${baseUrl}/nugget?and=(lesson.tags.title.eq.${level})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active`;
+  const filter = anonymous
+    ? 'tags.title.eq.Beginner'
+    : `lesson.tags.title.eq.${level}`;
+  const url = `${baseUrl}/nugget?and=(${filter})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active`;
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Failed to fetch for ${level}`);
   const data = await response.json();
@@ -106,14 +111,22 @@ const IndexScreen: React.FC = () => {
         lessons = stored.lessons || [];
       }
 
-      // Fetch all lesson counts
+      const token = await getToken();
+      const anonymous = !token;
+
+      // Fetch all lesson counts (anonymous: only Beginner nugget query is allowed; other levels stay 0)
       const counts: Partial<LessonCount> = {};
       await Promise.all(
         LEVELS.map(async (level: LessonLevel) => {
+          if (anonymous && level !== 'Beginner') {
+            counts[level] = 0;
+            return;
+          }
           try {
             counts[level] = await fetchLessonCountForLevel(
               EXPO_PUBLIC_BASE_URL,
               level,
+              anonymous,
             );
           } catch {
             counts[level] = 0;

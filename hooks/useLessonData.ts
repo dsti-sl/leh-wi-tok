@@ -174,9 +174,14 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
           throw new Error('No user ID found');
         }
 
+        // guest user nugget list requires nugget tag Beginner
+        const nuggetFilter = isGuest
+          ? 'tags.title.eq.Beginner'
+          : `lesson.tags.title.eq.${effectiveAssessment}`;
+
         // Fetch lesson nuggets with pagination
         const response = await fetch(
-          `${BASE_URL}/nugget?and=(lesson.tags.title.eq.${effectiveAssessment})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active,detail,illustration&page=${page}&page-size=${PAGE_SIZE}&order=priority`,
+          `${BASE_URL}/nugget?and=(${nuggetFilter})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active,detail,illustration&page=${page}&page-size=${PAGE_SIZE}&order=priority`,
         );
 
         if (!response.ok) {
