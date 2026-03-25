@@ -1,18 +1,50 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
 import { Colors } from '@/constants/Colors';
 
 const index = () => {
+  const insets = useSafeAreaInsets();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, event => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const webViewBottomInset = useMemo(() => {
+    if (!keyboardHeight) return 0;
+    return Math.max(keyboardHeight - insets.bottom, 0);
+  }, [insets.bottom, keyboardHeight]);
+
   const injectedJS2 = `
     (function() {
     // Hide <app-viewer-selector>
@@ -38,6 +70,29 @@ const index = () => {
       hideShadowElements(document);
     }
 
+    function scrollActiveInputIntoView() {
+      const activeElement = document.activeElement;
+      if (!activeElement) return;
+
+      const isEditable =
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable;
+
+      if (!isEditable) return;
+
+      setTimeout(() => {
+        activeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest',
+        });
+      }, 150);
+    }
+
+    document.addEventListener('focusin', scrollActiveInputIntoView, true);
+    window.addEventListener('resize', scrollActiveInputIntoView);
+
     // Run once immediately
     hideEverything();
 
@@ -49,7 +104,11 @@ const index = () => {
 `;
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
       <StatusBar
         barStyle="light-content"
         backgroundColor={Colors.primary}
@@ -73,7 +132,7 @@ const index = () => {
         </View>
       </View>
       <WebView
-        style={styles.webView}
+        style={[styles.webView, { marginBottom: webViewBottomInset }]}
         source={{ uri: 'https://sign.mt/' }}
         injectedJavaScript={injectedJS2}
         injectedJavaScriptBeforeContentLoaded={injectedJS2}
@@ -88,7 +147,7 @@ const index = () => {
           <ActivityIndicator style={styles.loader} size="large" />
         )}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
