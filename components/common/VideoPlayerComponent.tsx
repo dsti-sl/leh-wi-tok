@@ -272,21 +272,24 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   }, [player, onTimeUpdate]);
 
   const loadVideoInfo = useCallback(async () => {
-    if (!videoId || !token || !enableAdaptiveStreaming) return;
+    if (!videoId || !enableAdaptiveStreaming) return;
 
     try {
       setIsLoading(true);
       setHasError(false);
 
       const baseUrl = getBaseUrl();
+      const authHeaders = token
+        ? { Authorization: `Token ${token}` as const }
+        : {};
 
-      // Try adaptive streaming endpoint first
+      // Try adaptive streaming endpoint first (auth optional; guests use curriculum file policy)
       try {
         const response = await fetch(`${baseUrl}/video/info?id=${videoId}`, {
           headers: {
-            Authorization: `Token ${token}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
+            ...authHeaders,
             ...headers,
           },
         });
@@ -311,6 +314,10 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           }
           return;
         }
+
+        if (response.status === 404) {
+          console.warn('video/info returned 404; falling back to direct URI.');
+        }
       } catch (adaptiveError) {
         console.warn(
           'Adaptive streaming lookup failed, falling back.',
@@ -333,20 +340,20 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   }, [videoId, token, headers, onError, uri, enableAdaptiveStreaming]);
 
   useEffect(() => {
-    if (enableAdaptiveStreaming && token) {
+    if (enableAdaptiveStreaming && videoId) {
       loadVideoInfo();
     }
-  }, [enableAdaptiveStreaming, token, loadVideoInfo]);
+  }, [enableAdaptiveStreaming, videoId, token, loadVideoInfo]);
 
   useEffect(() => {
-    if (!enableAdaptiveStreaming || !token) {
+    if (!enableAdaptiveStreaming) {
       setCurrentStreamUrl(uri);
       setIsLoading(true);
       setHasLoaded(false);
       setHasError(false);
       setErrorMessage('');
     }
-  }, [uri, enableAdaptiveStreaming, token]);
+  }, [uri, enableAdaptiveStreaming]);
 
   const getRecommendedQuality = useCallback((): string => {
     const type = connectionType.toLowerCase();
