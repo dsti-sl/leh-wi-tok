@@ -18,7 +18,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: false,
     infoPlist: {
-      NSPhotoLibraryUsageDescription: 'Le Wi Tok access ',
+      NSPhotoLibraryUsageDescription:
+        'Leh Wi Tok needs access to your photo library so you can select and upload a profile picture. The photo you choose will be displayed on your account profile.',
     },
     bundleIdentifier: 'com.dsti.lehwitok',
   },
