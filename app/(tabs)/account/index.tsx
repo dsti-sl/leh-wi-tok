@@ -28,6 +28,7 @@ const Account = () => {
   const {
     userInfo,
     isLoggingOut,
+    isDeletingAccount,
     confirmLogout,
     confirmAccountDeletion,
     fetchUserInfo,
@@ -336,13 +337,25 @@ const Account = () => {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          disabled={true}
-          style={styles.itemRow}
+          disabled={isGuest || isDeletingAccount}
+          style={[
+            styles.itemRow,
+            (isGuest || isDeletingAccount) && styles.itemRowDisabled,
+          ]}
           onPress={confirmAccountDeletion}
         >
           <Feather name="trash-2" size={24} color="#dc2626" />
-          <Text style={[styles.itemText, { color: '#dc2626' }]}>
-            Delete your account
+          <Text
+            style={[
+              styles.itemText,
+              { color: isGuest || isDeletingAccount ? '#f87171' : '#dc2626' },
+            ]}
+          >
+            {isGuest
+              ? 'Delete account unavailable in guest mode'
+              : isDeletingAccount
+                ? 'Deleting account...'
+                : 'Delete your account'}
           </Text>
         </TouchableOpacity>
       </View>
