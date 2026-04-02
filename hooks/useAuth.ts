@@ -6,8 +6,8 @@ import {
   getBaseUrl,
   getGuestMode,
   getStoredUserId,
-  normalizePhoneNumber,
   setToken,
+  validateSierraLeonePhoneNumber,
 } from '@/utils';
 
 const useAuth = () => {
@@ -21,20 +21,24 @@ const useAuth = () => {
     const compact = trimmed.replace(/\s+/g, '');
     const withoutPlus = compact.replace(/^\+/, '');
     const isPhone = /^\d+$/.test(withoutPlus);
-    const normalizedPhone = isPhone ? normalizePhoneNumber(withoutPlus) : '';
+    const phoneValidation = isPhone
+      ? validateSierraLeonePhoneNumber(withoutPlus)
+      : null;
     return {
       isPhone,
       isEmail: /\S+@\S+\.\S+/.test(trimmed),
-      normalizedUser: isPhone ? normalizedPhone : trimmed,
+      phoneValidation,
+      normalizedUser:
+        isPhone && phoneValidation?.isValid ? phoneValidation.normalized : '',
     };
   };
 
   const validateUser = (): string => {
     if (!user.trim()) return 'Phone, email, or handle is required';
-    const { isPhone, isEmail, normalizedUser } = normalizeUserInput(user);
+    const { isPhone, isEmail, phoneValidation } = normalizeUserInput(user);
     if (isPhone) {
-      if (normalizedUser.length < 11 || normalizedUser.length > 12) {
-        return 'Phone number must be between 9 and 10 digits (e.g., 076XXXXXX).';
+      if (!phoneValidation?.isValid) {
+        return phoneValidation?.error || 'Invalid phone number.';
       }
     } else if (user.includes('@') && !isEmail) {
       return 'Invalid email format';
