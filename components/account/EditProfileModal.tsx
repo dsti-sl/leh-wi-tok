@@ -14,12 +14,14 @@ import {
 
 import { Feather } from '@expo/vector-icons';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import CModal from '@/components/common/CModal';
 import { Colors } from '@/constants/Colors';
-import type { AccountUserInfo } from '@/hooks/useAccount';
-import { getBaseUrl } from '@/utils';
+import {
+  type AccountUserInfo,
+  hydrateCurrentAccountProfile,
+  normalizeEditablePhoneNumber,
+} from '@/lib/accountProfile';
+import { getBaseUrl, getToken } from '@/utils';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -27,8 +29,6 @@ interface EditProfileModalProps {
   userInfo: AccountUserInfo | null;
   onSaved?: () => void;
 }
-
-const DEFAULT_USER_ID = '7097e840-ee12-44a0-b3fd-2fe95c4ed617';
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({
   open,
@@ -38,20 +38,17 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [handle, setHandle] = useState('');
-  const [age, setAge] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [address, setAddress] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
   const initialValues = useMemo(
     () => ({
+      address: userInfo?.address ?? '',
       name: userInfo?.name ?? '',
       handle: userInfo?.handle ?? '',
-      age:
-        typeof userInfo?.age === 'number'
-          ? String(userInfo?.age)
-          : typeof userInfo?.age === 'string'
-            ? userInfo?.age
-            : '',
+      phoneNumber: userInfo?.phoneNumber ?? '',
     }),
     [userInfo],
   );
@@ -60,59 +57,142 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     if (!open) return;
     setName(initialValues.name);
     setHandle(initialValues.handle);
-    setAge(initialValues.age);
+    setPhoneNumber(initialValues.phoneNumber);
+    setAddress(initialValues.address);
   }, [open, initialValues]);
+
+  const buildHeaders = async () => {
+    const token = await getToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Token ${token}` } : {}),
+    };
+  };
 
   const submitUpdate = async () => {
     const trimmedName = name.trim();
     const trimmedHandle = handle.trim();
+    const trimmedAddress = address.trim();
+    const normalizedPhone = normalizeEditablePhoneNumber(phoneNumber);
 
     if (!trimmedName || !trimmedHandle) {
       Alert.alert('Missing info', 'Name and handle are required.');
       return;
     }
 
-    const parsedAge = age ? Number(age) : null;
-    if (age && Number.isNaN(parsedAge)) {
-      Alert.alert('Invalid age', 'Age must be a number.');
+    if (
+      phoneNumber.trim() &&
+      (normalizedPhone.length < 11 || normalizedPhone.length > 12)
+    ) {
+      Alert.alert(
+        'Invalid phone number',
+        'Enter a valid Sierra Leone phone number.',
+      );
       return;
     }
 
     setIsSaving(true);
     try {
-      const id = userInfo?.id ?? DEFAULT_USER_ID;
-      const payload = {
-        name: trimmedName,
-        handle: trimmedHandle,
-        age: parsedAge ?? null,
-      };
+      if (!userInfo?.id) {
+        throw new Error('User profile is unavailable.');
+      }
 
-      const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user?id=${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
+      const headers = await buildHeaders();
+
+      const response = await fetch(
+        `${EXPO_PUBLIC_BASE_URL}/user?id=${userInfo.id}`,
+        {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({
+            name: trimmedName,
+            handle: trimmedHandle,
+          }),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || 'Failed to update profile.');
       }
 
-      const stored = await AsyncStorage.getItem('user');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const updated = {
-          ...parsed,
-          name: trimmedName,
-          handle: trimmedHandle,
-          age: parsedAge ?? parsed.age,
-        };
-        await AsyncStorage.setItem('user', JSON.stringify(updated));
+      const phoneChanged = normalizedPhone !== (userInfo.phoneNumber ?? '');
+      if (phoneChanged) {
+        if (normalizedPhone) {
+          const phoneResponse = await fetch(
+            `${EXPO_PUBLIC_BASE_URL}/phone${
+              userInfo.phoneId ? `?id=${userInfo.phoneId}` : ''
+            }`,
+            {
+              method: userInfo.phoneId ? 'PATCH' : 'POST',
+              headers,
+              body: JSON.stringify({
+                number: normalizedPhone,
+                ...(userInfo.phoneId ? { verified: false } : {}),
+              }),
+            },
+          );
+
+          if (!phoneResponse.ok) {
+            const errorText = await phoneResponse.text();
+            throw new Error(errorText || 'Failed to update phone number.');
+          }
+        } else if (userInfo.phoneId) {
+          const phoneDeleteResponse = await fetch(
+            `${EXPO_PUBLIC_BASE_URL}/phone?id=${userInfo.phoneId}`,
+            {
+              method: 'DELETE',
+              headers,
+            },
+          );
+
+          if (!phoneDeleteResponse.ok) {
+            const errorText = await phoneDeleteResponse.text();
+            throw new Error(errorText || 'Failed to remove phone number.');
+          }
+        }
       }
 
-      onSaved?.();
+      const addressChanged = trimmedAddress !== (userInfo.address ?? '');
+      if (addressChanged) {
+        if (trimmedAddress) {
+          const addressResponse = await fetch(
+            `${EXPO_PUBLIC_BASE_URL}/address${
+              userInfo.addressId ? `?id=${userInfo.addressId}` : ''
+            }`,
+            {
+              method: userInfo.addressId ? 'PATCH' : 'POST',
+              headers,
+              body: JSON.stringify({
+                address: trimmedAddress,
+                ...(userInfo.addressId ? { verified: false } : {}),
+              }),
+            },
+          );
+
+          if (!addressResponse.ok) {
+            const errorText = await addressResponse.text();
+            throw new Error(errorText || 'Failed to update address.');
+          }
+        } else if (userInfo.addressId) {
+          const addressDeleteResponse = await fetch(
+            `${EXPO_PUBLIC_BASE_URL}/address?id=${userInfo.addressId}`,
+            {
+              method: 'DELETE',
+              headers,
+            },
+          );
+
+          if (!addressDeleteResponse.ok) {
+            const errorText = await addressDeleteResponse.text();
+            throw new Error(errorText || 'Failed to remove address.');
+          }
+        }
+      }
+
+      const token = await getToken();
+      await hydrateCurrentAccountProfile(EXPO_PUBLIC_BASE_URL, token);
+      await onSaved?.();
       setOpen(false);
       Alert.alert('Profile updated', 'Your profile changes have been saved.');
     } catch (error) {
@@ -184,13 +264,24 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </View>
 
         <View style={styles.inputRow}>
-          <Feather name="hash" size={18} color={Colors.primary} />
+          <Feather name="phone" size={18} color={Colors.primary} />
           <TextInput
             style={styles.input}
-            placeholder="Age"
-            value={age}
-            onChangeText={setAge}
-            keyboardType="number-pad"
+            placeholder="Phone number"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        <View style={styles.inputRow}>
+          <Feather name="map-pin" size={18} color={Colors.primary} />
+          <TextInput
+            style={styles.input}
+            placeholder="Address"
+            value={address}
+            onChangeText={setAddress}
+            multiline
           />
         </View>
 
