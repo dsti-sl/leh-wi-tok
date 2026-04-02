@@ -6,20 +6,13 @@ import { useRouter } from 'expo-router';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import {
+  type AccountUserInfo,
+  fetchCurrentAccountProfile,
+  storeAccountProfile,
+} from '@/lib/accountProfile';
 import { clearGuestMode, getBaseUrl, getToken } from '@/utils';
 import { clearAllLessonPositions } from '@/utils/lessonProgress';
-export interface AccountUserInfo {
-  id: string;
-  name: string;
-  handle: string;
-  pictureId: string | null;
-  createdAt: string;
-  student: boolean;
-  teacher: boolean;
-  superuser: boolean;
-  superviewer: boolean;
-  [key: string]: string | boolean | null | undefined;
-}
 
 export interface UseAccountReturn {
   userInfo: AccountUserInfo | null;
@@ -40,11 +33,34 @@ const useAccount = (): UseAccountReturn => {
   const BASE_URL = getBaseUrl();
 
   const fetchUserInfo = useCallback(async () => {
-    const user = await AsyncStorage.getItem('user');
-    if (user) {
-      setUserInfo(JSON.parse(user));
+    const token = await getToken();
+    const storedUser = await AsyncStorage.getItem('user');
+    const parsedUser = storedUser
+      ? (JSON.parse(storedUser) as AccountUserInfo)
+      : null;
+
+    if (!token) {
+      if (parsedUser) {
+        setUserInfo(parsedUser);
+      } else {
+        setUserInfo(null);
+      }
+      return;
     }
-  }, []);
+
+    try {
+      const freshUser = await fetchCurrentAccountProfile(BASE_URL, token);
+      setUserInfo(freshUser);
+      await storeAccountProfile(freshUser);
+    } catch (error) {
+      if (!parsedUser) {
+        setUserInfo(null);
+      } else {
+        setUserInfo(parsedUser);
+      }
+      console.warn('Unable to refresh account details:', error);
+    }
+  }, [BASE_URL]);
 
   useEffect(() => {
     fetchUserInfo();
