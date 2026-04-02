@@ -23,7 +23,8 @@ import CModal from '@/components/common/CModal';
 import Select from '@/components/common/Select';
 import { Colors } from '@/constants/Colors';
 import useLocationGrades from '@/hooks/useLocationGrades';
-import { getBaseUrl } from '@/utils';
+import { getAuthorizedHeaders, uploadProfileImage } from '@/lib/accountProfile';
+import { getBaseUrl, getToken } from '@/utils';
 
 const ProfileDetailsScreen = () => {
   const { grades, locations, isLoading, error } = useLocationGrades();
@@ -42,12 +43,28 @@ const ProfileDetailsScreen = () => {
   const { userId, name } = useLocalSearchParams();
 
   const EXPO_PUBLIC_BASE_URL = getBaseUrl();
+  const effectiveUserId =
+    typeof user?.id === 'string'
+      ? user.id
+      : typeof userId === 'string'
+        ? userId
+        : '';
+  const effectiveName =
+    typeof user?.name === 'string'
+      ? user.name
+      : typeof name === 'string'
+        ? name
+        : '';
 
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/me`);
+        const token = await getToken();
+        const headers = token ? { Authorization: `Token ${token}` } : {};
+        const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/me`, {
+          headers,
+        });
         const data = await response.json();
 
         if (response.ok) {
@@ -118,7 +135,8 @@ const ProfileDetailsScreen = () => {
 
   const handleSaveAndContinue = async () => {
     if (
-      !name ||
+      !effectiveName ||
+      !effectiveUserId ||
       (!selectedGrade && user?.student) ||
       !age ||
       !selectedLocation
@@ -132,22 +150,21 @@ const ProfileDetailsScreen = () => {
     setIsSaving(true);
 
     try {
-      const profileImageData = {
-        contentType: 'image/jpeg',
-        userId,
-        path: profileImage,
-        name: `${name}_profile-pic.jpg`,
-        size: 1024000,
-      };
-
-      const uploadResponse = await uploadProfileImage(profileImageData);
-      if (!uploadResponse?.data?.[0]?.id) {
+      const token = await getToken();
+      const fileId = profileImage
+        ? await uploadProfileImage(EXPO_PUBLIC_BASE_URL, token, {
+            fileName: `${effectiveName}_profile-pic.jpg`,
+            mimeType: 'image/jpeg',
+            uri: profileImage,
+          })
+        : null;
+      if (profileImage && !fileId) {
         throw new Error('Profile image upload failed.');
       }
 
       const profileDetails = {
-        handle: name,
-        pictureId: uploadResponse.data[0].id,
+        handle: effectiveName,
+        ...(fileId ? { pictureId: fileId } : {}),
         tags: user?.student ? [gradeID] : [],
         age: parseInt(age),
         locationId,
@@ -168,29 +185,26 @@ const ProfileDetailsScreen = () => {
     }
   };
 
-  // API Helper Functions
-  const uploadProfileImage = async (profileImageData: unknown) => {
-    const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/file`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(profileImageData),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to upload profile image.');
-    }
-    return response.json();
-  };
-
   const updateUserProfile = async (profileInfo: unknown) => {
-    const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user?id=${userId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(profileInfo),
-    });
+    const token = await getToken();
+    const response = await fetch(
+      `${EXPO_PUBLIC_BASE_URL}/user?id=${effectiveUserId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthorizedHeaders(token),
+        },
+        body: JSON.stringify(profileInfo),
+      },
+    );
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update profile details.');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData?.errors?.[0]?.detail ||
+          errorData?.message ||
+          'Failed to update profile details.',
+      );
     }
     return response.json();
   };
@@ -232,7 +246,7 @@ const ProfileDetailsScreen = () => {
               style={styles.input}
               placeholder="Username"
               placeholderTextColor={'#ccc'}
-              value={typeof name === 'string' ? name : ''}
+              value={effectiveName}
               disableFullscreenUI={true}
               autoCapitalize="none"
               showSoftInputOnFocus={false} // Prevents keyboard from showing
