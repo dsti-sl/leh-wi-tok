@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { router } from 'expo-router';
 
+import { hydrateCurrentAccountProfile } from '@/lib/accountProfile';
 import {
   getBaseUrl,
   getGuestMode,
@@ -121,6 +122,7 @@ const useAuth = () => {
       const token = data?.data?.[0]?.token || data?.token;
       if (response.ok && token) {
         await setToken(token);
+        await hydrateCurrentAccountProfile(EXPO_PUBLIC_BASE_URL, token);
         router.replace('/home');
         return;
       }
