@@ -18,6 +18,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
+import { hydrateCurrentAccountProfile } from '@/lib/accountProfile';
 import { getBaseUrl, setToken } from '@/utils';
 
 const OtpScreen = () => {
@@ -78,6 +79,7 @@ const OtpScreen = () => {
       if (response.ok) {
         const token = data.data[0]?.token;
         await setToken(token);
+        await hydrateCurrentAccountProfile(BASE_URL, token);
 
         // Sync translations after successful authentication
         try {

@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 
 import { router } from 'expo-router';
 
-import { getBaseUrl, normalizePhoneNumber, setToken } from '@/utils';
+import { getBaseUrl, setToken, validateSierraLeonePhoneNumber } from '@/utils';
 
 const useSignup = () => {
   const [fullName, setFullName] = useState('');
@@ -21,6 +21,9 @@ const useSignup = () => {
     if (!phoneNumber) return 'Phone number is required';
     if (!/^\d+$/.test(phoneNumber))
       return 'Phone number can only contain digits';
+    const phoneValidation = validateSierraLeonePhoneNumber(phoneNumber);
+    if (!phoneValidation.isValid)
+      return phoneValidation.error || 'Invalid phone number';
     if (email && !/^\S+@\S+\.\S+$/.test(email)) return 'Invalid email format';
     return '';
   };
@@ -38,15 +41,8 @@ const useSignup = () => {
         return;
       }
 
-      const normalizedPhone = normalizePhoneNumber(phoneNumber);
-
-      if (normalizedPhone.length < 11 || normalizedPhone.length > 12) {
-        setError(
-          'Phone number must be between 9 and 10 digits (e.g., 0761112222).',
-        );
-        setIsLoading(false);
-        return;
-      }
+      const { normalized: normalizedPhone } =
+        validateSierraLeonePhoneNumber(phoneNumber);
 
       const userData = {
         name: fullName,

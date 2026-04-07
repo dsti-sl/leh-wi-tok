@@ -15,7 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
-import { getBaseUrl } from '@/utils';
+import { getBaseUrl, getToken } from '@/utils';
 
 const welcomeScreen = () => {
   const router = useRouter();
@@ -28,7 +28,11 @@ const welcomeScreen = () => {
     const fetchUserDetails = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/me`);
+        const token = await getToken();
+        const headers = token ? { Authorization: `Token ${token}` } : {};
+        const response = await fetch(`${EXPO_PUBLIC_BASE_URL}/user/me`, {
+          headers,
+        });
         const data = await response.json();
         if (response.ok) {
           setUser(data.data[0]);

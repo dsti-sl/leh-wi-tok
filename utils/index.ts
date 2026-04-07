@@ -75,6 +75,11 @@ export type CompletedLessonData = {
 };
 
 export const getStoredUserId = async (): Promise<string | null> => {
+  const token = await AsyncStorage.getItem('token');
+  if (!token) {
+    return null;
+  }
+
   const user = await AsyncStorage.getItem('user');
   return user ? JSON.parse(user).id : null;
 };
@@ -164,6 +169,95 @@ export function getBaseUrl(): string {
   return url;
 }
 
+export const SIERRA_LEONE_PHONE_PREFIXES = [
+  '088',
+  '099',
+  '090',
+  '077',
+  '073',
+  '072',
+  '080',
+  '078',
+  '079',
+  '033',
+  '034',
+  '031',
+  '076',
+  '075',
+  '074',
+  '030',
+] as const;
+
+const SIERRA_LEONE_PHONE_PREFIX_SET = new Set<string>(
+  SIERRA_LEONE_PHONE_PREFIXES,
+);
+const SIERRA_LEONE_LOCAL_PHONE_LENGTH = 9;
+const SIERRA_LEONE_COUNTRY_CODE = '232';
+
+function toSierraLeoneLocalPhoneNumber(phoneNumber: string): string | null {
+  const digitsOnly = phoneNumber.replace(/\D+/g, '');
+
+  if (!digitsOnly) {
+    return null;
+  }
+
+  if (
+    digitsOnly.length === SIERRA_LEONE_LOCAL_PHONE_LENGTH &&
+    digitsOnly.startsWith('0')
+  ) {
+    return digitsOnly;
+  }
+
+  if (
+    digitsOnly.length ===
+      SIERRA_LEONE_COUNTRY_CODE.length + SIERRA_LEONE_LOCAL_PHONE_LENGTH - 1 &&
+    digitsOnly.startsWith(SIERRA_LEONE_COUNTRY_CODE)
+  ) {
+    return `0${digitsOnly.slice(SIERRA_LEONE_COUNTRY_CODE.length)}`;
+  }
+
+  if (digitsOnly.length === SIERRA_LEONE_LOCAL_PHONE_LENGTH - 1) {
+    return `0${digitsOnly}`;
+  }
+
+  return null;
+}
+
+export function validateSierraLeonePhoneNumber(phoneNumber: string): {
+  isValid: boolean;
+  normalized: string;
+  localNumber: string;
+  error?: string;
+} {
+  const localNumber = toSierraLeoneLocalPhoneNumber(phoneNumber);
+
+  if (!localNumber) {
+    return {
+      isValid: false,
+      normalized: '',
+      localNumber: '',
+      error:
+        'Phone number must be 8 digits, 9 digits with a leading 0, or 11 digits with country code 232.',
+    };
+  }
+
+  const prefix = localNumber.slice(0, 3);
+  if (!SIERRA_LEONE_PHONE_PREFIX_SET.has(prefix)) {
+    return {
+      isValid: false,
+      normalized: '',
+      localNumber,
+      error: `Phone number prefix must be one of: ${SIERRA_LEONE_PHONE_PREFIXES.join(', ')}.`,
+    };
+  }
+
+  return {
+    isValid: true,
+    normalized: `${SIERRA_LEONE_COUNTRY_CODE}${localNumber.slice(1)}`,
+    localNumber,
+  };
+}
+
 /**
  * Normalizes Sierra Leone phone numbers to international format (232XXXXXXXXX)
  * Handles various input formats: 0XXX, 232XXXXXXX, +232XXXXXXX
@@ -171,12 +265,18 @@ export function getBaseUrl(): string {
  * @returns Normalized phone number starting with 232
  */
 export function normalizePhoneNumber(phoneNumber: string): string {
+  const validation = validateSierraLeonePhoneNumber(phoneNumber);
+
+  if (validation.isValid) {
+    return validation.normalized;
+  }
+
   let normalized = phoneNumber.replace(/\s+/g, '').replace(/^\+/, '');
 
   if (normalized.startsWith('0')) {
-    normalized = '232' + normalized.substring(1);
-  } else if (!normalized.startsWith('232')) {
-    normalized = '232' + normalized;
+    normalized = `${SIERRA_LEONE_COUNTRY_CODE}${normalized.substring(1)}`;
+  } else if (!normalized.startsWith(SIERRA_LEONE_COUNTRY_CODE)) {
+    normalized = `${SIERRA_LEONE_COUNTRY_CODE}${normalized}`;
   }
 
   return normalized;
