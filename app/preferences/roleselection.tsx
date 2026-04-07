@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
-import { getBaseUrl } from '@/utils';
+import { getBaseUrl, getToken } from '@/utils';
 
 const roles = [
   { id: 'student', label: 'Student' },
@@ -44,14 +44,17 @@ const RoleSelection = () => {
       },
       {} as Record<string, boolean>,
     );
+    const token = await getToken();
+    const resolvedUserId = typeof userId === 'string' ? userId : '';
 
     try {
       const response = await fetch(
-        `${EXPO_PUBLIC_BASE_URL}/user?id=${userId}`,
+        `${EXPO_PUBLIC_BASE_URL}/user?id=${resolvedUserId}`,
         {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Token ${token}` } : {}),
           },
           body: JSON.stringify(rolesUpdate),
         },

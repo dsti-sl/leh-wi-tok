@@ -75,6 +75,11 @@ export type CompletedLessonData = {
 };
 
 export const getStoredUserId = async (): Promise<string | null> => {
+  const token = await AsyncStorage.getItem('token');
+  if (!token) {
+    return null;
+  }
+
   const user = await AsyncStorage.getItem('user');
   return user ? JSON.parse(user).id : null;
 };

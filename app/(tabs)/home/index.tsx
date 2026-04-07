@@ -11,15 +11,14 @@ import {
 
 import { router } from 'expo-router';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { HomeBanner } from '@/components/home/HomeBanner';
 import HomeItem from '@/components/home/HomeItem';
 import InitialVideoCard from '@/components/home/InitialVideoCard';
 import { Colors } from '@/constants/Colors';
 import useLastLesson from '@/hooks/useLastLesson';
+import { hydrateCurrentAccountProfile } from '@/lib/accountProfile';
 import { Record } from '@/lib/types';
-import { getBaseUrl, getGuestMode } from '@/utils';
+import { getBaseUrl, getGuestMode, getToken } from '@/utils';
 
 import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png';
 import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
@@ -54,11 +53,15 @@ const HomeScreen = () => {
     const fetchUserDetails = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${BASE_URL}/user/me`);
+        const token = await getToken();
+        const headers = token ? { Authorization: `Token ${token}` } : {};
+        const response = await fetch(`${BASE_URL}/user/me`, {
+          headers,
+        });
         const data = await response.json();
         if (response.ok) {
           setUser(data.data[0]);
-          await AsyncStorage.setItem('user', JSON.stringify(data.data[0]));
+          await hydrateCurrentAccountProfile(BASE_URL, token);
         }
         setIsLoading(false);
       } catch (error) {
