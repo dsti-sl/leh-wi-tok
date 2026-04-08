@@ -129,6 +129,14 @@ const TOK_WEBVIEW_BOOTSTRAP = `
         editable.focus();
       }
 
+      if (typeof editable.scrollIntoView === 'function') {
+        editable.scrollIntoView({ block: 'center', inline: 'nearest' });
+      }
+
+      if (document.activeElement !== editable && typeof editable.click === 'function') {
+        editable.click();
+      }
+
       if ('value' in editable) {
         setNativeValue(editable, value);
         editable.dispatchEvent(new Event('input', { bubbles: true }));
@@ -136,6 +144,28 @@ const TOK_WEBVIEW_BOOTSTRAP = `
       } else if (editable.isContentEditable) {
         editable.textContent = value;
         editable.dispatchEvent(new InputEvent('input', { bubbles: true, data: value }));
+      }
+
+      return true;
+    }
+
+    function focusEditable() {
+      const editable = findEditableInRoot(document);
+
+      if (!editable) return false;
+
+      try {
+        editable.focus({ preventScroll: true });
+      } catch (error) {
+        editable.focus();
+      }
+
+      if (typeof editable.scrollIntoView === 'function') {
+        editable.scrollIntoView({ block: 'center', inline: 'nearest' });
+      }
+
+      if (document.activeElement !== editable && typeof editable.click === 'function') {
+        editable.click();
       }
 
       return true;
@@ -298,6 +328,7 @@ const TOK_WEBVIEW_BOOTSTRAP = `
     window.__TOK_BRIDGE__ = {
       hideChrome: hideChrome,
       pauseIllustration: pauseIllustration,
+      focusEditable: focusEditable,
       submitTranslation: submitTranslation,
       syncText: syncText,
     };
@@ -330,12 +361,23 @@ const buildSyncScript = (text: string): string => {
   `;
 };
 
-const PAUSE_ILLUSTRATION_SCRIPT = `
+const REFRESH_AFTER_VIEWER_CLOSE_SCRIPT = `
   (function() {
-    if (window.__TOK_BRIDGE__) {
-      window.__TOK_BRIDGE__.pauseIllustration();
+    if (!window.__TOK_BRIDGE__) {
+      return;
+    }
+
+    window.__TOK_BRIDGE__.pauseIllustration();
+    window.__TOK_BRIDGE__.hideChrome();
+
+    function focusInput() {
+      window.__TOK_BRIDGE__.focusEditable();
       window.__TOK_BRIDGE__.hideChrome();
     }
+
+    focusInput();
+    window.setTimeout(focusInput, 80);
+    window.setTimeout(focusInput, 180);
   })();
   true;
 `;
@@ -361,7 +403,7 @@ export default function TokScreen() {
     }
 
     if (payload?.type === 'viewer_closed') {
-      webViewRef.current?.injectJavaScript(PAUSE_ILLUSTRATION_SCRIPT);
+      webViewRef.current?.injectJavaScript(REFRESH_AFTER_VIEWER_CLOSE_SCRIPT);
     }
   };
 
