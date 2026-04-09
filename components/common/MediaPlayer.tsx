@@ -10,8 +10,9 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import * as FileSystem from 'expo-file-system';
 import { router } from 'expo-router';
+
+import * as FileSystem from 'expo-file-system/legacy';
 
 import { FontSizes, FontWeights } from '@/constants/Typography';
 import { getBaseUrl, getGuestMode, getToken } from '@/utils';
