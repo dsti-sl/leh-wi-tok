@@ -24,6 +24,12 @@ import lessonFillSeconday from '../../../assets/images/lesson-fill-secondary.png
 import volunteerOutlineFillSecondary from '../../../assets/images/puzzle-piece-outline-fill-secondary.png';
 import usersOutlineFillSeconday from '../../../assets/images/users-outline-fill-secondary.png';
 
+const buildFallbackUser = (isGuest: boolean): Record =>
+  ({
+    name: isGuest ? 'Guest' : 'Learner',
+    location: { id: isGuest ? 'guest' : 'pending' },
+  }) as Record;
+
 const HomeScreen = () => {
   const { lastLesson, loading: lessonLoading } = useLastLesson();
   const [user, setUser] = useState<Record | null>(null);
@@ -73,13 +79,7 @@ const HomeScreen = () => {
     fetchUserDetails();
   }, [BASE_URL, isGuest]);
 
-  useEffect(() => {
-    if (!user || isGuest) return;
-
-    if (!user.location) {
-      router.replace('/preferences');
-    }
-  }, [user, isGuest]);
+  const displayUser = user ?? buildFallbackUser(isGuest);
 
   const handleVideoPlay = (
     lessonId: string,
@@ -98,62 +98,55 @@ const HomeScreen = () => {
     }
   };
 
-  if (isLoading && !user) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
+  return (
+    <View style={styles.container}>
+      <HomeBanner user={displayUser} />
+      {isLoading && !user && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading your profile...</Text>
+        </View>
+      )}
+      {lastLesson && !lessonLoading && (
+        <InitialVideoCard
+          videoData={lastLesson}
+          onPlayPress={handleVideoPlay}
+        />
+      )}
+      {lessonLoading && (
+        <View style={styles.videoLoadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading your content...</Text>
+        </View>
+      )}
 
-  if ((user?.location as Record)?.id) {
-    return (
-      <View style={styles.container}>
-        {user && <HomeBanner user={user} />}
-        {lastLesson && !lessonLoading && (
-          <InitialVideoCard
-            videoData={lastLesson}
-            onPlayPress={handleVideoPlay}
+      <ScrollView style={styles.itemsContainer}>
+        <View>
+          <HomeItem
+            title="Lessons"
+            description="Get Started with our progress driven Le Wi Tok ASL lessons."
+            image={lessonFillSeconday as ImageSourcePropType}
+            bgColor="#0f4c5c"
+            routeName={`/(tabs)/lessons`}
           />
-        )}
-        {lessonLoading && (
-          <View style={styles.videoLoadingContainer}>
-            <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading your content...</Text>
-          </View>
-        )}
-
-        <ScrollView style={styles.itemsContainer}>
-          <View>
-            <HomeItem
-              title="Lessons"
-              description="Get Started with our progress driven Le Wi Tok ASL lessons."
-              image={lessonFillSeconday as ImageSourcePropType}
-              bgColor="#0f4c5c"
-              routeName={`/(tabs)/lessons`}
-            />
-            <HomeItem
-              title="Common Words & Dictionary"
-              description="Find frequently used words for instant communications "
-              image={usersOutlineFillSeconday as ImageSourcePropType}
-              bgColor="#1e1e1e"
-              routeName="/(tabs)/dictionary"
-            />
-            <HomeItem
-              title="Kam Mak Wi Tok"
-              description="With instant translation of text to sign language"
-              image={volunteerOutlineFillSecondary as ImageSourcePropType}
-              bgColor="#1f1f39"
-              routeName="/(tabs)/tok"
-            />
-          </View>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  return null;
+          <HomeItem
+            title="Common Words & Dictionary"
+            description="Find frequently used words for instant communications "
+            image={usersOutlineFillSeconday as ImageSourcePropType}
+            bgColor="#1e1e1e"
+            routeName="/(tabs)/dictionary"
+          />
+          <HomeItem
+            title="Kam Mak Wi Tok"
+            description="With instant translation of text to sign language"
+            image={volunteerOutlineFillSecondary as ImageSourcePropType}
+            bgColor="#1f1f39"
+            routeName="/(tabs)/tok"
+          />
+        </View>
+      </ScrollView>
+    </View>
+  );
 };
 
 export default HomeScreen;
