@@ -646,7 +646,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             ref={playerRef}
             player={player}
             style={styles.video}
-            allowsFullscreen
+            fullscreenOptions={{ enable: true }}
             allowsPictureInPicture
             contentFit="cover"
             accessibilityLabel={accessibilityLabel}

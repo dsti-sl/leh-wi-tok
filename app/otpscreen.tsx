@@ -83,9 +83,8 @@ const OtpScreen = () => {
 
         // Sync translations after successful authentication
         try {
-          const { checkAndUpdateTranslations } = await import(
-            '@/data/dictionary'
-          );
+          const { checkAndUpdateTranslations } =
+            await import('@/data/dictionary');
           await checkAndUpdateTranslations();
           console.log('Translations synced after login');
         } catch (syncError) {
@@ -184,7 +183,9 @@ const OtpScreen = () => {
         {otp.map((value, index) => (
           <TextInput
             key={index}
-            ref={ref => (inputRefs.current[index] = ref)}
+            ref={ref => {
+              inputRefs.current[index] = ref;
+            }}
             style={styles.otpInput}
             keyboardType="numeric"
             maxLength={1}
