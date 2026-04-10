@@ -23,3 +23,8 @@ export const setGuestMode = async (isGuest: boolean): Promise<void> => {
 export const clearGuestMode = async (): Promise<void> => {
   await AsyncStorage.removeItem(GUEST_MODE_KEY);
 };
+
+export const enterGuestMode = async (): Promise<void> => {
+  await AsyncStorage.multiRemove(['token', 'user']);
+  await setGuestMode(true);
+};

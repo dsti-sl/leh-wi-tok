@@ -13,8 +13,8 @@ const GuestStatusBanner = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>
-        You currently logged in as guest to view all feature please create
-        account.
+        You are browsing as a guest. Beginner lessons dictio words are
+        available. To gain full learning experience, create an account.
       </Text>
     </View>
   );

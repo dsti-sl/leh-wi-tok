@@ -129,8 +129,11 @@ const useLastLesson = () => {
   const fetchLastLessonDetails = async (lessonData: any) => {
     try {
       const baseUrl = getBaseUrl();
+      const nuggetAndClause = isGuest
+        ? `(lesson.id.eq.${lessonData.lessonId},tags.title.eq.Beginner)`
+        : `(lesson.id.eq.${lessonData.lessonId})`;
       const response = await fetch(
-        `${baseUrl}/nugget?and=(lesson.id.eq.${lessonData.lessonId})&select=lesson(id,title,description,illustration,tags),gesture(id,name,path,contentType)`,
+        `${baseUrl}/nugget?and=${nuggetAndClause}&select=lesson(id,title,description,illustration,tags),gesture(id,name,path,contentType)`,
       );
 
       if (!response.ok) {
