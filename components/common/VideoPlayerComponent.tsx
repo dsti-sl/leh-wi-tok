@@ -1,7 +1,16 @@
-import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
+import React, {
+  memo,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
 
 import {
   ActivityIndicator,
+  Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -499,6 +508,25 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     enableAdaptiveStreaming,
   ]);
 
+  const sortedQualities = useMemo(() => {
+    if (!videoInfo?.qualities) return [];
+
+    return [...videoInfo.qualities].sort((a, b) => {
+      const qualityOrder = ['1080p', '720p', '480p', '360p', '240p', '144p'];
+      const aIndex = qualityOrder.indexOf(a.quality);
+      const bIndex = qualityOrder.indexOf(b.quality);
+
+      if (aIndex !== -1 && bIndex !== -1) {
+        return aIndex - bIndex;
+      }
+
+      if (aIndex !== -1) return -1;
+      if (bIndex !== -1) return 1;
+
+      return b.quality.localeCompare(a.quality);
+    });
+  }, [videoInfo?.qualities]);
+
   const handleVideoTap = useCallback(() => {
     if (enableAdaptiveStreaming) {
       setShowControls(true);
@@ -681,9 +709,36 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             >
               <Text style={styles.qualityButtonText}>{getQualityLabel()}</Text>
             </TouchableOpacity>
+          </View>
+        )}
 
-            {showQualityMenu && (
-              <View style={styles.qualityMenuInline}>
+      {enableAdaptiveStreaming &&
+        !usingFallback &&
+        videoInfo?.hasQualities &&
+        showQualityMenu && (
+          <Modal
+            visible={showQualityMenu}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowQualityMenu(false)}
+          >
+            <View style={styles.qualityModalRoot}>
+              <Pressable
+                style={styles.qualityBackdrop}
+                onPress={() => setShowQualityMenu(false)}
+              />
+              <View style={styles.qualitySheet}>
+                <View style={styles.qualitySheetHeader}>
+                  <Text style={styles.qualitySheetTitle}>Video Quality</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowQualityMenu(false)}
+                    style={styles.qualityCloseButton}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="close" size={20} color="#FFF" />
+                  </TouchableOpacity>
+                </View>
+
                 <ScrollView
                   style={styles.qualityMenuScroll}
                   contentContainerStyle={styles.qualityMenuContent}
@@ -702,47 +757,24 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
                     </Text>
                   </TouchableOpacity>
 
-                  {videoInfo.qualities
-                    ?.sort((a, b) => {
-                      const qualityOrder = [
-                        '1080p',
-                        '720p',
-                        '480p',
-                        '360p',
-                        '240p',
-                        '144p',
-                      ];
-                      const aIndex = qualityOrder.indexOf(a.quality);
-                      const bIndex = qualityOrder.indexOf(b.quality);
-
-                      if (aIndex !== -1 && bIndex !== -1) {
-                        return aIndex - bIndex;
-                      }
-
-                      if (aIndex !== -1) return -1;
-                      if (bIndex !== -1) return 1;
-
-                      return b.quality.localeCompare(a.quality);
-                    })
-                    ?.map(q => (
-                      <TouchableOpacity
-                        key={q.quality}
-                        style={[
-                          styles.qualityOption,
-                          selectedQuality === q.quality &&
-                            styles.selectedOption,
-                        ]}
-                        onPress={() => handleQualityChange(q.quality)}
-                      >
-                        <Text style={styles.qualityText}>
-                          {QUALITY_LABELS[q.quality] || q.quality}
-                        </Text>
-                        <Text style={styles.qualitySubtext}>
-                          {q.resolution} • {q.bitrate} •{' '}
-                          {(q.size / 1024 / 1024).toFixed(1)}MB
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                  {sortedQualities.map((q: VideoQuality) => (
+                    <TouchableOpacity
+                      key={q.quality}
+                      style={[
+                        styles.qualityOption,
+                        selectedQuality === q.quality && styles.selectedOption,
+                      ]}
+                      onPress={() => handleQualityChange(q.quality)}
+                    >
+                      <Text style={styles.qualityText}>
+                        {QUALITY_LABELS[q.quality] || q.quality}
+                      </Text>
+                      <Text style={styles.qualitySubtext}>
+                        {q.resolution} • {q.bitrate} •{' '}
+                        {(q.size / 1024 / 1024).toFixed(1)}MB
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
 
                   <TouchableOpacity
                     style={[
@@ -759,8 +791,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
                   </TouchableOpacity>
                 </ScrollView>
               </View>
-            )}
-          </View>
+            </View>
+          </Modal>
         )}
     </View>
   );
@@ -857,16 +889,23 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   qualityButtonText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
-  qualityMenuInline: {
-    marginTop: 8,
-    backgroundColor: 'rgba(0,0,0,0.95)',
-    borderRadius: 10,
-    minWidth: 220,
-    maxHeight: 400,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    zIndex: 40,
+  qualityModalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  qualityBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  qualitySheet: {
+    backgroundColor: 'rgba(0,0,0,0.97)',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    maxHeight: '70%',
+    paddingTop: 8,
+    paddingBottom: 20,
+    borderTopWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -877,11 +916,31 @@ const styles = StyleSheet.create({
       android: { elevation: 8 },
     }),
   },
+  qualitySheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  qualitySheetTitle: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  qualityCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
   qualityMenuScroll: {
-    maxHeight: 360,
+    maxHeight: '100%',
   },
   qualityMenuContent: {
-    paddingBottom: 4,
+    paddingBottom: 8,
   },
   qualityOption: {
     paddingHorizontal: 16,
