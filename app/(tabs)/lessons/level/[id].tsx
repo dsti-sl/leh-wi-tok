@@ -104,6 +104,7 @@ const Level: React.FC = () => {
     useState<FlattenedLesson | null>(null);
   const [showFullList, setShowFullList] = useState<boolean>(false);
   const [resumeTime, setResumeTime] = useState<number>(0);
+  const [playbackSessionKey, setPlaybackSessionKey] = useState(0);
   const sectionListRef = useRef<SectionList<LessonTag, LessonSection>>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
@@ -117,6 +118,7 @@ const Level: React.FC = () => {
   );
   const pendingResumeTimeRef = useRef<number | null>(null);
   const hasRestoredLastLessonRef = useRef(false);
+  const restartFromBeginningRef = useRef(false);
 
   const clearAutoPlayTimers = useCallback(() => {
     if (countdownIntervalRef.current) {
@@ -283,6 +285,13 @@ const Level: React.FC = () => {
         setResumeTime(0);
         const storageKey = `${GESTURE_POSITION_PREFIX}${selectedGestureId}`;
         resumeKeyRef.current = storageKey;
+
+        if (restartFromBeginningRef.current) {
+          restartFromBeginningRef.current = false;
+          pendingResumeTimeRef.current = 0;
+          return;
+        }
+
         const storedValue = await AsyncStorage.getItem(storageKey);
         const parsed = storedValue ? parseFloat(storedValue) : 0;
         const safeValue = Number.isFinite(parsed) ? parsed : 0;
@@ -430,6 +439,10 @@ const Level: React.FC = () => {
   const handleLessonSelect = useCallback(
     (lesson: LessonTag) => {
       clearAutoPlayTimers();
+      restartFromBeginningRef.current = true;
+      setResumeTime(0);
+      pendingResumeTimeRef.current = 0;
+      setPlaybackSessionKey(prev => prev + 1);
       setShowFullList(false);
       setCurrentLessonId(lesson.id);
       setNextLessonEntry(null);
@@ -725,7 +738,7 @@ const Level: React.FC = () => {
         <View style={styles.playerWrapper}>
           {selectedGestureId && lessonGestureInfo?.contentType ? (
             <MediaPlayer
-              key={selectedGestureId}
+              key={`${selectedGestureId}-${playbackSessionKey}`}
               gestureInfo={lessonGestureInfo}
               gestureId={selectedGestureId}
               autoPlay={true}
