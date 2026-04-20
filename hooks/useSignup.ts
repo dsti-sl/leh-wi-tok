@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 
 import { router } from 'expo-router';
 
-import { getBaseUrl, setToken, validateSierraLeonePhoneNumber } from '@/utils';
+import { getBaseUrl, setToken, validatePhoneNumber } from '@/utils';
 
 const useSignup = () => {
   const [fullName, setFullName] = useState('');
@@ -19,9 +19,7 @@ const useSignup = () => {
     if (!/^[A-Za-z\s]+$/.test(fullName))
       return 'Full name can only contain letters and spaces';
     if (!phoneNumber) return 'Phone number is required';
-    if (!/^\d+$/.test(phoneNumber))
-      return 'Phone number can only contain digits';
-    const phoneValidation = validateSierraLeonePhoneNumber(phoneNumber);
+    const phoneValidation = validatePhoneNumber(phoneNumber);
     if (!phoneValidation.isValid)
       return phoneValidation.error || 'Invalid phone number';
     if (email && !/^\S+@\S+\.\S+$/.test(email)) return 'Invalid email format';
@@ -41,8 +39,7 @@ const useSignup = () => {
         return;
       }
 
-      const { normalized: normalizedPhone } =
-        validateSierraLeonePhoneNumber(phoneNumber);
+      const { normalized: normalizedPhone } = validatePhoneNumber(phoneNumber);
 
       const userData = {
         name: fullName,

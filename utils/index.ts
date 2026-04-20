@@ -169,30 +169,28 @@ export function getBaseUrl(): string {
   return url;
 }
 
-export const SIERRA_LEONE_PHONE_PREFIXES = [
-  '088',
-  '099',
-  '090',
-  '077',
-  '073',
-  '072',
-  '080',
-  '078',
-  '079',
-  '033',
-  '034',
-  '031',
-  '076',
-  '075',
-  '074',
-  '030',
-] as const;
-
-const SIERRA_LEONE_PHONE_PREFIX_SET = new Set<string>(
-  SIERRA_LEONE_PHONE_PREFIXES,
-);
 const SIERRA_LEONE_LOCAL_PHONE_LENGTH = 9;
 const SIERRA_LEONE_COUNTRY_CODE = '232';
+const SIERRA_LEONE_MIN_PREFIX = 11;
+const SIERRA_LEONE_MAX_PREFIX = 99;
+const MIN_INTERNATIONAL_PHONE_LENGTH = 7;
+const MAX_INTERNATIONAL_PHONE_LENGTH = 15;
+
+function isValidSierraLeoneLocalNumber(localNumber: string): boolean {
+  if (
+    localNumber.length !== SIERRA_LEONE_LOCAL_PHONE_LENGTH ||
+    !localNumber.startsWith('0')
+  ) {
+    return false;
+  }
+
+  const prefixValue = Number.parseInt(localNumber.slice(1, 3), 10);
+  return (
+    Number.isInteger(prefixValue) &&
+    prefixValue >= SIERRA_LEONE_MIN_PREFIX &&
+    prefixValue <= SIERRA_LEONE_MAX_PREFIX
+  );
+}
 
 function toSierraLeoneLocalPhoneNumber(phoneNumber: string): string | null {
   const digitsOnly = phoneNumber.replace(/\D+/g, '');
@@ -216,10 +214,6 @@ function toSierraLeoneLocalPhoneNumber(phoneNumber: string): string | null {
     return `0${digitsOnly.slice(SIERRA_LEONE_COUNTRY_CODE.length)}`;
   }
 
-  if (digitsOnly.length === SIERRA_LEONE_LOCAL_PHONE_LENGTH - 1) {
-    return `0${digitsOnly}`;
-  }
-
   return null;
 }
 
@@ -229,57 +223,72 @@ export function validateSierraLeonePhoneNumber(phoneNumber: string): {
   localNumber: string;
   error?: string;
 } {
+  const digitsOnly = phoneNumber.trim().replace(/\D+/g, '');
   const localNumber = toSierraLeoneLocalPhoneNumber(phoneNumber);
 
-  if (!localNumber) {
+  if (localNumber) {
+    if (!isValidSierraLeoneLocalNumber(localNumber)) {
+      return {
+        isValid: false,
+        normalized: '',
+        localNumber,
+        error: 'Sierra Leone numbers must be 9 digits locally starting with 0.',
+      };
+    }
+
+    return {
+      isValid: true,
+      normalized: `${SIERRA_LEONE_COUNTRY_CODE}${localNumber.slice(1)}`,
+      localNumber,
+    };
+  }
+
+  if (!digitsOnly) {
+    return {
+      isValid: false,
+      normalized: '',
+      localNumber: '',
+      error: 'Phone number is required.',
+    };
+  }
+
+  if (
+    digitsOnly.length < MIN_INTERNATIONAL_PHONE_LENGTH ||
+    digitsOnly.length > MAX_INTERNATIONAL_PHONE_LENGTH
+  ) {
     return {
       isValid: false,
       normalized: '',
       localNumber: '',
       error:
-        'Phone number must be 8 digits, 9 digits with a leading 0, or 11 digits with country code 232.',
-    };
-  }
-
-  const prefix = localNumber.slice(0, 3);
-  if (!SIERRA_LEONE_PHONE_PREFIX_SET.has(prefix)) {
-    return {
-      isValid: false,
-      normalized: '',
-      localNumber,
-      error: `Phone number prefix must be one of: ${SIERRA_LEONE_PHONE_PREFIXES.join(', ')}.`,
+        'Enter a valid international phone number. Sierra Leone numbers must be 9 digits locally starting with 0, or start with +232/232.',
     };
   }
 
   return {
     isValid: true,
-    normalized: `${SIERRA_LEONE_COUNTRY_CODE}${localNumber.slice(1)}`,
-    localNumber,
+    normalized: digitsOnly,
+    localNumber: '',
   };
 }
 
+export const validatePhoneNumber = validateSierraLeonePhoneNumber;
+
 /**
- * Normalizes Sierra Leone phone numbers to international format (232XXXXXXXXX)
- * Handles various input formats: 0XXX, 232XXXXXXX, +232XXXXXXX
+ * Normalizes phone numbers to a compact digit-only format.
+ * Sierra Leone numbers are normalized to 232XXXXXXXX.
+ * Other numbers are normalized by stripping formatting and any leading plus.
  * @param phoneNumber - The input phone number
- * @returns Normalized phone number starting with 232
+ * @returns Normalized phone number
  */
 export function normalizePhoneNumber(phoneNumber: string): string {
-  const validation = validateSierraLeonePhoneNumber(phoneNumber);
+  const validation = validatePhoneNumber(phoneNumber);
 
   if (validation.isValid) {
     return validation.normalized;
   }
 
-  let normalized = phoneNumber.replace(/\s+/g, '').replace(/^\+/, '');
-
-  if (normalized.startsWith('0')) {
-    normalized = `${SIERRA_LEONE_COUNTRY_CODE}${normalized.substring(1)}`;
-  } else if (!normalized.startsWith(SIERRA_LEONE_COUNTRY_CODE)) {
-    normalized = `${SIERRA_LEONE_COUNTRY_CODE}${normalized}`;
-  }
-
-  return normalized;
+  return phoneNumber.replace(/\D+/g, '');
 }
 
 export * from './guest';

@@ -21,7 +21,7 @@ import {
   hydrateCurrentAccountProfile,
   normalizeEditablePhoneNumber,
 } from '@/lib/accountProfile';
-import { getBaseUrl, getToken } from '@/utils';
+import { getBaseUrl, getToken, validatePhoneNumber } from '@/utils';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -73,21 +73,29 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     const trimmedName = name.trim();
     const trimmedHandle = handle.trim();
     const trimmedAddress = address.trim();
-    const normalizedPhone = normalizeEditablePhoneNumber(phoneNumber);
+    let normalizedPhone = normalizeEditablePhoneNumber(phoneNumber);
 
     if (!trimmedName || !trimmedHandle) {
       Alert.alert('Missing info', 'Name and handle are required.');
       return;
     }
 
-    if (
-      phoneNumber.trim() &&
-      (normalizedPhone.length < 11 || normalizedPhone.length > 12)
-    ) {
-      Alert.alert(
-        'Invalid phone number',
-        'Enter a valid Sierra Leone phone number.',
-      );
+    if (phoneNumber.trim()) {
+      const phoneValidation = validatePhoneNumber(phoneNumber);
+      if (!phoneValidation.isValid) {
+        Alert.alert(
+          'Invalid phone number',
+          phoneValidation.error ||
+            'Enter a valid phone number. Sierra Leone numbers must be 9 digits locally starting with 0, or start with +232/232.',
+        );
+        return;
+      }
+
+      normalizedPhone = phoneValidation.normalized;
+    }
+
+    if (phoneNumber.trim() && !normalizedPhone) {
+      Alert.alert('Invalid phone number', 'Enter a valid phone number.');
       return;
     }
 
