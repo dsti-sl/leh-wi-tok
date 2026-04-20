@@ -4,7 +4,6 @@ import { StyleSheet, View } from 'react-native';
 
 import { Tabs, useSegments } from 'expo-router';
 
-import GuestStatusBanner from '@/components/common/GuestStatusBanner';
 import TabBarIcon from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 
@@ -24,7 +23,6 @@ export default function Layout() {
 
   return (
     <View style={styles.root}>
-      <GuestStatusBanner />
       <View style={styles.tabsWrapper}>
         <Tabs
           screenOptions={{

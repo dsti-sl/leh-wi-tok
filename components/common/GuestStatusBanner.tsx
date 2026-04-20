@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Platform, StatusBar, StyleSheet, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import useGuestMode from '@/hooks/useGuestMode';
@@ -10,14 +10,7 @@ const GuestStatusBanner = () => {
 
   if (!isGuest) return null;
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>
-        You are browsing as a guest. Beginner lessons dictio words are
-        available. To gain full learning experience, create an account.
-      </Text>
-    </View>
-  );
+  return <View style={styles.container}></View>;
 };
 
 const styles = StyleSheet.create({
