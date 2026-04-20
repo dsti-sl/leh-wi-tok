@@ -8,7 +8,7 @@ import {
   getGuestMode,
   getStoredUserId,
   setToken,
-  validateSierraLeonePhoneNumber,
+  validatePhoneNumber,
 } from '@/utils';
 
 const useAuth = () => {
@@ -19,18 +19,18 @@ const useAuth = () => {
 
   const normalizeUserInput = (value: string) => {
     const trimmed = value.trim();
-    const compact = trimmed.replace(/\s+/g, '');
+    const compact = trimmed.replace(/[\s()-]+/g, '');
     const withoutPlus = compact.replace(/^\+/, '');
     const isPhone = /^\d+$/.test(withoutPlus);
-    const phoneValidation = isPhone
-      ? validateSierraLeonePhoneNumber(withoutPlus)
-      : null;
+    const phoneValidation = isPhone ? validatePhoneNumber(compact) : null;
     return {
       isPhone,
       isEmail: /\S+@\S+\.\S+/.test(trimmed),
       phoneValidation,
       normalizedUser:
-        isPhone && phoneValidation?.isValid ? phoneValidation.normalized : '',
+        isPhone && phoneValidation?.isValid
+          ? phoneValidation.normalized
+          : trimmed,
     };
   };
 

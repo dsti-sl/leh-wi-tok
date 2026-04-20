@@ -97,6 +97,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   const [serverProgress, setServerProgress] = useState<LessonData[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState<boolean | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreData, setHasMoreData] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,30 +110,38 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
   const BASE_URL = getBaseUrl();
 
+  const refreshAuthState = useCallback(async () => {
+    try {
+      const [storedToken, guestValue] = await Promise.all([
+        getToken(),
+        getGuestMode(),
+      ]);
+      setToken(storedToken);
+      setIsGuest(guestValue);
+    } catch (error) {
+      console.error('Error fetching token:', error);
+      setToken(null);
+      setIsGuest(false);
+    } finally {
+      setIsAuthReady(true);
+    }
+  }, []);
+
   // Fetch and set token on mount
   useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        const [storedToken, guestValue] = await Promise.all([
-          getToken(),
-          getGuestMode(),
-        ]);
-        setToken(storedToken);
-        setIsGuest(guestValue);
-      } catch (error) {
-        console.error('Error fetching token:', error);
-        setIsGuest(false);
-      }
-    };
-    fetchToken();
-  }, []);
+    refreshAuthState();
+  }, [refreshAuthState]);
 
   // Fetch lesson progress
   const fetchLessonProgress = useCallback(
-    async (userId: string): Promise<LessonData[] | null> => {
+    async (
+      userId: string,
+      authHeaders?: Record<string, string>,
+    ): Promise<LessonData[] | null> => {
       try {
         const response = await fetch(
           `${BASE_URL}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`,
+          authHeaders ? { headers: authHeaders } : undefined,
         );
 
         if (!response.ok) {
@@ -157,7 +166,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   // Main fetch function for lessons
   const fetchLessons = useCallback(
     async (page: number = 1, append: boolean = false) => {
-      if (isGuest === null) return;
+      if (!isAuthReady || isGuest === null) return;
 
       const effectiveAssessment = isGuest ? 'Beginner' : assessment;
 
@@ -169,10 +178,29 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
       setError(null);
 
       try {
+        if (!isGuest && !token) {
+          setError('Please sign in to access this content.');
+          if (!append) {
+            setLessonNuggets([]);
+            setCompletedLessons(new Set());
+            setLessonCount(0);
+          }
+          return;
+        }
+
         const userId = isGuest ? GUEST_USER_ID : await getStoredUserId();
         if (!userId) {
-          throw new Error('No user ID found');
+          setError('Please sign in to access this content.');
+          if (!append) {
+            setLessonNuggets([]);
+            setCompletedLessons(new Set());
+            setLessonCount(0);
+          }
+          return;
         }
+
+        const authHeaders =
+          !isGuest && token ? { Authorization: `Token ${token}` } : undefined;
 
         // guest user nugget list requires nugget tag Beginner
         const nuggetFilter = isGuest
@@ -182,6 +210,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
         // Fetch lesson nuggets with pagination
         const response = await fetch(
           `${BASE_URL}/nugget?and=(${nuggetFilter})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active,detail,illustration&page=${page}&page-size=${PAGE_SIZE}&order=priority`,
+          authHeaders ? { headers: authHeaders } : undefined,
         );
 
         if (!response.ok) {
@@ -231,7 +260,8 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
           let progressData: LessonData[] = [];
 
           if (!isGuest) {
-            progressData = (await fetchLessonProgress(userId)) ?? [];
+            progressData =
+              (await fetchLessonProgress(userId, authHeaders)) ?? [];
           }
 
           if (!progressData.length) {
@@ -275,7 +305,9 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error occurred';
         setError(errorMessage);
-        console.error('Error in fetchLessons:', error);
+        if (!errorMessage.toLowerCase().includes('sign in')) {
+          console.error('Error in fetchLessons:', error);
+        }
 
         if (!append) {
           setLessonNuggets([]);
@@ -287,7 +319,7 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
         setIsLoadingMore(false);
       }
     },
-    [BASE_URL, assessment, fetchLessonProgress, isGuest],
+    [BASE_URL, assessment, fetchLessonProgress, isAuthReady, isGuest, token],
   );
 
   // Load more data for pagination
@@ -334,11 +366,16 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
           const levelExists = !!matchedProgress;
 
           try {
+            const authToken = await getToken();
+            const headers = {
+              'Content-Type': 'application/json',
+              ...(authToken ? { Authorization: `Token ${authToken}` } : {}),
+            };
             await fetch(
               `${BASE_URL}/lesson-progress${levelExists ? `/?id=${matchedProgress.id}` : ''}`,
               {
                 method: levelExists ? 'PATCH' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({
                   userId,
                   level: assessment,
@@ -501,9 +538,9 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
 
   // Initial data fetch
   useEffect(() => {
-    if (isGuest === null) return;
+    if (!isAuthReady || isGuest === null) return;
     fetchLessons(1, false);
-  }, [fetchLessons, isGuest]);
+  }, [fetchLessons, isAuthReady, isGuest]);
 
   return {
     lessonNuggets,
