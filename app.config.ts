@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'leh-wi-tok',
   slug: 'leh-wi-tok',
   scheme: 'leh-wi-tok',
-  version: '1.0.2',
+  version: '1.0.5',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   userInterfaceStyle: 'automatic',
