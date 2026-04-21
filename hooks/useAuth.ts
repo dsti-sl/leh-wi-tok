@@ -51,15 +51,19 @@ const useAuth = () => {
 
   useEffect(() => {
     const checkUser = async () => {
-      const user = await getStoredUserId();
-      if (user) {
-        router.replace('/home');
-        return;
-      }
+      try {
+        const user = await getStoredUserId();
+        if (user) {
+          router.replace('/home');
+          return;
+        }
 
-      const isGuest = await getGuestMode();
-      if (isGuest) {
-        router.replace('/home');
+        const isGuest = await getGuestMode();
+        if (isGuest) {
+          router.replace('/home');
+        }
+      } catch (error) {
+        console.warn('Failed to restore authenticated session.', error);
       }
     };
     checkUser();

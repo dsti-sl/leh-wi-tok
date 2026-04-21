@@ -32,6 +32,7 @@ import {
   OverallData,
   SUMMARY_LEVELS,
   storeCompletedLessons,
+  getStoredUserId,
 } from '@/utils';
 
 const LAST_LESSON_RESUME_KEY = 'lesson_last_resume';
@@ -41,11 +42,6 @@ type LastLessonResume = {
   lessonId: string;
   lessonTitle: string;
   updatedAt: string;
-};
-
-const getStoredUserId = async (): Promise<string | null> => {
-  const user = await AsyncStorage.getItem('user');
-  return user ? JSON.parse(user).id : null;
 };
 
 const fetchLessonProgress = async (baseUrl: string, userId: string) => {

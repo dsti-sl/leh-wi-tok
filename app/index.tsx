@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
@@ -36,18 +37,26 @@ const Onboarding = () => {
   }
   useEffect(() => {
     const checkOnboardingStatus = async () => {
-      const hasOnboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
-      if (hasOnboarded) {
-        const [userId, isGuest] = await Promise.all([
-          getStoredUserId(),
-          getGuestMode(),
-        ]);
-        if (userId || isGuest) {
-          router.replace('/home');
+      try {
+        const hasOnboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
+        if (hasOnboarded) {
+          const [userId, isGuest] = await Promise.all([
+            getStoredUserId(),
+            getGuestMode(),
+          ]);
+          if (userId || isGuest) {
+            router.replace('/home');
+          } else {
+            router.replace('/signin');
+          }
         } else {
-          router.replace('/signin');
+          setIsLoading(false);
         }
-      } else {
+      } catch (error) {
+        console.warn(
+          'Failed to resolve onboarding state, showing onboarding screen.',
+          error,
+        );
         setIsLoading(false);
       }
     };
@@ -124,8 +133,14 @@ const Onboarding = () => {
       <Text style={styles.description}>{item.description}</Text>
     </View>
   );
+
   if (isLoading) {
-    return null;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
   }
 
   return (
@@ -168,6 +183,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFF',
     justifyContent: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.primary,
   },
   slide: {
     width,

@@ -27,7 +27,6 @@ import {
   formatHandle,
   formatPhoneForDisplay,
   getAuthorizedHeaders,
-  getProfileVerificationStatus,
   getUserTypeLabel,
   hydrateCurrentAccountProfile,
   uploadProfileImage,
@@ -68,7 +67,6 @@ const Account = () => {
   );
   const initial = displayName?.[0]?.toUpperCase?.() ?? 'A';
   const userTypeLabel = getUserTypeLabel(userInfo);
-  const isVerified = getProfileVerificationStatus(userInfo);
 
   useEffect(() => {
     const loadToken = async () => {
@@ -327,16 +325,6 @@ const Account = () => {
           <View style={styles.profileCopy}>
             <View style={styles.nameRow}>
               <Text style={styles.profileName}>{displayName}</Text>
-              {isVerified && (
-                <View style={styles.verifiedBadge}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={14}
-                    color={Colors.secondary}
-                  />
-                  <Text style={styles.verifiedText}>Verified</Text>
-                </View>
-              )}
             </View>
             <Text style={styles.profileMeta}>{displayHandle}</Text>
             <Text style={styles.profileMeta}>{userTypeLabel}</Text>
@@ -377,11 +365,7 @@ const Account = () => {
               isGuest ? 'Guest mode' : (userInfo?.address ?? 'Not added yet')
             }
           />
-          <DetailRow
-            icon="shield"
-            label="Verification"
-            value={isVerified ? 'Verified account' : 'Not verified'}
-          />
+
           <DetailRow
             icon="calendar"
             label="Joined"

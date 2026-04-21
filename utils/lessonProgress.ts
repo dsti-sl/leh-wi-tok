@@ -61,12 +61,14 @@ export const markLessonCompleted = async (lessonId: string) => {
 export const clearAllLessonPositions = async () => {
   try {
     const keys = await AsyncStorage.getAllKeys();
-    const lessonPositionKeys = keys.filter(
+    const lessonTrackingKeys = keys.filter(
       key =>
-        key.startsWith(LESSON_POSITION_PREFIX) &&
-        key.endsWith(LESSON_POSITION_SUFFIX),
+        (key.startsWith('lesson_') && key.endsWith('_position')) ||
+        key.startsWith('lesson_gesture_position_') ||
+        key.startsWith('lesson_last_selected_') ||
+        key === 'completedLesson',
     );
-    await AsyncStorage.multiRemove(lessonPositionKeys);
+    await AsyncStorage.multiRemove(lessonTrackingKeys);
   } catch (error) {
     console.error('Error clearing lesson positions:', error);
   }
