@@ -1,5 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const LESSON_POSITION_PREFIX = 'lesson_';
+const LESSON_POSITION_SUFFIX = '_position';
+const LAST_LESSON_SELECTED_PREFIX = 'lesson_last_selected_';
+const LAST_LESSON_RESUME_KEY = 'lesson_last_resume';
+
 interface CompletedLesson {
   lessonId: string;
   totalCompleted: number;
@@ -57,10 +62,31 @@ export const clearAllLessonPositions = async () => {
   try {
     const keys = await AsyncStorage.getAllKeys();
     const lessonPositionKeys = keys.filter(
-      key => key.startsWith('lesson_') && key.endsWith('_position'),
+      key =>
+        key.startsWith(LESSON_POSITION_PREFIX) &&
+        key.endsWith(LESSON_POSITION_SUFFIX),
     );
     await AsyncStorage.multiRemove(lessonPositionKeys);
   } catch (error) {
     console.error('Error clearing lesson positions:', error);
+  }
+};
+
+export const clearLessonSessionState = async () => {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const lessonSessionKeys = keys.filter(
+      key =>
+        (key.startsWith(LESSON_POSITION_PREFIX) &&
+          key.endsWith(LESSON_POSITION_SUFFIX)) ||
+        key.startsWith(LAST_LESSON_SELECTED_PREFIX) ||
+        key === LAST_LESSON_RESUME_KEY,
+    );
+
+    if (lessonSessionKeys.length > 0) {
+      await AsyncStorage.multiRemove(lessonSessionKeys);
+    }
+  } catch (error) {
+    console.error('Error clearing lesson session state:', error);
   }
 };
