@@ -16,12 +16,14 @@ import { Colors } from '@/constants/Colors';
 
 const TOK_WEBVIEW_BOOTSTRAP = `
   (function() {
-    function postToNative(type) {
+    function postToNative(type, payload) {
       if (
         window.ReactNativeWebView &&
         typeof window.ReactNativeWebView.postMessage === 'function'
       ) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: type }));
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify(Object.assign({ type: type }, payload || {}))
+        );
       }
     }
 
@@ -42,12 +44,58 @@ const TOK_WEBVIEW_BOOTSTRAP = `
       }
     }
 
+    function ensureBridgeStyleTag() {
+      var existing = document.getElementById('tok-bridge-style');
+      if (existing) return existing;
+
+      var style = document.createElement('style');
+      style.id = 'tok-bridge-style';
+      style.textContent = [
+        'html, body { background: #ffffff !important; }',
+        'video { background: #ffffff !important; }',
+        'video::-webkit-media-controls-fullscreen-button { display: none !important; }',
+        '[aria-label*="fullscreen" i], [aria-label*="full screen" i],',
+        '[title*="fullscreen" i], [title*="full screen" i],',
+        '[icon*="fullscreen" i] {',
+        '  pointer-events: none !important;',
+        '}',
+      ].join('\\n');
+
+      document.head.appendChild(style);
+      return style;
+    }
+
+    function rootHasCloseControl(root) {
+      if (!root || !root.querySelectorAll) return false;
+
+      const controls = root.querySelectorAll(
+        'button, [role="button"], ion-button, ion-icon'
+      );
+
+      for (const control of controls) {
+        if (isCloseControl(control)) {
+          return true;
+        }
+      }
+
+      const allElements = root.querySelectorAll('*');
+      for (const element of allElements) {
+        if (element.shadowRoot && rootHasCloseControl(element.shadowRoot)) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
     function hideShadowElements(root) {
       if (!root || !root.querySelectorAll) return;
 
-      const elementsToHide = root.querySelectorAll(
-        'ion-header ion-toolbar:first-of-type, ion-tab-bar, .buttons-first-slot, .buttons-last-slot'
-      );
+      const hideHeaderToolbar = !rootHasCloseControl(root);
+      const selectors = hideHeaderToolbar
+        ? 'ion-header ion-toolbar:first-of-type, ion-tab-bar'
+        : 'ion-tab-bar';
+      const elementsToHide = root.querySelectorAll(selectors);
 
       elementsToHide.forEach(function(element) {
         element.style.display = 'none';
@@ -64,6 +112,81 @@ const TOK_WEBVIEW_BOOTSTRAP = `
     function hideChrome() {
       hideViewerSelector();
       hideShadowElements(document);
+    }
+
+    function disableMediaFullscreen(root) {
+      var videos = findElementsInRoot(root, 'video');
+
+      videos.forEach(function(video) {
+        if (!video || !video.setAttribute) return;
+
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true');
+        video.setAttribute('disablepictureinpicture', 'true');
+        video.setAttribute(
+          'controlslist',
+          'nofullscreen nodownload noremoteplayback'
+        );
+
+        video.disablePictureInPicture = true;
+        video.playsInline = true;
+      });
+    }
+
+    function applyWhiteBackground(root) {
+      if (!root) return;
+
+      const targets = [];
+
+      if (root === document) {
+        if (document.documentElement) targets.push(document.documentElement);
+        if (document.body) targets.push(document.body);
+      } else if (root.host) {
+        targets.push(root.host);
+      }
+
+      targets.forEach(function(element) {
+        element.style.background = '#ffffff';
+        element.style.backgroundColor = '#ffffff';
+      });
+
+      const allElements = root.querySelectorAll ? root.querySelectorAll('*') : [];
+
+      allElements.forEach(function(element) {
+        if (
+          element.tagName === 'HTML' ||
+          element.tagName === 'BODY' ||
+          element.tagName === 'ION-CONTENT' ||
+          element.tagName === 'MAIN' ||
+          (element.className && String(element.className).toLowerCase().includes('content'))
+        ) {
+          element.style.background = '#ffffff';
+          element.style.backgroundColor = '#ffffff';
+        }
+
+        if (element.shadowRoot) {
+          applyWhiteBackground(element.shadowRoot);
+        }
+      });
+    }
+
+    function keepCloseControlsReachable(root) {
+      const closeControls = findElementsInRoot(
+        root,
+        'button, [role="button"], ion-button, ion-icon'
+      ).filter(isCloseControl);
+
+      closeControls.forEach(function(control) {
+        if (!control || !control.style) return;
+
+        control.style.display = '';
+        control.style.visibility = 'visible';
+        control.style.pointerEvents = 'auto';
+        control.style.zIndex = '2147483647';
+        if (!control.style.position) {
+          control.style.position = 'relative';
+        }
+      });
     }
 
     function findEditableInRoot(root) {
@@ -300,10 +423,131 @@ const TOK_WEBVIEW_BOOTSTRAP = `
       }
     }
 
+    function exitFullscreenEverywhere() {
+      postToNative('fullscreen_change', { active: false });
+      return false;
+    }
+
+    function isFullscreenControl(element) {
+      if (!element) return false;
+
+      var label = getElementLabel(element);
+      var iconName =
+        (element.getAttribute && element.getAttribute('icon')) || '';
+
+      return (
+        label.includes('fullscreen') ||
+        label.includes('full screen') ||
+        label.includes('expand') ||
+        iconName.toLowerCase().includes('fullscreen') ||
+        iconName.toLowerCase().includes('expand')
+      );
+    }
+
+    function hideFullscreenControls(root) {
+      var controls = findElementsInRoot(
+        root,
+        'button, [role="button"], ion-button, ion-icon'
+      ).filter(isFullscreenControl);
+
+      controls.forEach(function(control) {
+        if (!control || !control.style) return;
+
+        control.style.display = 'none';
+        control.style.visibility = 'hidden';
+        control.style.pointerEvents = 'none';
+      });
+    }
+
+    function installFullscreenOverrides(root) {
+      if (!root) return;
+
+      var elementPrototype = root.Element && root.Element.prototype;
+      var documentPrototype = root.Document && root.Document.prototype;
+      var htmlVideoElementPrototype =
+        root.HTMLVideoElement && root.HTMLVideoElement.prototype;
+      if (!elementPrototype || !documentPrototype) return;
+
+      if (!elementPrototype.__tokOriginalRequestFullscreen) {
+        elementPrototype.__tokOriginalRequestFullscreen =
+          elementPrototype.requestFullscreen ||
+          elementPrototype.webkitRequestFullscreen ||
+          elementPrototype.webkitRequestFullScreen ||
+          elementPrototype.mozRequestFullScreen ||
+          elementPrototype.msRequestFullscreen ||
+          null;
+      }
+
+      var overrideRequestFullscreen = function() {
+        postToNative('fullscreen_change', { active: false });
+        return Promise.resolve(false);
+      };
+
+      elementPrototype.requestFullscreen = overrideRequestFullscreen;
+      elementPrototype.webkitRequestFullscreen = overrideRequestFullscreen;
+      elementPrototype.webkitRequestFullScreen = overrideRequestFullscreen;
+      elementPrototype.mozRequestFullScreen = overrideRequestFullscreen;
+      elementPrototype.msRequestFullscreen = overrideRequestFullscreen;
+
+      if (htmlVideoElementPrototype) {
+        htmlVideoElementPrototype.requestFullscreen = overrideRequestFullscreen;
+        htmlVideoElementPrototype.webkitRequestFullscreen =
+          overrideRequestFullscreen;
+        htmlVideoElementPrototype.webkitRequestFullScreen =
+          overrideRequestFullscreen;
+        htmlVideoElementPrototype.mozRequestFullScreen =
+          overrideRequestFullscreen;
+        htmlVideoElementPrototype.msRequestFullscreen =
+          overrideRequestFullscreen;
+        htmlVideoElementPrototype.webkitEnterFullscreen = function() {
+          return false;
+        };
+        htmlVideoElementPrototype.webkitEnterFullScreen = function() {
+          return false;
+        };
+      }
+
+      documentPrototype.exitFullscreen = function() {
+        return Promise.resolve(exitFullscreenEverywhere());
+      };
+      documentPrototype.webkitExitFullscreen = function() {
+        return exitFullscreenEverywhere();
+      };
+      documentPrototype.webkitCancelFullScreen = function() {
+        return exitFullscreenEverywhere();
+      };
+      documentPrototype.mozCancelFullScreen = function() {
+        return exitFullscreenEverywhere();
+      };
+      documentPrototype.msExitFullscreen = function() {
+        return exitFullscreenEverywhere();
+      };
+
+      try {
+        Object.defineProperty(document, 'fullscreenElement', {
+          configurable: true,
+          get: function() {
+            return null;
+          },
+        });
+      } catch (error) {}
+
+      try {
+        Object.defineProperty(document, 'webkitFullscreenElement', {
+          configurable: true,
+          get: function() {
+            return null;
+          },
+        });
+      } catch (error) {}
+    }
+
     function handleViewerClose() {
       window.setTimeout(function() {
+        exitFullscreenEverywhere();
         pauseIllustration();
         hideChrome();
+        applyWhiteBackground(document);
         postToNative('viewer_closed');
       }, 0);
     }
@@ -319,6 +563,13 @@ const TOK_WEBVIEW_BOOTSTRAP = `
 
           if (target && isCloseControl(target)) {
             handleViewerClose();
+            return;
+          }
+
+          if (target && isFullscreenControl(target)) {
+            event.preventDefault();
+            event.stopPropagation();
+            exitFullscreenEverywhere();
           }
         },
         true
@@ -331,13 +582,32 @@ const TOK_WEBVIEW_BOOTSTRAP = `
       focusEditable: focusEditable,
       submitTranslation: submitTranslation,
       syncText: syncText,
+      exitFullscreen: exitFullscreenEverywhere,
+      applyWhiteBackground: function() {
+        ensureBridgeStyleTag();
+        applyWhiteBackground(document);
+        disableMediaFullscreen(document);
+        hideFullscreenControls(document);
+        keepCloseControlsReachable(document);
+      },
     };
 
+    ensureBridgeStyleTag();
+    applyWhiteBackground(document);
+    installFullscreenOverrides(window);
+    disableMediaFullscreen(document);
     hideChrome();
+    hideFullscreenControls(document);
+    keepCloseControlsReachable(document);
     bindViewerCloseHandler();
 
     const observer = new MutationObserver(function() {
+      ensureBridgeStyleTag();
+      applyWhiteBackground(document);
+      disableMediaFullscreen(document);
       hideChrome();
+      hideFullscreenControls(document);
+      keepCloseControlsReachable(document);
     });
 
     observer.observe(document.documentElement, {
@@ -367,7 +637,9 @@ const REFRESH_AFTER_VIEWER_CLOSE_SCRIPT = `
       return;
     }
 
+    window.__TOK_BRIDGE__.exitFullscreen();
     window.__TOK_BRIDGE__.pauseIllustration();
+    window.__TOK_BRIDGE__.applyWhiteBackground();
     window.__TOK_BRIDGE__.hideChrome();
 
     function focusInput() {
@@ -441,17 +713,31 @@ export default function TokScreen() {
         <WebView
           ref={webViewRef}
           style={styles.webView}
+          containerStyle={styles.webView}
           source={{ uri: 'https://sign.mt/' }}
           injectedJavaScriptBeforeContentLoaded={TOK_WEBVIEW_BOOTSTRAP}
           injectedJavaScript={TOK_WEBVIEW_BOOTSTRAP}
           javaScriptEnabled={true}
           domStorageEnabled={true}
+          allowsFullscreenVideo={false}
+          allowsInlineMediaPlayback={true}
           keyboardDisplayRequiresUserAction={false}
           startInLoadingState={true}
           onLoadEnd={() => {
             setIsReady(true);
           }}
           onMessage={handleWebViewMessage}
+          onLoadProgress={() => {
+            webViewRef.current?.injectJavaScript(`
+              (function() {
+                if (window.__TOK_BRIDGE__) {
+                  window.__TOK_BRIDGE__.applyWhiteBackground();
+                  window.__TOK_BRIDGE__.hideChrome();
+                }
+              })();
+              true;
+            `);
+          }}
           setDisplayZoomControls={true}
           scalesPageToFit={true}
           renderLoading={() => (
