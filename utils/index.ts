@@ -139,7 +139,7 @@ export const calculateOverallDataForLevels = (
   return levels.reduce(
     (acc, level) => {
       const lesson = lessons.find(item => item.level === level);
-      const totalLessons = lessonCount[level] ?? lesson?.totalLessons ?? 0;
+      const totalLessons = lesson?.totalLessons ?? lessonCount[level] ?? 0;
       const completed = lesson?.totalCompleted ?? 0;
       const cappedCompleted = Math.min(completed, totalLessons);
 

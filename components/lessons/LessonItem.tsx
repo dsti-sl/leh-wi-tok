@@ -39,6 +39,10 @@ const LessonItem: React.FC<LessonItemProps> = ({
   token,
 }) => {
   const hasContent = parsedDetails.length > 0 || !!illustrationUrl;
+  const subtitle =
+    item.duration && item.duration.trim() !== item.title.trim()
+      ? item.duration
+      : null;
 
   return (
     <View key={item.id}>
@@ -64,9 +68,13 @@ const LessonItem: React.FC<LessonItemProps> = ({
             {item.title}
             {isLocked && ' (Locked)'}
           </Text>
-          <Text style={[styles.lessonDuration, isLocked && { color: '#999' }]}>
-            {item.duration || item.lesson?.title || ''}
-          </Text>
+          {subtitle && (
+            <Text
+              style={[styles.lessonDuration, isLocked && { color: '#999' }]}
+            >
+              {subtitle}
+            </Text>
+          )}
         </View>
         {!isLocked && hasContent && (
           <View style={styles.accordionIcon}>

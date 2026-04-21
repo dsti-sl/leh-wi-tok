@@ -5,21 +5,25 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import CurrentLevelProgressCard from '@/components/lessons/CurrentLevelProgressCard';
 import { LessonsBanner } from '@/components/lessons/LessonsBanner';
 import LessonsCategory from '@/components/lessons/LessonsCategory';
 import { Colors } from '@/constants/Colors';
 import useLessons from '@/hooks/useLessons';
+import { Record } from '@/lib/types';
 import {
   calculateOverallDataForLevels,
   getBaseUrl,
   getStoredCompletedLessons,
-  getStoredUserId,
   getToken,
   LessonCount,
   LessonData,
@@ -28,11 +32,26 @@ import {
   OverallData,
   SUMMARY_LEVELS,
   storeCompletedLessons,
+  getStoredUserId,
 } from '@/utils';
+
+const LAST_LESSON_RESUME_KEY = 'lesson_last_resume';
+
+type LastLessonResume = {
+  assessment: LessonLevel;
+  lessonId: string;
+  lessonTitle: string;
+  updatedAt: string;
+};
 
 const fetchLessonProgress = async (baseUrl: string, userId: string) => {
   const url = `${baseUrl}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`;
-  const response = await fetch(url);
+  const token = await getToken();
+  const response = await fetch(
+    url,
+    token ? { headers: { Authorization: `Token ${token}` } } : undefined,
+  );
+
   if (!response.ok) throw new Error('API error');
   const { data } = await response.json();
   return data as LessonData[] | undefined;
@@ -43,11 +62,17 @@ const fetchLessonCountForLevel = async (
   level: LessonLevel,
   anonymous: boolean,
 ) => {
+  const token = await getToken();
   const filter = anonymous
     ? 'tags.title.eq.Beginner'
     : `lesson.tags.title.eq.${level}`;
   const url = `${baseUrl}/nugget?and=(${filter})&select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active`;
-  const response = await fetch(url);
+  const response = await fetch(
+    url,
+    !anonymous && token
+      ? { headers: { Authorization: `Token ${token}` } }
+      : undefined,
+  );
   if (!response.ok) throw new Error(`Failed to fetch for ${level}`);
   const data = await response.json();
   return data.meta.count as number;
@@ -67,6 +92,8 @@ const IndexScreen: React.FC = () => {
     accumulatedLessons: 0,
     accumulatedCompletedLessons: 0,
   });
+  const [lastLessonResume, setLastLessonResume] =
+    useState<LastLessonResume | null>(null);
 
   const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
@@ -141,18 +168,40 @@ const IndexScreen: React.FC = () => {
     }
   }, []);
 
+  const loadLastLessonResume = useCallback(async () => {
+    try {
+      const stored = await AsyncStorage.getItem(LAST_LESSON_RESUME_KEY);
+      setLastLessonResume(
+        stored ? (JSON.parse(stored) as LastLessonResume) : null,
+      );
+    } catch (error) {
+      console.warn('Failed to load last lesson resume:', error);
+      setLastLessonResume(null);
+    }
+  }, []);
+
   // Use focus effect for per-page load
   useFocusEffect(
     useCallback(() => {
       if (isMountedRef.current) {
         // Only reload when returning to focus (not initial mount)
         loadDataOnFocus();
+        loadLastLessonResume();
       } else {
         isMountedRef.current = true;
         loadDataOnFocus();
+        loadLastLessonResume();
       }
-    }, [loadDataOnFocus]),
+    }, [loadDataOnFocus, loadLastLessonResume]),
   );
+
+  const handleResumeLastLesson = useCallback(() => {
+    if (!lastLessonResume || !progressSummary) return;
+
+    router.push(
+      `/(tabs)/lessons/level/${(progressSummary[lastLessonResume.assessment] as Record).title}?assessment=${lastLessonResume.assessment}`,
+    );
+  }, [lastLessonResume, progressSummary]);
 
   return (
     <ScrollView
@@ -174,6 +223,23 @@ const IndexScreen: React.FC = () => {
         <>
           <LessonsBanner />
           <CurrentLevelProgressCard accumulatedData={overallData} />
+          {lastLessonResume && progressSummary && (
+            <TouchableOpacity
+              style={styles.resumeCard}
+              onPress={handleResumeLastLesson}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.resumeEyebrow}>
+                Continue where you left off
+              </Text>
+              <Text style={styles.resumeTitle} numberOfLines={2}>
+                {lastLessonResume.lessonTitle}
+              </Text>
+              <Text style={styles.resumeMeta}>
+                {lastLessonResume.assessment} lesson
+              </Text>
+            </TouchableOpacity>
+          )}
           {progressSummary && (
             <LessonsCategory
               lessonCount={lessonCount}
@@ -199,5 +265,35 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  resumeCard: {
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+    gap: 6,
+  },
+  resumeEyebrow: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  resumeTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  resumeMeta: {
+    fontSize: 14,
+    color: '#4B5563',
   },
 });

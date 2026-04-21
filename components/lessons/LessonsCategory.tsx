@@ -10,6 +10,7 @@ import useGuestMode from '@/hooks/useGuestMode';
 import { Record } from '@/lib/types';
 import {
   getBaseUrl,
+  getToken,
   getStoredUserId,
   LessonCompletionData,
   LessonLevel,
@@ -22,7 +23,16 @@ import LessonCard from './LessonCard';
 // -- Helper functions outside component (pure, testable) --
 const fetchLessonProgress = async (baseUrl: string, userId: string) => {
   const url = `${baseUrl}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`;
-  const response = await fetch(url);
+  const token = await getToken();
+  const response = await fetch(
+    url,
+    token ? { headers: { Authorization: `Token ${token}` } } : undefined,
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch lesson progress');
+  }
+
   const { data } = await response.json();
   return data as LessonProgress[] | undefined;
 };
@@ -162,7 +172,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
             key={key}
             title={(progressSummary[key] as Record).title as string}
             completed={lessonData[key]?.totalCompleted}
-            totalLesson={lessonCount[key] ?? lessonData[key]?.totalLessons}
+            totalLesson={lessonData[key]?.totalLessons ?? lessonCount[key] ?? 0}
             onPress={() => handleLessonPress(assessment)}
             backgroundColor={color}
           />
@@ -182,7 +192,7 @@ const LessonsCategory: React.FC<LessonsCategoryProps> = ({
             //     .totalLessons
             // }
             completed={lessonData[key]?.totalCompleted}
-            totalLesson={lessonCount[key] ?? lessonData[key]?.totalLessons}
+            totalLesson={lessonData[key]?.totalLessons ?? lessonCount[key] ?? 0}
             onPress={() => handleLessonPress(assessment)}
             backgroundColor={color}
           />
