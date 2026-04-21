@@ -10,6 +10,7 @@ import useGuestMode from '@/hooks/useGuestMode';
 import { Record } from '@/lib/types';
 import {
   getBaseUrl,
+  getStoredUserId,
   LessonCompletionData,
   LessonLevel,
   LessonProgress,
@@ -19,11 +20,6 @@ import {
 import LessonCard from './LessonCard';
 
 // -- Helper functions outside component (pure, testable) --
-const getStoredUserId = async (): Promise<string | null> => {
-  const user = await AsyncStorage.getItem('user');
-  return user ? JSON.parse(user).id : null;
-};
-
 const fetchLessonProgress = async (baseUrl: string, userId: string) => {
   const url = `${baseUrl}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`;
   const response = await fetch(url);

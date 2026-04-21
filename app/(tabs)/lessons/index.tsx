@@ -10,8 +10,6 @@ import {
 
 import { useFocusEffect } from 'expo-router';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import CurrentLevelProgressCard from '@/components/lessons/CurrentLevelProgressCard';
 import { LessonsBanner } from '@/components/lessons/LessonsBanner';
 import LessonsCategory from '@/components/lessons/LessonsCategory';
@@ -21,6 +19,7 @@ import {
   calculateOverallDataForLevels,
   getBaseUrl,
   getStoredCompletedLessons,
+  getStoredUserId,
   getToken,
   LessonCount,
   LessonData,
@@ -30,11 +29,6 @@ import {
   SUMMARY_LEVELS,
   storeCompletedLessons,
 } from '@/utils';
-
-const getStoredUserId = async (): Promise<string | null> => {
-  const user = await AsyncStorage.getItem('user');
-  return user ? JSON.parse(user).id : null;
-};
 
 const fetchLessonProgress = async (baseUrl: string, userId: string) => {
   const url = `${baseUrl}/lesson-progress?and=(user.id.eq.${userId})&select=totalCompleted,user(id,name),level,totalLessons,lessonsCompleted,id,updatedAt,createdAt`;

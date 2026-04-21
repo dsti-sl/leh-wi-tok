@@ -81,7 +81,18 @@ export const getStoredUserId = async (): Promise<string | null> => {
   }
 
   const user = await AsyncStorage.getItem('user');
-  return user ? JSON.parse(user).id : null;
+  if (!user) {
+    return null;
+  }
+
+  try {
+    const parsedUser = JSON.parse(user) as { id?: string };
+    return typeof parsedUser.id === 'string' ? parsedUser.id : null;
+  } catch (error) {
+    console.warn('Invalid stored user payload, clearing local session.', error);
+    await AsyncStorage.multiRemove(['token', 'user']);
+    return null;
+  }
 };
 
 export const getStoredCompletedLessons =
