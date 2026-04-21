@@ -33,7 +33,7 @@ export const LessonInfo = memo(
     lessonCount,
   }: {
     assessment: string;
-    completedLessons: Set<string>;
+    completedLessons: number;
     lessonCount: number;
   }) => (
     <View style={styles.lessonInfo}>
@@ -41,8 +41,7 @@ export const LessonInfo = memo(
         <View>
           <Text style={styles.title}>{assessment}</Text>
           <Text style={styles.subtitle}>
-            {Math.min(completedLessons.size, lessonCount)} of {lessonCount}{' '}
-            Lessons Completed
+            {Math.min(completedLessons, lessonCount)} of {lessonCount} completed
           </Text>
         </View>
       </View>

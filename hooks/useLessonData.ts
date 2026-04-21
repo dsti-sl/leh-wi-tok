@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Alert, Platform, ToastAndroid } from 'react-native';
+import { Alert } from 'react-native';
 
 import {
   getBaseUrl,
@@ -71,6 +71,8 @@ interface UseLessonDataReturn {
   token: string | null;
   currentPage: number;
   error: string | null;
+  levelCompletedCount: number;
+  levelTotalLessons: number;
   fetchLessons: (_page?: number, _append?: boolean) => Promise<void>;
   loadMoreData: () => void;
   markLessonCompleted: (_lessonId: string) => Promise<void>;
@@ -84,6 +86,7 @@ interface UseLessonDataReturn {
   createHandleLessonClick: (
     _callbacks: LessonClickCallbacks,
   ) => (_lesson: LessonTag) => Promise<void>;
+  fetchLessonById: (_lessonId: string) => Promise<LessonTag | null>;
 }
 
 export const useLessonData = (assessment: string): UseLessonDataReturn => {
@@ -101,6 +104,8 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreData, setHasMoreData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [levelCompletedCount, setLevelCompletedCount] = useState(0);
+  const [levelTotalLessons, setLevelTotalLessons] = useState(0);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(),
   );
@@ -161,6 +166,156 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
       }
     },
     [BASE_URL],
+  );
+
+  const buildNuggetSelectQuery = useCallback(
+    () =>
+      'select=lesson(id,title,description,active,tags,title,id,illustration),gesture,priority,id,title,active,detail,illustration',
+    [],
+  );
+
+  const dedupeAndSortLessonNuggets = useCallback((nuggets: LessonTag[]) => {
+    const merged = new Map<string, LessonTag>();
+
+    nuggets.forEach(item => {
+      merged.set(item.id, item);
+    });
+
+    return Array.from(merged.values()).sort((a, b) => a.priority - b.priority);
+  }, []);
+
+  const mergeLessonNuggets = useCallback(
+    (current: LessonTag[], incoming: LessonTag[]) =>
+      dedupeAndSortLessonNuggets([...current, ...incoming]),
+    [dedupeAndSortLessonNuggets],
+  );
+
+  const fetchLessonById = useCallback(
+    async (lessonId: string): Promise<LessonTag | null> => {
+      if (!isAuthReady || isGuest === null) return null;
+
+      const effectiveAssessment = isGuest ? 'Beginner' : assessment;
+      const authHeaders =
+        !isGuest && token ? { Authorization: `Token ${token}` } : undefined;
+      const nuggetFilter = isGuest
+        ? `(id.eq.${lessonId},tags.title.eq.Beginner)`
+        : `(id.eq.${lessonId},lesson.tags.title.eq.${effectiveAssessment})`;
+
+      try {
+        const response = await fetch(
+          `${BASE_URL}/nugget?and=${nuggetFilter}&${buildNuggetSelectQuery()}`,
+          authHeaders ? { headers: authHeaders } : undefined,
+        );
+
+        if (!response.ok) {
+          return null;
+        }
+
+        const payload = await response.json();
+        const fetchedLesson =
+          (payload?.data?.[0] as LessonTag | undefined) ?? null;
+
+        if (!fetchedLesson) {
+          return null;
+        }
+
+        const lessonGroupId = fetchedLesson.lesson?.id;
+        let lessonContext: LessonTag[] = [fetchedLesson];
+
+        if (lessonGroupId) {
+          const contextFilter = isGuest
+            ? `(lesson.id.eq.${lessonGroupId},tags.title.eq.Beginner)`
+            : `(lesson.id.eq.${lessonGroupId},lesson.tags.title.eq.${effectiveAssessment})`;
+
+          const contextResponse = await fetch(
+            `${BASE_URL}/nugget?and=${contextFilter}&${buildNuggetSelectQuery()}&order=priority`,
+            authHeaders ? { headers: authHeaders } : undefined,
+          );
+
+          if (contextResponse.ok) {
+            const contextPayload = await contextResponse.json();
+            const contextLessons = Array.isArray(contextPayload?.data)
+              ? (contextPayload.data as LessonTag[])
+              : [];
+
+            if (contextLessons.length > 0) {
+              lessonContext = contextLessons;
+            }
+          }
+        }
+
+        setLessonNuggets(prev => mergeLessonNuggets(prev, lessonContext));
+
+        return fetchedLesson;
+      } catch (error) {
+        console.warn('Failed to fetch lesson by id:', error);
+        return null;
+      }
+    },
+    [
+      BASE_URL,
+      assessment,
+      buildNuggetSelectQuery,
+      isAuthReady,
+      isGuest,
+      mergeLessonNuggets,
+      token,
+    ],
+  );
+
+  const getCurrentLevelProgress = useCallback(
+    (
+      progressData: LessonData[],
+      level: string,
+      fallbackTotalLessons: number,
+      userId: string,
+    ): LessonData => {
+      const matched = progressData.find(item => item.level === level);
+
+      return {
+        ...(matched?.id ? { id: matched.id } : {}),
+        level,
+        userId,
+        totalCompleted: Math.max(0, matched?.totalCompleted ?? 0),
+        totalLessons: Math.max(
+          0,
+          matched?.totalLessons ?? fallbackTotalLessons ?? 0,
+        ),
+        lessonsCompleted: matched?.lessonsCompleted ?? [],
+      };
+    },
+    [],
+  );
+
+  const applyLevelProgressState = useCallback((progress: LessonData) => {
+    setCompletedLessons(new Set(progress.lessonsCompleted));
+    setLevelCompletedCount(
+      Math.min(progress.totalCompleted, progress.totalLessons),
+    );
+    setLevelTotalLessons(progress.totalLessons);
+  }, []);
+
+  const upsertLevelProgress = useCallback(
+    (
+      lessons: LessonData[],
+      nextProgress: LessonData,
+    ): { updatedLessons: LessonData[]; wasAlreadyCompleted: boolean } => {
+      const previous = lessons.find(item => item.level === nextProgress.level);
+      const previousCompletedIds = new Set(previous?.lessonsCompleted ?? []);
+      const nextCompletedIds = new Set(nextProgress.lessonsCompleted);
+      const wasAlreadyCompleted = Array.from(nextCompletedIds).every(id =>
+        previousCompletedIds.has(id),
+      );
+
+      return {
+        updatedLessons: [
+          ...lessons.filter(item => item.level !== nextProgress.level),
+          nextProgress,
+        ],
+        wasAlreadyCompleted,
+      };
+    },
+    [],
   );
 
   // Main fetch function for lessons
@@ -245,10 +400,12 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
         const data = await response.json();
 
         if (append) {
-          setLessonNuggets(prev => [...prev, ...data.data]);
+          setLessonNuggets(prev => mergeLessonNuggets(prev, data.data));
         } else {
-          setLessonNuggets(data.data);
-          setLessonCount(data.meta.count);
+          setLessonNuggets(dedupeAndSortLessonNuggets(data.data));
+          const totalCount = data?.meta?.count ?? 0;
+          setLessonCount(totalCount);
+          setLevelTotalLessons(totalCount);
         }
         // This avoids coupling to the returned page array length
         const more = page * PAGE_SIZE < (data?.meta?.count ?? 0);
@@ -269,36 +426,17 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
             progressData = stored.lessons ?? [];
           }
 
-          // Filter completed lessons
-          const currentLevel = progressData.find(
-            l => l.level === effectiveAssessment,
-          );
-          const completedIds = currentLevel?.lessonsCompleted || [];
-          const filteredCompleted = completedIds.filter((id: string) =>
-            data.data.some((lesson: LessonTag) => lesson.id === id),
+          const currentLevelProgress = getCurrentLevelProgress(
+            progressData,
+            effectiveAssessment,
+            data?.meta?.count ?? 0,
+            userId,
           );
 
-          setCompletedLessons(new Set(filteredCompleted));
+          applyLevelProgressState(currentLevelProgress);
 
-          // Repair local progress if needed
-          if (filteredCompleted.length !== completedIds.length) {
-            const updatedProgress = progressData.map(p =>
-              p.level === effectiveAssessment
-                ? {
-                    ...p,
-                    lessonsCompleted: filteredCompleted,
-                    totalCompleted: filteredCompleted.length,
-                  }
-                : p,
-            );
-            await storeCompletedLessons(updatedProgress);
-
-            if (Platform.OS === 'android' && completedIds.length > 0) {
-              ToastAndroid.show(
-                'Some completed lessons have been removed.',
-                ToastAndroid.SHORT,
-              );
-            }
+          if (!isGuest && progressData.length > 0) {
+            await storeCompletedLessons(progressData);
           }
         }
       } catch (error) {
@@ -313,13 +451,24 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
           setLessonNuggets([]);
           setCompletedLessons(new Set());
           setLessonCount(0);
+          setLevelCompletedCount(0);
+          setLevelTotalLessons(0);
         }
       } finally {
         setIsLoading(false);
         setIsLoadingMore(false);
       }
     },
-    [BASE_URL, assessment, fetchLessonProgress, isAuthReady, isGuest, token],
+    [
+      BASE_URL,
+      applyLevelProgressState,
+      assessment,
+      fetchLessonProgress,
+      getCurrentLevelProgress,
+      isAuthReady,
+      isGuest,
+      token,
+    ],
   );
 
   // Load more data for pagination
@@ -336,27 +485,41 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
         const userId = await getStoredUserId();
         if (!userId) return;
 
-        // Update local state
-        const previousCompleted = Array.from(completedLessons).filter(id =>
-          lessonNuggets.some(l => l.id === id),
-        );
-        const newCompleted = new Set(previousCompleted);
-        newCompleted.add(lessonId);
-
-        // Update storage
         const storedCompleted = await getStoredCompletedLessons();
-        const updatedLessons = (storedCompleted.lessons ?? []).filter(
-          l => l.level !== assessment,
-        );
-        updatedLessons.push({
-          level: assessment,
-          totalCompleted: newCompleted.size,
-          totalLessons: lessonCount,
+        const currentLevelProgress = getCurrentLevelProgress(
+          storedCompleted.lessons ?? [],
+          assessment,
+          levelTotalLessons || lessonCount,
           userId,
-          lessonsCompleted: Array.from(newCompleted),
-        });
+        );
+
+        const nextCompletedIds = new Set(currentLevelProgress.lessonsCompleted);
+        const wasAlreadyCompleted = nextCompletedIds.has(lessonId);
+        nextCompletedIds.add(lessonId);
+
+        const nextLevelProgress: LessonData = {
+          ...currentLevelProgress,
+          userId,
+          lessonsCompleted: Array.from(nextCompletedIds),
+          totalCompleted: nextCompletedIds.size,
+          totalLessons:
+            currentLevelProgress.totalLessons ||
+            levelTotalLessons ||
+            lessonCount,
+        };
+
+        const { updatedLessons } = upsertLevelProgress(
+          storedCompleted.lessons ?? [],
+          nextLevelProgress,
+        );
 
         await storeCompletedLessons(updatedLessons);
+        setServerProgress(updatedLessons);
+        applyLevelProgressState(nextLevelProgress);
+
+        if (wasAlreadyCompleted) {
+          return;
+        }
 
         if (!isGuest) {
           // Sync progress to server
@@ -379,9 +542,9 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
                 body: JSON.stringify({
                   userId,
                   level: assessment,
-                  totalCompleted: newCompleted.size,
-                  totalLessons: lessonCount,
-                  lessonsCompleted: Array.from(newCompleted),
+                  totalCompleted: nextLevelProgress.totalCompleted,
+                  totalLessons: nextLevelProgress.totalLessons,
+                  lessonsCompleted: nextLevelProgress.lessonsCompleted,
                 }),
               },
             );
@@ -389,20 +552,20 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
             console.warn('Failed to sync to server:', serverError);
           }
         }
-
-        setCompletedLessons(newCompleted);
       } catch (error) {
         console.error('Error marking lesson as completed:', error);
       }
     },
     [
       assessment,
-      completedLessons,
+      applyLevelProgressState,
+      getCurrentLevelProgress,
       isGuest,
       lessonCount,
+      levelTotalLessons,
       serverProgress,
       BASE_URL,
-      lessonNuggets,
+      upsertLevelProgress,
     ],
   );
 
@@ -430,7 +593,12 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
           };
         }
 
-        acc[lessonId].data.push(nugget);
+        const alreadyExists = acc[lessonId].data.some(
+          item => item.id === nugget.id,
+        );
+        if (!alreadyExists) {
+          acc[lessonId].data.push(nugget);
+        }
         return acc;
       },
       {} as Record<string, LessonSection>,
@@ -554,6 +722,8 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
     token,
     currentPage,
     error,
+    levelCompletedCount,
+    levelTotalLessons,
     fetchLessons,
     loadMoreData,
     markLessonCompleted,
@@ -562,5 +732,6 @@ export const useLessonData = (assessment: string): UseLessonDataReturn => {
     getSectionProgress,
     refetch,
     createHandleLessonClick,
+    fetchLessonById,
   };
 };

@@ -48,6 +48,7 @@ const MIN_AUTOPLAY_DELAY = 3;
 const MAX_AUTOPLAY_DELAY = 15;
 const GESTURE_POSITION_PREFIX = 'lesson_gesture_position_';
 const LAST_LESSON_PREFIX = 'lesson_last_selected_';
+const LAST_LESSON_RESUME_KEY = 'lesson_last_resume';
 
 type FlattenedLesson = {
   lesson: LessonTag;
@@ -71,6 +72,8 @@ const Level: React.FC = () => {
     isLoadingMore,
     lessonCount,
     completedLessons,
+    levelCompletedCount,
+    levelTotalLessons,
     token,
     error,
     loadMoreData,
@@ -79,6 +82,7 @@ const Level: React.FC = () => {
     getSectionProgress,
     refetch,
     createHandleLessonClick,
+    fetchLessonById,
   } = useLessonData(assessment || '');
 
   const {
@@ -236,7 +240,11 @@ const Level: React.FC = () => {
         const storedId = await AsyncStorage.getItem(storageKey);
         if (!storedId || !isMounted) return;
 
-        const match = lessonNuggets.find(lesson => lesson.id === storedId);
+        let match: LessonTag | null =
+          lessonNuggets.find(lesson => lesson.id === storedId) ?? null;
+        if (!match) {
+          match = await fetchLessonById(storedId);
+        }
         if (!match) return;
 
         setCurrentLessonId(match.id);
@@ -266,6 +274,7 @@ const Level: React.FC = () => {
     assessment,
     currentLessonId,
     expandOnlySection,
+    fetchLessonById,
     findSectionIdForLesson,
     lessonNuggets,
   ]);
@@ -451,10 +460,20 @@ const Level: React.FC = () => {
         expandOnlySection(sectionId);
       }
       if (assessment) {
-        AsyncStorage.setItem(
-          `${LAST_LESSON_PREFIX}${assessment}`,
-          lesson.id,
-        ).catch(error => console.warn('Failed to persist last lesson:', error));
+        Promise.all([
+          AsyncStorage.setItem(`${LAST_LESSON_PREFIX}${assessment}`, lesson.id),
+          AsyncStorage.setItem(
+            LAST_LESSON_RESUME_KEY,
+            JSON.stringify({
+              assessment,
+              lessonId: lesson.id,
+              lessonTitle: lesson.title,
+              updatedAt: new Date().toISOString(),
+            }),
+          ),
+        ]).catch(error =>
+          console.warn('Failed to persist last lesson:', error),
+        );
       }
       baseLessonClickHandler(lesson);
     },
@@ -802,8 +821,9 @@ const Level: React.FC = () => {
             <Switch
               value={autoPlayEnabled}
               onValueChange={setAutoPlayEnabled}
-              thumbColor={autoPlayEnabled ? '#fff' : '#f4f4f4'}
-              trackColor={{ false: '#d6d6d6', true: Colors.primary }}
+              thumbColor={autoPlayEnabled ? '#ffffff' : '#ffffff'}
+              trackColor={{ false: '#94a3b8', true: Colors.primary }}
+              ios_backgroundColor="#64748b"
             />
           </View>
         </View>
@@ -812,8 +832,8 @@ const Level: React.FC = () => {
       {/* Lesson Info */}
       <LessonInfo
         assessment={assessment || ''}
-        completedLessons={completedLessons}
-        lessonCount={lessonCount}
+        completedLessons={levelCompletedCount}
+        lessonCount={levelTotalLessons || lessonCount}
       />
 
       {/* Compact Lesson Preview */}

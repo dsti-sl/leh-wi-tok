@@ -12,7 +12,7 @@ import {
   storeAccountProfile,
 } from '@/lib/accountProfile';
 import { clearGuestMode, getBaseUrl, getToken } from '@/utils';
-import { clearAllLessonPositions } from '@/utils/lessonProgress';
+import { clearLessonSessionState } from '@/utils/lessonProgress';
 
 export interface UseAccountReturn {
   userInfo: AccountUserInfo | null;
@@ -69,7 +69,7 @@ const useAccount = (): UseAccountReturn => {
   const clearLocalSession = useCallback(async () => {
     setUserInfo(null);
     await AsyncStorage.multiRemove(['token', 'user', 'completedLesson']);
-    await clearAllLessonPositions();
+    await clearLessonSessionState();
     await clearGuestMode();
   }, []);
 
