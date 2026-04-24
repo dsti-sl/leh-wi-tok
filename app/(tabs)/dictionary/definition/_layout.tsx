@@ -14,10 +14,13 @@ import { StatusBar } from 'expo-status-bar';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { Colors } from '@/constants/Colors';
 
 const _layout = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { word: initialDefinitionWord, query: urlQueryParam } =
     useLocalSearchParams<{
       word: string;
@@ -62,7 +65,7 @@ const _layout = () => {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {Platform.OS === 'ios' ? (
-        <View style={{ height: 50, backgroundColor: Colors.primary }} />
+        <View style={{ height: insets.top, backgroundColor: Colors.primary }} />
       ) : (
         <StatusBar style="light" backgroundColor={Colors.primary} />
       )}
@@ -122,7 +125,6 @@ export default _layout;
 
 const styles = StyleSheet.create({
   headerContainer: {
-    top: Platform.OS === 'ios' ? 0 : 20,
     backgroundColor: '#ffffff',
     paddingHorizontal: 10,
     paddingVertical: 10,

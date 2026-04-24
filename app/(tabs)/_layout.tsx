@@ -1,14 +1,23 @@
 import React from 'react';
 
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Tabs, useSegments } from 'expo-router';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import TabBarIcon from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
+import { isTabletLayout } from '@/utils/layout';
 
 export default function Layout() {
   const segments = useSegments();
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const isTablet = isTabletLayout(width, height);
+  const tabBarHeight = (isTablet ? 78 : 68) + Math.max(insets.bottom, 8);
+  const iconContainerSize = isTablet ? 68 : 60;
+  const floatingIconOffset = isTablet ? -14 : -10;
 
   // Hide tab bar on child routes
   const shouldHideTabBar = segments.some(
@@ -27,8 +36,20 @@ export default function Layout() {
         <Tabs
           screenOptions={{
             tabBarShowLabel: true,
-            tabBarStyle: shouldHideTabBar ? { display: 'none' } : styles.tabBar,
-            tabBarItemStyle: styles.tabBarItemStyle,
+            tabBarStyle: shouldHideTabBar
+              ? { display: 'none' }
+              : [
+                  styles.tabBar,
+                  {
+                    height: tabBarHeight,
+                    paddingBottom: Math.max(insets.bottom, 10),
+                    paddingTop: isTablet ? 10 : 6,
+                  },
+                ],
+            tabBarItemStyle: [
+              styles.tabBarItemStyle,
+              { paddingTop: isTablet ? 2 : 0 },
+            ],
             tabBarLabelStyle: styles.tabLabel,
             tabBarActiveTintColor: Colors.primary,
             tabBarInactiveTintColor: '#9E9E9E',
@@ -74,7 +95,13 @@ export default function Layout() {
               title: 'Dictionary',
               tabBarIcon: ({ color, focused }) => (
                 <TabBarIcon
-                  tabStyle={styles.circularIconContainer}
+                  tabStyle={{
+                    ...styles.circularIconContainer,
+                    top: floatingIconOffset,
+                    width: iconContainerSize,
+                    height: iconContainerSize,
+                    borderRadius: iconContainerSize / 2,
+                  }}
                   activeStyle={styles.activeTab}
                   activeIcon={'library' as 'text'}
                   icon={'library-outline' as 'text'}
@@ -132,10 +159,9 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     borderRadius: 10,
-    height: 80,
   },
   tabBarItemStyle: {
-    bottom: 5,
+    bottom: 0,
     top: 0,
   },
   tabLabel: {
@@ -143,10 +169,6 @@ const styles = StyleSheet.create({
     display: 'flex',
   },
   circularIconContainer: {
-    top: -10,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ecf0f1',

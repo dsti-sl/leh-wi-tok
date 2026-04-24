@@ -6,20 +6,33 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import { hydrateCurrentAccountProfile } from '@/lib/accountProfile';
 import { getBaseUrl, setToken } from '@/utils';
+import {
+  getContentMaxWidth,
+  getHeroImageSize,
+  getHorizontalPadding,
+  getOtpCellSize,
+} from '@/utils/layout';
 
 const OtpScreen = () => {
   const {
@@ -39,6 +52,16 @@ const OtpScreen = () => {
   const [error, setError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = getHorizontalPadding(width);
+  const contentMaxWidth = getContentMaxWidth(width, {
+    compact: 440,
+    tablet: 620,
+    largeTablet: 720,
+  });
+  const logoSize = getHeroImageSize(width);
+  const otpCellSize = getOtpCellSize(width);
 
   const BASE_URL = getBaseUrl();
   // Refs for each input field
@@ -162,71 +185,94 @@ const OtpScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'android' ? 'padding' : 'height'}
-      style={styles.container}
-    >
+    <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
       <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
-
-      <Image
-        source={require('../assets/images/Auth_logo.png')}
-        style={styles.logo}
-      />
-
-      <Text style={styles.headerText}>Enter OTP</Text>
-      <Text style={styles.subText}>
-        Enter the OTP code we just sent{'\n'}to your registered Email/Phone
-        number
-      </Text>
-
-      <View style={styles.otpContainer}>
-        {otp.map((value, index) => (
-          <TextInput
-            key={index}
-            ref={ref => {
-              inputRefs.current[index] = ref;
-            }}
-            style={styles.otpInput}
-            keyboardType="numeric"
-            maxLength={1}
-            value={value}
-            onChangeText={text => handleOtpChange(text, index)}
-            onKeyPress={({ nativeEvent }) => {
-              if (nativeEvent.key === 'Backspace' && !value && index > 0) {
-                inputRefs.current[index - 1]?.focus();
-              }
-            }}
-          />
-        ))}
-      </View>
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <View>
-        {isVerifying ? (
-          <ActivityIndicator size="small" color={Colors.primary} />
-        ) : (
-          <C_Button
-            title="Confirm OTP"
-            // onPress={() => router.push('/preferences')}
-            onPress={handleVerifyOtp}
-            buttonStyle={styles.verifyOtpButton}
-          />
-        )}
-      </View>
-
-      <TouchableOpacity
-        onPress={handleResendOtp}
-        style={[styles.resendButton, isResending && { opacity: 0.5 }]}
-        disabled={isResending}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardContainer}
       >
-        {isResending ? (
-          <ActivityIndicator size="small" color={Colors.primary} />
-        ) : (
-          <Text style={styles.resendText}>Didn’t get OTP? Resend OTP</Text>
-        )}
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingHorizontal: horizontalPadding,
+              paddingTop: insets.top + 24,
+              paddingBottom: Math.max(insets.bottom, 24),
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
+            <Image
+              source={require('../assets/images/Auth_logo.png')}
+              style={[styles.logo, { width: logoSize, height: logoSize }]}
+            />
+
+            <Text style={styles.headerText}>Enter OTP</Text>
+            <Text style={styles.subText}>
+              Enter the OTP code we just sent{'\n'}to your registered
+              Email/Phone number
+            </Text>
+
+            <View style={styles.otpContainer}>
+              {otp.map((value, index) => (
+                <TextInput
+                  key={index}
+                  ref={ref => {
+                    inputRefs.current[index] = ref;
+                  }}
+                  style={[
+                    styles.otpInput,
+                    { width: otpCellSize, height: otpCellSize * 1.35 },
+                  ]}
+                  keyboardType="numeric"
+                  maxLength={1}
+                  value={value}
+                  onChangeText={text => handleOtpChange(text, index)}
+                  onKeyPress={({ nativeEvent }) => {
+                    if (
+                      nativeEvent.key === 'Backspace' &&
+                      !value &&
+                      index > 0
+                    ) {
+                      inputRefs.current[index - 1]?.focus();
+                    }
+                  }}
+                />
+              ))}
+            </View>
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <View>
+              {isVerifying ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <C_Button
+                  title="Confirm OTP"
+                  onPress={handleVerifyOtp}
+                  buttonStyle={styles.verifyOtpButton}
+                />
+              )}
+            </View>
+
+            <TouchableOpacity
+              onPress={handleResendOtp}
+              style={[styles.resendButton, isResending && { opacity: 0.5 }]}
+              disabled={isResending}
+            >
+              {isResending ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <Text style={styles.resendText}>
+                  Didn’t get OTP? Resend OTP
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -235,17 +281,23 @@ export default OtpScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'center',
     backgroundColor: '#fff',
   },
+  keyboardContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  content: {
+    width: '100%',
+    alignSelf: 'center',
+  },
   logo: {
-    width: 160,
-    height: 160,
     resizeMode: 'cover',
     alignSelf: 'center',
-    marginBottom: 1,
-    marginTop: -50,
+    marginBottom: 8,
   },
   headerText: {
     fontSize: 28,
@@ -263,12 +315,11 @@ const styles = StyleSheet.create({
   },
   otpContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-between',
     marginBottom: 20,
+    gap: 8,
   },
   otpInput: {
-    width: 50,
-    height: 70,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#eaeff5',

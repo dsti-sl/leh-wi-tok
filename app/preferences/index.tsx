@@ -3,24 +3,44 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
-  Platform,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
 import { getBaseUrl, getToken } from '@/utils';
+import {
+  getContentMaxWidth,
+  getHeroImageSize,
+  getHorizontalPadding,
+} from '@/utils/layout';
 
 const welcomeScreen = () => {
   const router = useRouter();
   const [user, setUser] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = getHorizontalPadding(width);
+  const contentMaxWidth = getContentMaxWidth(width, {
+    compact: 440,
+    tablet: 620,
+    largeTablet: 720,
+  });
+  const heroSize = getHeroImageSize(width) + 40;
 
   const EXPO_PUBLIC_BASE_URL = getBaseUrl();
 
@@ -56,28 +76,41 @@ const welcomeScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
       <StatusBar backgroundColor="#0F4C5C" style="light" />
-      <Image
-        source={require('../../assets/images/Preferences_logo.png')}
-        style={styles.logo}
-      />
-      <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>
-          Hi! {user?.name?.toString() || ''}
-        </Text>
-        <Text style={styles.welcomeText}>Welcome to Le Wi Tok</Text>
-      </View>
-      <C_Button
-        title="Let's Get Started"
-        onPress={() =>
-          router.push(
-            `/preferences/roleselection?userId=${user?.id}&name=${user?.name}`,
-          )
-        }
-        buttonStyle={styles.getStartedButton}
-      />
-    </View>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingHorizontal: horizontalPadding,
+            paddingTop: insets.top + 24,
+            paddingBottom: Math.max(insets.bottom, 24),
+          },
+        ]}
+      >
+        <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
+          <Image
+            source={require('../../assets/images/Preferences_logo.png')}
+            style={[styles.logo, { width: heroSize, height: heroSize * 0.96 }]}
+          />
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>
+              Hi! {user?.name?.toString() || ''}
+            </Text>
+            <Text style={styles.welcomeText}>Welcome to Le Wi Tok</Text>
+          </View>
+          <C_Button
+            title="Let's Get Started"
+            onPress={() =>
+              router.push(
+                `/preferences/roleselection?userId=${user?.id}&name=${user?.name}`,
+              )
+            }
+            buttonStyle={styles.getStartedButton}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -86,9 +119,16 @@ export default welcomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     backgroundColor: '#fff',
-    padding: Platform.OS === 'ios' ? 20 : 20,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  content: {
+    width: '100%',
+    alignSelf: 'center',
+    alignItems: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -97,17 +137,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   logo: {
-    width: 250,
-    height: 240,
     resizeMode: 'cover',
-    alignSelf: 'center',
-    marginTop: Platform.OS === 'ios' ? 0 : 0,
   },
   welcomeContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -100,
+    marginTop: -12,
+    marginBottom: 32,
   },
   welcomeText: {
     fontSize: 24,
@@ -119,6 +154,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     color: Colors.secondary,
     fontWeight: 'bold',
-    marginBottom: 50,
+    width: '100%',
   },
 });
