@@ -229,10 +229,14 @@ const ProfileDetailsScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={80}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
         style={styles.keyboardContainer}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          scrollEnabled={true}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.profileImageContainer}>
             <ProfileImagePicker
               profileImage={profileImage}
@@ -348,7 +352,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     padding: 20,
-    paddingBottom: 30,
+    paddingBottom: 80,
   },
   loadingContainer: {
     flex: 1,

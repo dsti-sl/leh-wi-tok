@@ -5,6 +5,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -233,89 +234,97 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       closeOnBackdropPress={!isSaving}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
       >
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>Edit Profile</Text>
-          <TouchableOpacity
-            accessibilityLabel="Close edit profile"
-            onPress={() => setOpen(false)}
-            disabled={isSaving}
-          >
-            <Feather name="x" size={20} color="#111827" />
-          </TouchableOpacity>
-        </View>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 0 }}
+          scrollEnabled={true}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Edit Profile</Text>
+            <TouchableOpacity
+              accessibilityLabel="Close edit profile"
+              onPress={() => setOpen(false)}
+              disabled={isSaving}
+            >
+              <Feather name="x" size={20} color="#111827" />
+            </TouchableOpacity>
+          </View>
 
-        <Text style={styles.subtitle}>
-          Update your details below. These changes will reflect immediately.
-        </Text>
+          <Text style={styles.subtitle}>
+            Update your details below. These changes will reflect immediately.
+          </Text>
 
-        <View style={styles.inputRow}>
-          <Feather name="user" size={18} color={Colors.primary} />
-          <TextInput
-            style={styles.input}
-            placeholder="Name"
-            value={name}
-            onChangeText={setName}
-          />
-        </View>
+          <View style={styles.inputRow}>
+            <Feather name="user" size={18} color={Colors.primary} />
+            <TextInput
+              style={styles.input}
+              placeholder="Name"
+              value={name}
+              onChangeText={setName}
+            />
+          </View>
 
-        <View style={styles.inputRow}>
-          <Feather name="at-sign" size={18} color={Colors.primary} />
-          <TextInput
-            style={styles.input}
-            placeholder="Handle"
-            value={handle}
-            onChangeText={setHandle}
-            autoCapitalize="none"
-          />
-        </View>
+          <View style={styles.inputRow}>
+            <Feather name="at-sign" size={18} color={Colors.primary} />
+            <TextInput
+              style={styles.input}
+              placeholder="Handle"
+              value={handle}
+              onChangeText={setHandle}
+              autoCapitalize="none"
+            />
+          </View>
 
-        <View style={styles.inputRow}>
-          <Feather name="phone" size={18} color={Colors.primary} />
-          <TextInput
-            style={styles.input}
-            placeholder="Phone number"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad"
-          />
-        </View>
+          <View style={styles.inputRow}>
+            <Feather name="phone" size={18} color={Colors.primary} />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone number"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+            />
+          </View>
 
-        <View style={styles.inputRow}>
-          <Feather name="map-pin" size={18} color={Colors.primary} />
-          <TextInput
-            style={styles.input}
-            placeholder="Address"
-            value={address}
-            onChangeText={setAddress}
-            multiline
-          />
-        </View>
+          <View style={styles.inputRow}>
+            <Feather name="map-pin" size={18} color={Colors.primary} />
+            <TextInput
+              style={styles.input}
+              placeholder="Address"
+              value={address}
+              onChangeText={setAddress}
+              multiline
+            />
+          </View>
 
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.cancelButton]}
-            onPress={() => setOpen(false)}
-            disabled={isSaving}
-          >
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.saveButton]}
-            onPress={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Feather name="save" size={16} color="#fff" />
-                <Text style={styles.saveText}>Save</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.cancelButton]}
+              onPress={() => setOpen(false)}
+              disabled={isSaving}
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.saveButton]}
+              onPress={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Feather name="save" size={16} color="#fff" />
+                  <Text style={styles.saveText}>Save</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </CModal>
   );
@@ -326,7 +335,7 @@ export default EditProfileModal;
 const styles = StyleSheet.create({
   modalContainer: {
     width: '90%',
-    maxHeight: '80%',
+    maxHeight: '90%',
     borderRadius: 18,
     padding: 20,
     backgroundColor: '#fff',
@@ -363,12 +372,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#0f172a',
+    minHeight: 44,
   },
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
-    marginTop: 10,
+    marginTop: 20,
   },
   actionButton: {
     flex: 1,
