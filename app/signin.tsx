@@ -180,7 +180,7 @@ const SignInScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.label}>Phone / Email / Handle</Text>
+              <Text style={styles.label}>Phone / Handle</Text>
               <View style={styles.inputContainer}>
                 <Feather
                   name="user"
@@ -190,7 +190,7 @@ const SignInScreen = () => {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter your phone, email, or handle"
+                  placeholder="Enter your phone, or handle"
                   placeholderTextColor="#ccc"
                   keyboardType="default"
                   autoCapitalize="none"

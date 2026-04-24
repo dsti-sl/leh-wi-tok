@@ -210,8 +210,8 @@ const OtpScreen = () => {
 
             <Text style={styles.headerText}>Enter OTP</Text>
             <Text style={styles.subText}>
-              Enter the OTP code we just sent{'\n'}to your registered
-              Email/Phone number
+              Enter the OTP code we just sent{'\n'}to your registered Phone
+              number
             </Text>
 
             <View style={styles.otpContainer}>
