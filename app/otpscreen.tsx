@@ -114,7 +114,7 @@ const OtpScreen = () => {
           console.log('Translation sync failed (non-critical):', syncError);
         }
 
-        isSignIn ? router.replace('/home') : router.replace('/preferences');
+        router.replace(isSignIn ? '/' : '/preferences');
       } else {
         setError(data.message || 'Invalid OTP. Please try again.');
       }

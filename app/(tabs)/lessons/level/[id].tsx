@@ -971,6 +971,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     backgroundColor: '#000',
+    minHeight: 220,
     marginHorizontal: 0,
     // marginTop: 8,
     borderRadius: 0,

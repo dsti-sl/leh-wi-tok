@@ -18,7 +18,6 @@ import {
   useWindowDimensions,
   View,
   Platform,
-  StatusBar,
 } from 'react-native';
 
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -697,8 +696,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      <StatusBar hidden />
-
       <View
         style={[
           styles.videoFrame,
@@ -848,15 +845,18 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 220,
   },
   videoFrame: {
     alignSelf: 'center',
+    width: '100%',
     backgroundColor: '#000',
     overflow: 'hidden',
+    minHeight: 220,
   },
   videoWrapper: {
-    flex: 1,
     width: '100%',
+    height: '100%',
   },
   video: {
     ...StyleSheet.absoluteFillObject,

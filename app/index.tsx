@@ -16,7 +16,6 @@ import { router } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -29,11 +28,10 @@ import {
   getHorizontalPadding,
   getHeroImageSize,
 } from '@/utils/layout';
+import { completeOnboarding, shouldShowOnboarding } from '@/utils/onboarding';
 //import { fetchAndInsertTranslations } from '@/data/dictionary';
 
 import slidesData from '../constants/OnboardingData.json';
-
-const ONBOARDING_KEY = 'hasOnboarded';
 
 const Onboarding = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -55,19 +53,21 @@ const Onboarding = () => {
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
-        const hasOnboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
-        if (hasOnboarded) {
-          const [userId, isGuest] = await Promise.all([
-            getStoredUserId(),
-            getGuestMode(),
-          ]);
-          if (userId || isGuest) {
-            router.replace('/home');
-          } else {
-            router.replace('/signin');
-          }
-        } else {
+        const [userId, isGuest] = await Promise.all([
+          getStoredUserId(),
+          getGuestMode(),
+        ]);
+        const needsOnboarding = await shouldShowOnboarding(userId, isGuest);
+
+        if (needsOnboarding) {
           setIsLoading(false);
+          return;
+        }
+
+        if (userId || isGuest) {
+          router.replace('/home');
+        } else {
+          router.replace('/signin');
         }
       } catch (error) {
         console.warn(
@@ -81,7 +81,22 @@ const Onboarding = () => {
   }, []);
 
   const handleCompleteOnboarding = async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    const [userId, isGuest] = await Promise.all([
+      getStoredUserId(),
+      getGuestMode(),
+    ]);
+    await completeOnboarding(userId);
+
+    if (userId) {
+      router.replace('/home');
+      return;
+    }
+
+    if (isGuest) {
+      router.replace('/home');
+      return;
+    }
+
     router.replace('/signin');
   };
 

@@ -253,6 +253,7 @@ const styles = StyleSheet.create<{
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
+    minHeight: 220,
   },
   media: {
     width: '100%',
