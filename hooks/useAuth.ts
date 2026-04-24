@@ -131,7 +131,7 @@ const useAuth = () => {
       if (response.ok && token) {
         await setToken(token);
         await hydrateCurrentAccountProfile(EXPO_PUBLIC_BASE_URL, token);
-        router.replace('/home');
+        router.replace('/');
         return;
       }
 

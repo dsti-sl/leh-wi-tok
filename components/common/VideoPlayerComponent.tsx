@@ -15,12 +15,19 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
   Platform,
-  StatusBar,
 } from 'react-native';
 
-import { useVideoPlayer, VideoView } from 'expo-video';
+import {
+  type SourceLoadEventPayload,
+  type StatusChangeEventPayload,
+  type TimeUpdateEventPayload,
+  type VideoPlayer,
+  useVideoPlayer,
+  VideoView,
+} from 'expo-video';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -64,6 +71,26 @@ interface VideoPlayerComponentProps {
   onTimeUpdate?: (_currentTime: number) => void;
 }
 
+type VideoPlayerEventMap = {
+  playToEnd: undefined;
+  sourceLoad: SourceLoadEventPayload;
+  statusChange: StatusChangeEventPayload;
+  timeUpdate: TimeUpdateEventPayload;
+};
+
+type VideoPlayerSubscription = {
+  remove: () => void;
+};
+
+type VideoPlayerWithListeners = VideoPlayer & {
+  addListener<TKey extends keyof VideoPlayerEventMap>(
+    eventName: TKey,
+    listener: VideoPlayerEventMap[TKey] extends undefined
+      ? () => void
+      : (payload: VideoPlayerEventMap[TKey]) => void,
+  ): VideoPlayerSubscription;
+};
+
 // ============= CONSTANTS =============
 
 const QUALITY_LABELS: Record<string, string> = {
@@ -91,6 +118,9 @@ const NETWORK_QUALITY_MAP: Record<string, string> = {
   none: '144p',
 };
 
+const VIDEO_ASPECT_RATIO = 16 / 9;
+const MAX_VIDEO_FRAME_WIDTH = 1280;
+
 const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   uri,
   headers,
@@ -117,10 +147,11 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [connectionType, setConnectionType] = useState<string>('unknown');
   const [isBuffering, setIsBuffering] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [frameAspectRatio, setFrameAspectRatio] = useState(VIDEO_ASPECT_RATIO);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const playerRef = useRef<React.ComponentRef<typeof VideoView> | null>(null);
   const hasAppliedInitialTimeRef = useRef(false);
@@ -196,7 +227,45 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   useEffect(() => {
     if (!player) return;
 
-    const subscription = player.addListener('statusChange', status => {
+    const eventedPlayer = player as VideoPlayerWithListeners;
+    const subscription = eventedPlayer.addListener('sourceLoad', payload => {
+      const bestTrack = payload.availableVideoTracks
+        .filter(
+          track =>
+            track?.size?.width > 0 &&
+            track?.size?.height > 0 &&
+            track.isSupported !== false,
+        )
+        .sort(
+          (left, right) =>
+            right.size.width * right.size.height -
+            left.size.width * left.size.height,
+        )[0];
+
+      const nextAspectRatio =
+        bestTrack?.size?.width && bestTrack?.size?.height
+          ? bestTrack.size.width / bestTrack.size.height
+          : VIDEO_ASPECT_RATIO;
+
+      if (Number.isFinite(nextAspectRatio) && nextAspectRatio > 0) {
+        setFrameAspectRatio(nextAspectRatio);
+      }
+    });
+
+    return () => {
+      try {
+        subscription?.remove();
+      } catch (error) {
+        console.warn('Error removing source load listener:', error);
+      }
+    };
+  }, [player]);
+
+  useEffect(() => {
+    if (!player) return;
+
+    const eventedPlayer = player as VideoPlayerWithListeners;
+    const subscription = eventedPlayer.addListener('statusChange', status => {
       setIsBuffering(status.status === 'loading');
     });
 
@@ -210,25 +279,10 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   }, [player, videoId, currentStreamUrl, headers]);
 
   useEffect(() => {
-    if (!player) return;
-
-    const subscription = player.addListener('playingChange', payload => {
-      setIsPlaying(payload.isPlaying);
-    });
-
-    return () => {
-      try {
-        subscription?.remove();
-      } catch (error) {
-        console.warn('Error removing playing listener:', error);
-      }
-    };
-  }, [player]);
-
-  useEffect(() => {
     if (!player || !onEnd) return;
 
-    const endSubscription = player.addListener('playToEnd', () => {
+    const eventedPlayer = player as VideoPlayerWithListeners;
+    const endSubscription = eventedPlayer.addListener('playToEnd', () => {
       onEnd();
     });
 
@@ -262,7 +316,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     if (!player || !onTimeUpdate) return;
 
     player.timeUpdateEventInterval = 1;
-    const subscription = player.addListener('timeUpdate', payload => {
+    const eventedPlayer = player as VideoPlayerWithListeners;
+    const subscription = eventedPlayer.addListener('timeUpdate', payload => {
       onTimeUpdate(payload.currentTime);
     });
 
@@ -639,6 +694,16 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     }
   };
 
+  const maxAvailableWidth = Math.min(screenWidth, MAX_VIDEO_FRAME_WIDTH);
+  const maxAvailableHeight = Math.max(220, screenHeight * 0.55);
+  let frameWidth = maxAvailableWidth;
+  let frameHeight = frameWidth / frameAspectRatio;
+
+  if (frameHeight > maxAvailableHeight) {
+    frameHeight = maxAvailableHeight;
+    frameWidth = frameHeight * frameAspectRatio;
+  }
+
   if (hasError) {
     return (
       <View style={styles.errorContainer}>
@@ -662,11 +727,17 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      <StatusBar hidden />
-
-      <View style={styles.videoWrapper}>
+      <View
+        style={[
+          styles.videoFrame,
+          {
+            width: frameWidth,
+            height: frameHeight,
+          },
+        ]}
+      >
         <TouchableOpacity
-          style={styles.videoTouchArea}
+          style={styles.videoWrapper}
           onPress={handleVideoTap}
           activeOpacity={1}
         >
@@ -676,7 +747,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
             style={styles.video}
             fullscreenOptions={{ enable: true }}
             allowsPictureInPicture
-            contentFit="cover"
+            contentFit="contain"
             accessibilityLabel={accessibilityLabel}
             nativeControls={true}
           />
@@ -699,8 +770,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       {enableAdaptiveStreaming &&
         !usingFallback &&
         videoInfo?.hasQualities &&
-        showControls &&
-        !isPlaying && (
+        showControls && (
           <View style={styles.qualityPanel}>
             <TouchableOpacity
               style={styles.qualityButtonInline}
@@ -799,19 +869,31 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000', position: 'relative' },
+  container: {
+    width: '100%',
+    alignSelf: 'center',
+    backgroundColor: '#000',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 220,
+  },
+  videoFrame: {
+    alignSelf: 'center',
+    width: '100%',
+    backgroundColor: '#000',
+    overflow: 'hidden',
+    minHeight: 220,
+  },
   videoWrapper: {
-    flex: 1,
     width: '100%',
     height: '100%',
-    overflow: 'hidden',
   },
   video: {
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
   },
-  videoTouchArea: { flex: 1, width: '100%', height: '100%' },
   loadingOverlay: {
     position: 'absolute',
     top: 10,
@@ -902,7 +984,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     maxHeight: '70%',
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 20,
     borderTopWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
@@ -913,7 +995,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
       },
-      android: { elevation: 8 },
+      android: { elevation: 4},
     }),
   },
   qualitySheetHeader: {

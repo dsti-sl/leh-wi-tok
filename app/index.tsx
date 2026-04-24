@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Image,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -16,21 +16,36 @@ import { router } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
 import { getGuestMode, getStoredUserId } from '@/utils';
+import {
+  getContentMaxWidth,
+  getHorizontalPadding,
+  getHeroImageSize,
+} from '@/utils/layout';
+import { completeOnboarding, shouldShowOnboarding } from '@/utils/onboarding';
 //import { fetchAndInsertTranslations } from '@/data/dictionary';
 
 import slidesData from '../constants/OnboardingData.json';
-
-const { width, height } = Dimensions.get('window');
-const ONBOARDING_KEY = 'hasOnboarded';
 
 const Onboarding = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const flatListRef = useRef<FlatList>(null);
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = getHorizontalPadding(width);
+  const contentMaxWidth = getContentMaxWidth(width, {
+    compact: 440,
+    tablet: 700,
+    largeTablet: 860,
+  });
+  const heroImageSize = Math.min(width * 0.82, getHeroImageSize(width) * 1.8);
 
   {
     /* TODO: Fix issues with onboarding state and navigation */
@@ -38,19 +53,21 @@ const Onboarding = () => {
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
-        const hasOnboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
-        if (hasOnboarded) {
-          const [userId, isGuest] = await Promise.all([
-            getStoredUserId(),
-            getGuestMode(),
-          ]);
-          if (userId || isGuest) {
-            router.replace('/home');
-          } else {
-            router.replace('/signin');
-          }
-        } else {
+        const [userId, isGuest] = await Promise.all([
+          getStoredUserId(),
+          getGuestMode(),
+        ]);
+        const needsOnboarding = await shouldShowOnboarding(userId, isGuest);
+
+        if (needsOnboarding) {
           setIsLoading(false);
+          return;
+        }
+
+        if (userId || isGuest) {
+          router.replace('/home');
+        } else {
+          router.replace('/signin');
         }
       } catch (error) {
         console.warn(
@@ -64,7 +81,22 @@ const Onboarding = () => {
   }, []);
 
   const handleCompleteOnboarding = async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    const [userId, isGuest] = await Promise.all([
+      getStoredUserId(),
+      getGuestMode(),
+    ]);
+    await completeOnboarding(userId);
+
+    if (userId) {
+      router.replace('/home');
+      return;
+    }
+
+    if (isGuest) {
+      router.replace('/home');
+      return;
+    }
+
     router.replace('/signin');
   };
 
@@ -127,10 +159,21 @@ const Onboarding = () => {
   }: {
     item: { image: string; title: string; description: string };
   }): React.JSX.Element => (
-    <View style={styles.slide}>
-      <Image source={getImageSource(item.image)} style={styles.image} />
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.description}>{item.description}</Text>
+    <View style={[styles.slide, { width }]}>
+      <View style={[styles.slideInner, { maxWidth: contentMaxWidth }]}>
+        <Image
+          source={getImageSource(item.image)}
+          style={[
+            styles.image,
+            {
+              width: heroImageSize,
+              height: Math.min(height * 0.34, heroImageSize),
+            },
+          ]}
+        />
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.description}>{item.description}</Text>
+      </View>
     </View>
   );
 
@@ -144,7 +187,7 @@ const Onboarding = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
       <StatusBar backgroundColor="#0F4C5C" barStyle="light-content" />
 
       <FlatList
@@ -159,7 +202,16 @@ const Onboarding = () => {
         keyExtractor={(_, index) => index.toString()}
       />
 
-      <View style={styles.buttonContainer}>
+      <View
+        style={[
+          styles.buttonContainer,
+          {
+            paddingHorizontal: horizontalPadding,
+            paddingBottom: Math.max(insets.bottom, 16),
+            maxWidth: contentMaxWidth,
+          },
+        ]}
+      >
         {currentIndex < slidesData.length - 1 && (
           <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
             <Text style={styles.skipText}>Skip</Text>
@@ -172,7 +224,7 @@ const Onboarding = () => {
           <Ionicons name="chevron-forward" size={12} color="#FB8B24" />
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -196,13 +248,16 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   slide: {
-    width,
     alignItems: 'center',
-    paddingVertical: 50,
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
+  slideInner: {
+    width: '100%',
+    alignItems: 'center',
+    alignSelf: 'center',
   },
   image: {
-    width: width * 0.9,
-    height: height * 0.4,
     resizeMode: 'contain',
     marginBottom: 20,
     alignItems: 'center',
@@ -226,8 +281,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    width: '90%',
-    marginBottom: 40,
+    width: '100%',
+    alignSelf: 'center',
   },
   skipButton: {
     paddingLeft: 35,

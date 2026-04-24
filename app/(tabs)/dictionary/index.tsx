@@ -11,11 +11,10 @@ import {
   View,
 } from 'react-native';
 
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import CategoryCard from '@/components/dictionary/CategoryCard';
 import { Colors } from '@/constants/Colors';
 import {
   checkAndUpdateTranslations,
@@ -32,78 +31,60 @@ interface DictionaryEntry {
   categories: string[];
 }
 
-const extractCategories = (data: DictionaryEntry[]) => {
-  const categoryMap = new Map();
-
-  data.forEach(entry => {
-    entry.categories.forEach(category => {
-      if (categoryMap.has(category)) {
-        const existing = categoryMap.get(category);
-        categoryMap.set(category, {
-          count: existing.count + 1,
-          // Keep the first found image unless it was null
-          imageSource:
-            existing.imageSource || entry.image || entry.illustration,
-        });
-      } else {
-        categoryMap.set(category, {
-          count: 1,
-          imageSource: entry.image || entry.illustration,
-        });
-      }
-    });
-  });
-
-  return Array.from(categoryMap.entries()).map(([category, data]) => ({
-    categoryName: category,
-    wordCount: data.count,
-    imageSource:
-      data.imageSource || require('@/assets/images/adaptive-icon.png'),
-  }));
-};
-
 const index = () => {
   const router = useRouter();
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadData = async () => {
-    try {
-      await checkAndUpdateTranslations();
-      const data = await fetchDictionaryData();
-      const sortedData = data.sort((a, b) => a.word.localeCompare(b.word));
-      setDictionaryData(sortedData);
-    } catch (error) {
-      console.error('Error refreshing dictionary data:', error);
-    }
-  };
+  const loadData = useCallback(
+    async (options?: { withRemoteSync?: boolean }) => {
+      try {
+        if (options?.withRemoteSync) {
+          await checkAndUpdateTranslations();
+        }
+
+        const data = await fetchDictionaryData();
+        const sortedData = data.sort((a, b) => a.word.localeCompare(b.word));
+        setDictionaryData(sortedData);
+      } catch (error) {
+        console.error('Error refreshing dictionary data:', error);
+      }
+    },
+    [],
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData();
+    await loadData({ withRemoteSync: true });
     setRefreshing(false);
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     const initializeData = async () => {
       setLoading(true);
-      await loadData();
+      await loadData({ withRemoteSync: true });
       setLoading(false);
     };
 
     initializeData();
-  }, []);
+  }, [loadData]);
 
-  const categories = useMemo(
-    () => extractCategories(dictionaryData),
-    [dictionaryData],
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
   );
 
   const { query, setQuery, filteredData } = useSearch({
     data: dictionaryData,
     searchKey: 'word',
   });
+
+  const displayedData = useMemo(
+    () => (query ? filteredData : dictionaryData),
+    [dictionaryData, filteredData, query],
+  );
 
   if (loading) {
     return (
@@ -147,52 +128,32 @@ const index = () => {
           ) : null}
         </View>
 
-        {query ? (
-          <FlatList
-            data={filteredData}
-            keyExtractor={item => item.word}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() =>
-                  router.push({
-                    pathname: '/(tabs)/dictionary/definition',
-                    params: { word: item.word },
-                  })
-                }
-                style={styles.searchResultItem}
-              >
-                <Text style={styles.searchResultText}>{item.word}</Text>
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No words found.</Text>
-            }
-          />
-        ) : (
-          <FlatList
-            data={categories}
-            keyExtractor={item => item.categoryName}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            renderItem={({ item }) => (
-              <CategoryCard
-                imageSource={item.imageSource}
-                categoryName={item.categoryName}
-                wordCount={item.wordCount}
-                onPress={() =>
-                  router.push({
-                    pathname: '/(tabs)/dictionary/category',
-                    params: { categoryName: item.categoryName },
-                  })
-                }
-              />
-            )}
-          />
-        )}
+        <FlatList
+          data={displayedData}
+          keyExtractor={item => item.word}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/dictionary/definition',
+                  params: { word: item.word },
+                })
+              }
+              style={styles.searchResultItem}
+            >
+              <Text style={styles.searchResultText}>{item.word}</Text>
+              <Text numberOfLines={2} style={styles.searchResultDefinition}>
+                {item.definition}
+              </Text>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No words found.</Text>
+          }
+        />
       </View>
     </View>
   );
@@ -248,6 +209,13 @@ const styles = StyleSheet.create({
   searchResultText: {
     fontSize: 16,
     color: '#333',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  searchResultDefinition: {
+    fontSize: 14,
+    color: '#64748b',
+    lineHeight: 20,
   },
   emptyText: {
     fontSize: 16,

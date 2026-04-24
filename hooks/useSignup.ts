@@ -4,6 +4,7 @@ import { Alert } from 'react-native';
 
 import { router } from 'expo-router';
 
+import { hydrateCurrentAccountProfile } from '@/lib/accountProfile';
 import { getBaseUrl, setToken, validatePhoneNumber } from '@/utils';
 
 const useSignup = () => {
@@ -79,7 +80,8 @@ const useSignup = () => {
         const token = loginData?.data?.[0]?.token || loginData?.token;
         if (token) {
           await setToken(token);
-          router.replace('/home');
+          await hydrateCurrentAccountProfile(EXPO_PUBLIC_BASE_URL, token);
+          router.replace('/preferences');
           return;
         }
 

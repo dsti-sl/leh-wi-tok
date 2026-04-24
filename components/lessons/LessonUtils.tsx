@@ -16,9 +16,20 @@ import { Colors } from '@/constants/Colors';
 import { FontSizes, FontWeights } from '@/constants/Typography';
 
 export const LessonHeader = memo(
-  ({ onBackPress }: { onBackPress: () => void }) => (
-    <View style={styles.headerContainer}>
-      <TouchableOpacity onPress={onBackPress}>
+  ({
+    onBackPress,
+    topInset = 0,
+  }: {
+    onBackPress: () => void;
+    topInset?: number;
+  }) => (
+    <View style={[styles.headerContainer]}>
+      <TouchableOpacity
+        onPress={onBackPress}
+        style={styles.backButton}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+      >
         <Ionicons name="chevron-back" size={24} color="#fff" />
       </TouchableOpacity>
     </View>
@@ -123,6 +134,14 @@ const styles = StyleSheet.create<{
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: Colors.primary,
+    paddingBottom: 2,
+    paddingHorizontal: 12,
+  },
+  backButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   lessonInfo: {
     padding: 16,

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { getBaseUrl, getGuestMode, getToken } from '@/utils';
+import { getBaseUrl, getGuestMode, getStoredUserId, getToken } from '@/utils';
+import { shouldShowOnboarding } from '@/utils/onboarding';
 
 interface LastLessonData {
   id: string;
@@ -64,10 +65,10 @@ const useLastLesson = () => {
 
         // Checks if user has any completed lessons
         const completedLessons = await AsyncStorage.getItem('completedLesson');
-        const user = await AsyncStorage.getItem('user');
-        const hasOnboarded = await AsyncStorage.getItem('hasOnboarded');
+        const userId = await getStoredUserId();
+        const needsOnboarding = await shouldShowOnboarding(userId, isGuest);
 
-        if (!hasOnboarded || (!user && !isGuest)) {
+        if (needsOnboarding || (!userId && !isGuest)) {
           setIntroVideo();
           return;
         }

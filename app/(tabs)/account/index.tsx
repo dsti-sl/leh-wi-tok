@@ -130,7 +130,11 @@ const Account = () => {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      await fetchAndInsertTranslations();
+      const { syncedCount } = await fetchAndInsertTranslations();
+      Alert.alert(
+        'Dictionary synced',
+        `Successfully synced ${syncedCount} dictionary record${syncedCount === 1 ? '' : 's'}.`,
+      );
     } catch (error) {
       console.error('Error syncing dictionary:', error);
       Alert.alert('Sync failed', 'Unable to sync dictionary right now.');

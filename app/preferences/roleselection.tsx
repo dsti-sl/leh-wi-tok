@@ -3,17 +3,25 @@ import React, { useState } from 'react';
 import {
   Alert,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import { getBaseUrl, getToken } from '@/utils';
+import { getContentMaxWidth, getHorizontalPadding } from '@/utils/layout';
 
 const roles = [
   { id: 'student', label: 'Student' },
@@ -31,6 +39,14 @@ const RoleSelection = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { userId, name } = useLocalSearchParams();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = getHorizontalPadding(width);
+  const contentMaxWidth = getContentMaxWidth(width, {
+    compact: 460,
+    tablet: 700,
+    largeTablet: 820,
+  });
 
   const handleRoleSelect = (role: string) => {
     setSelectedRole(role);
@@ -91,47 +107,60 @@ const RoleSelection = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerText}>Get started</Text>
-      <Text style={styles.subText}>
-        We want you to get the best out of Le Wi Tok.
-      </Text>
-      <View style={styles.bannerContainer}>
-        <View style={styles.bannerTextContainer}>
-          <Text style={styles.bannerHeader}>Tell us more about you</Text>
-          <Text style={styles.bannerSubText}>
-            We would like to know about you. So let us start by selecting a
-            profile.
+    <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingHorizontal: horizontalPadding,
+            paddingTop: insets.top + 16,
+            paddingBottom: Math.max(insets.bottom, 24),
+          },
+        ]}
+      >
+        <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
+          <Text style={styles.headerText}>Get started</Text>
+          <Text style={styles.subText}>
+            We want you to get the best out of Le Wi Tok.
           </Text>
-        </View>
-        <Image
-          source={require('../../assets/images/prefren_img.png')}
-          style={styles.bannerImage}
-        />
-      </View>
-      <View style={styles.rolesContainer}>
-        {roles.map(role => (
-          <TouchableOpacity
-            key={role.id}
-            style={styles.roleOption}
-            onPress={() => handleRoleSelect(role.id)}
-          >
-            <View style={styles.radioCircle}>
-              {selectedRole === role.id && (
-                <View style={styles.selectedCircle} />
-              )}
+          <View style={styles.bannerContainer}>
+            <View style={styles.bannerTextContainer}>
+              <Text style={styles.bannerHeader}>Tell us more about you</Text>
+              <Text style={styles.bannerSubText}>
+                We would like to know about you. So let us start by selecting a
+                profile.
+              </Text>
             </View>
-            <Text style={styles.roleText}>{role.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <C_Button
-        title="Next"
-        onPress={handleNext}
-        loadingIndicator={isLoading}
-        buttonStyle={styles.nextButton}
-      />
-    </View>
+            <Image
+              source={require('../../assets/images/prefren_img.png')}
+              style={styles.bannerImage}
+            />
+          </View>
+          <View style={styles.rolesContainer}>
+            {roles.map(role => (
+              <TouchableOpacity
+                key={role.id}
+                style={styles.roleOption}
+                onPress={() => handleRoleSelect(role.id)}
+              >
+                <View style={styles.radioCircle}>
+                  {selectedRole === role.id && (
+                    <View style={styles.selectedCircle} />
+                  )}
+                </View>
+                <Text style={styles.roleText}>{role.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <C_Button
+            title="Next"
+            onPress={handleNext}
+            loadingIndicator={isLoading}
+            buttonStyle={styles.nextButton}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -140,9 +169,15 @@ export default RoleSelection;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#fff',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+  },
+  content: {
+    width: '100%',
+    alignSelf: 'center',
   },
   headerText: {
     fontSize: 24,
@@ -173,7 +208,7 @@ const styles = StyleSheet.create({
   },
   bannerTextContainer: {
     flex: 1,
-    paddingRight: 90,
+    paddingRight: 100,
   },
   bannerHeader: {
     fontSize: 14,
@@ -197,8 +232,7 @@ const styles = StyleSheet.create({
   },
   rolesContainer: {
     marginTop: 10,
-    marginBottom: 90,
-    paddingLeft: 10,
+    marginBottom: 32,
   },
   roleOption: {
     flexDirection: 'row',
@@ -232,6 +266,6 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     fontWeight: 'bold',
     borderRadius: 4,
-    marginBottom: 20,
+    width: '100%',
   },
 });

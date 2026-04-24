@@ -22,6 +22,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import MediaPlayer from '@/components/common/MediaPlayer';
 import LessonItem from '@/components/lessons/LessonItem';
@@ -61,6 +62,7 @@ type FlattenedLesson = {
 
 const Level: React.FC = () => {
   const { assessment } = useLocalSearchParams<{ assessment: string }>();
+  const insets = useSafeAreaInsets();
   const { isGuest, promptCreateAccount } = useGuestMode();
   const hasPromptedGuestRef = useRef(false);
 
@@ -723,7 +725,7 @@ const Level: React.FC = () => {
     return (
       <View style={styles.container}>
         {Platform.OS === 'ios' ? (
-          <View style={styles.iosStatusBar} />
+          <View style={[styles.iosStatusBar, { height: insets.top }]} />
         ) : (
           <StatusBar style="light" backgroundColor={Colors.primary} />
         )}
@@ -748,7 +750,7 @@ const Level: React.FC = () => {
   return (
     <View style={styles.container}>
       {Platform.OS === 'ios' ? (
-        <View style={styles.iosStatusBar} />
+        <View style={[styles.iosStatusBar, { height: insets.top }]} />
       ) : (
         <StatusBar style="light" backgroundColor={Colors.primary} />
       )}
@@ -960,14 +962,16 @@ export default React.memo(Level);
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  iosStatusBar: { height: 50, backgroundColor: Colors.primary },
+  iosStatusBar: { backgroundColor: Colors.primary },
   videoContainer: {
     // backgroundColor: '#1f1f1f',
     // paddingBottom: 12,
   },
   playerWrapper: {
-    minHeight: 240,
+    width: '100%',
+    alignSelf: 'center',
     backgroundColor: '#000',
+    minHeight: 220,
     marginHorizontal: 0,
     // marginTop: 8,
     borderRadius: 0,

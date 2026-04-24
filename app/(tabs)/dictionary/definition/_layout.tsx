@@ -14,10 +14,13 @@ import { StatusBar } from 'expo-status-bar';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { Colors } from '@/constants/Colors';
 
 const _layout = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { word: initialDefinitionWord, query: urlQueryParam } =
     useLocalSearchParams<{
       word: string;
@@ -59,10 +62,24 @@ const _layout = () => {
     router.setParams({ word: initialDefinitionWord, query: text });
   };
 
+  const handleBackPress = () => {
+    if (Platform.OS !== 'android') {
+      router.back();
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace('/(tabs)/dictionary');
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {Platform.OS === 'ios' ? (
-        <View style={{ height: 50, backgroundColor: Colors.primary }} />
+        <View style={{ height: insets.top, backgroundColor: Colors.primary }} />
       ) : (
         <StatusBar style="light" backgroundColor={Colors.primary} />
       )}
@@ -74,8 +91,20 @@ const _layout = () => {
             headerShown: true,
             headerStyle: { backgroundColor: '#ffffff' },
             header: () => (
-              <View style={styles.headerContainer}>
-                <TouchableOpacity onPress={() => router.back()}>
+              <View
+                style={[
+                  styles.headerContainer,
+                  Platform.OS === 'android'
+                    ? { paddingTop: insets.top + 12 }
+                    : null,
+                ]}
+              >
+                <TouchableOpacity
+                  onPress={handleBackPress}
+                  style={styles.backButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Go back"
+                >
                   <Ionicons
                     name="arrow-back"
                     size={24}
@@ -122,12 +151,17 @@ export default _layout;
 
 const styles = StyleSheet.create({
   headerContainer: {
-    top: Platform.OS === 'ios' ? 0 : 20,
     backgroundColor: '#ffffff',
     paddingHorizontal: 10,
     paddingVertical: 10,
     alignItems: 'center',
     flexDirection: 'row',
+  },
+  backButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleContainer: {
     flex: 1,

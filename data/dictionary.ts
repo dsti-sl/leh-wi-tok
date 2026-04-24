@@ -4,6 +4,10 @@ import { getDatabase } from '@/db/schema';
 import { getBaseUrl } from '@/utils';
 import { fileDownloads } from '@/utils/filedownloads';
 
+const TRANSLATION_PAGE_SIZE = 50;
+const TRANSLATION_REQUEST_TIMEOUT_MS = 15000;
+const ASSET_DOWNLOAD_CONCURRENCY = 4;
+
 interface ApiTranslationItem {
   id: string;
   phrase: string;
@@ -18,6 +22,20 @@ interface ApiTranslationItem {
   tags?: { category: string; title: string }[];
 }
 
+interface ApiTranslationResponse {
+  data: ApiTranslationItem[];
+  meta?: {
+    count?: number;
+    page?: number;
+    pageSize?: number;
+  };
+}
+
+type DownloadableAsset = {
+  id: string;
+  name: string;
+};
+
 export interface LocalDictionaryEntry {
   word: string;
   definition: string;
@@ -25,6 +43,10 @@ export interface LocalDictionaryEntry {
   image: string | null;
   partOfSpeech: string | null;
   categories: string[];
+}
+
+export interface DictionarySyncResult {
+  syncedCount: number;
 }
 
 /**
@@ -80,6 +102,126 @@ const updateWord = async (
   } catch (error) {
     console.error('Error updating word:', error);
   }
+};
+
+const createRequestTimeoutSignal = (timeoutMs: number): AbortSignal => {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+};
+
+const getTranslationEndpoint = (baseUrl: string, page: number): string => {
+  const baseUrlClean = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+  return `${baseUrlClean}/translation?select=id,phrase,description,
+    gesture(id,name,path,contentType),illustration(id,name,path,contentType),
+    tags(category,title)&page=${page}&page-size=${TRANSLATION_PAGE_SIZE}`;
+};
+
+const fetchTranslationPage = async (
+  baseUrl: string,
+  page: number,
+): Promise<ApiTranslationResponse> => {
+  const response = await fetch(getTranslationEndpoint(baseUrl, page), {
+    signal: createRequestTimeoutSignal(TRANSLATION_REQUEST_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch translations page ${page}: ${response.status} ${response.statusText} - ${errorText}`,
+    );
+  }
+
+  const payload = (await response.json()) as ApiTranslationResponse;
+  if (!payload || !Array.isArray(payload.data)) {
+    throw new Error(`Invalid translation response on page ${page}`);
+  }
+
+  return payload;
+};
+
+const fetchAllTranslations = async (
+  baseUrl: string,
+): Promise<ApiTranslationItem[]> => {
+  const translations: ApiTranslationItem[] = [];
+  let page = 1;
+  let expectedTotal: number | null = null;
+  let hasMorePages = true;
+
+  while (hasMorePages) {
+    const payload = await fetchTranslationPage(baseUrl, page);
+    const pageItems = payload.data;
+
+    if (expectedTotal === null && typeof payload.meta?.count === 'number') {
+      expectedTotal = payload.meta.count;
+    }
+
+    translations.push(...pageItems);
+
+    const reachedKnownTotal =
+      expectedTotal !== null && translations.length >= expectedTotal;
+    const reachedLastPage = pageItems.length < TRANSLATION_PAGE_SIZE;
+
+    hasMorePages = !(reachedKnownTotal || reachedLastPage);
+    page += 1;
+  }
+
+  return translations;
+};
+
+const dedupeTranslationsByPhrase = (
+  translations: ApiTranslationItem[],
+): ApiTranslationItem[] => {
+  const uniqueTranslations = new Map<string, ApiTranslationItem>();
+
+  for (const item of translations) {
+    const phrase = item.phrase?.trim();
+    if (!phrase) {
+      continue;
+    }
+
+    if (!uniqueTranslations.has(phrase)) {
+      uniqueTranslations.set(phrase, { ...item, phrase });
+    }
+  }
+
+  return Array.from(uniqueTranslations.values()).sort((a, b) =>
+    a.phrase.localeCompare(b.phrase, undefined, { numeric: true }),
+  );
+};
+
+const runWithConcurrency = async <TInput, TOutput>(
+  items: TInput[],
+  concurrency: number,
+  worker: (item: TInput) => Promise<TOutput>,
+): Promise<TOutput[]> => {
+  if (items.length === 0) {
+    return [];
+  }
+
+  const results: TOutput[] = new Array(items.length);
+  let currentIndex = 0;
+
+  const consume = async () => {
+    while (currentIndex < items.length) {
+      const index = currentIndex;
+      currentIndex += 1;
+      const item = items[index];
+      if (item === undefined) {
+        return;
+      }
+      results[index] = await worker(item);
+    }
+  };
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () =>
+      consume(),
+    ),
+  );
+
+  return results;
 };
 
 /**
@@ -143,106 +285,66 @@ export const insertDictionaryData = async (
  * Fetches dictionary data from the API and processes it.
  * This function will now handle downloading images and converting them to local URIs.
  */
-export const fetchAndInsertTranslations = async (): Promise<void> => {
-  try {
+export const fetchAndInsertTranslations =
+  async (): Promise<DictionarySyncResult> => {
     const baseUrl = getBaseUrl();
     if (!baseUrl) {
-      console.error('BASE_URL is not available!');
-      return;
+      throw new Error('BASE_URL is not available');
     }
 
-    const baseUrlClean = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    try {
+      const downloadCache = new Map<string, Promise<string>>();
+      const getCachedAssetPath = async (
+        asset?: DownloadableAsset,
+      ): Promise<string | null> => {
+        if (!asset?.id || !asset.name) {
+          return null;
+        }
 
-    // Backend's translation endpoint. Processes words in a batch of 50s.
-    const urlParams = `${baseUrlClean}/translation?select=id,phrase,description,
-    gesture(id,name,path,contentType),illustration(id,name,path,contentType),
-    tags(category,title)&page-size=50`;
-    const response = await fetch(urlParams);
+        const cachedDownload =
+          downloadCache.get(asset.id) ??
+          fileDownloads(asset.id, asset.name).then(path => path || '');
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Failed to fetch data from API: ${response.status} ${response.statusText} - ${errorText}`,
-      );
-    }
+        downloadCache.set(asset.id, cachedDownload);
 
-    const apiResponse = await response.json();
-    if (!apiResponse || !apiResponse.data || !Array.isArray(apiResponse.data)) {
-      throw new Error('Invalid API response structure');
-    }
+        const localPath = await cachedDownload;
+        return localPath || null;
+      };
 
-    let translations: ApiTranslationItem[] = apiResponse.data;
-    translations = translations.sort((a, b) =>
-      a.phrase.localeCompare(b.phrase, undefined, { numeric: true }),
-    );
-
-    const batchSize = 50;
-    for (let i = 0; i < translations.length; i += batchSize) {
-      const batch = translations.slice(i, i + batchSize);
-
-      // Transform and download assets for the current batch
-      const transformedBatch = await Promise.all(
-        batch.map(async item => {
-          if (!item.phrase) {
-            console.warn('Skipping entry with missing phrase:', item);
-            return null;
-          }
-
-          try {
-            const tags = item.tags || [];
-            const partOfSpeechTag = tags.find(
-              tag => tag.category === 'part-of-speech',
-            );
-            const categoriesTags = tags
-              .filter(tag => tag.category === 'categories')
-              .map(tag => tag.title);
-
-            const partOfSpeech = partOfSpeechTag?.title || null;
-
-            // Use fileDownloads with the image ID and the original filename.
-            // Fuck. Nobody should fuck with this section.
-            const gesturePath =
-              item.gesture?.id && item.gesture?.name
-                ? await fileDownloads(item.gesture.id, item.gesture.name).catch(
-                    () => null,
-                  )
-                : null;
-
-            const illustrationPath =
-              item.illustration?.id && item.illustration?.name
-                ? await fileDownloads(
-                    item.illustration.id,
-                    item.illustration.name,
-                  ).catch(() => null)
-                : null;
-
-            return {
-              word: item.phrase,
-              definition: item.description || 'No description available',
-              illustration: illustrationPath,
-              image: gesturePath,
-              partOfSpeech,
-              categories: categoriesTags,
-            } as LocalDictionaryEntry;
-          } catch (error) {
-            return null;
-          }
-        }),
+      const translations = dedupeTranslationsByPhrase(
+        await fetchAllTranslations(baseUrl),
       );
 
-      const validData = transformedBatch.filter(
-        item => item !== null,
-      ) as LocalDictionaryEntry[];
+      const transformedTranslations = await runWithConcurrency(
+        translations,
+        ASSET_DOWNLOAD_CONCURRENCY,
+        async item => {
+          const tags = item.tags || [];
+          const partOfSpeechTag = tags.find(
+            tag => tag.category === 'part-of-speech',
+          );
+          const categoryTags = tags
+            .filter(tag => tag.category === 'categories')
+            .map(tag => tag.title);
 
-      if (validData.length > 0) {
-        await insertDictionaryData(validData);
-      }
+          return {
+            word: item.phrase,
+            definition: item.description || 'No description available',
+            illustration: await getCachedAssetPath(item.illustration),
+            image: await getCachedAssetPath(item.gesture),
+            partOfSpeech: partOfSpeechTag?.title || null,
+            categories: categoryTags,
+          } satisfies LocalDictionaryEntry;
+        },
+      );
+
+      await insertDictionaryData(transformedTranslations);
+      return { syncedCount: transformedTranslations.length };
+    } catch (error) {
+      console.error('Error fetching translation data:', error);
+      throw error;
     }
-  } catch (error) {
-    console.error('Error fetching translation data:', error);
-    // Don't throw the error to avoid breaking the app
-  }
-};
+  };
 
 /**
  * Checks if the Dictionary need to be updated and updates it if necessary.

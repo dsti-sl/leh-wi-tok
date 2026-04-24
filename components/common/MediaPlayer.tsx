@@ -248,14 +248,15 @@ const styles = StyleSheet.create<{
   subErrorText: TextStyle;
 }>({
   container: {
-    flex: 1,
+    width: '100%',
+    alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
+    minHeight: 220,
   },
   media: {
     width: '100%',
-    height: '100%',
     borderRadius: 8,
   },
   loadingContainer: {
