@@ -984,7 +984,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     maxHeight: '70%',
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 20,
     borderTopWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
@@ -995,7 +995,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
       },
-      android: { elevation: 8 },
+      android: { elevation: 4},
     }),
   },
   qualitySheetHeader: {

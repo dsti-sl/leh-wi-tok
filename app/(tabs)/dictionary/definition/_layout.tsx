@@ -62,6 +62,20 @@ const _layout = () => {
     router.setParams({ word: initialDefinitionWord, query: text });
   };
 
+  const handleBackPress = () => {
+    if (Platform.OS !== 'android') {
+      router.back();
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace('/(tabs)/dictionary');
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       {Platform.OS === 'ios' ? (
@@ -77,8 +91,20 @@ const _layout = () => {
             headerShown: true,
             headerStyle: { backgroundColor: '#ffffff' },
             header: () => (
-              <View style={styles.headerContainer}>
-                <TouchableOpacity onPress={() => router.back()}>
+              <View
+                style={[
+                  styles.headerContainer,
+                  Platform.OS === 'android'
+                    ? { paddingTop: insets.top + 12 }
+                    : null,
+                ]}
+              >
+                <TouchableOpacity
+                  onPress={handleBackPress}
+                  style={styles.backButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Go back"
+                >
                   <Ionicons
                     name="arrow-back"
                     size={24}
@@ -130,6 +156,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
     flexDirection: 'row',
+  },
+  backButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleContainer: {
     flex: 1,
