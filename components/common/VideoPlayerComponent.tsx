@@ -20,7 +20,14 @@ import {
   Platform,
 } from 'react-native';
 
-import { useVideoPlayer, VideoView } from 'expo-video';
+import {
+  type SourceLoadEventPayload,
+  type StatusChangeEventPayload,
+  type TimeUpdateEventPayload,
+  type VideoPlayer,
+  useVideoPlayer,
+  VideoView,
+} from 'expo-video';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -63,6 +70,26 @@ interface VideoPlayerComponentProps {
   initialTime?: number;
   onTimeUpdate?: (_currentTime: number) => void;
 }
+
+type VideoPlayerEventMap = {
+  playToEnd: undefined;
+  sourceLoad: SourceLoadEventPayload;
+  statusChange: StatusChangeEventPayload;
+  timeUpdate: TimeUpdateEventPayload;
+};
+
+type VideoPlayerSubscription = {
+  remove: () => void;
+};
+
+type VideoPlayerWithListeners = VideoPlayer & {
+  addListener<TKey extends keyof VideoPlayerEventMap>(
+    eventName: TKey,
+    listener: VideoPlayerEventMap[TKey] extends undefined
+      ? () => void
+      : (payload: VideoPlayerEventMap[TKey]) => void,
+  ): VideoPlayerSubscription;
+};
 
 // ============= CONSTANTS =============
 
@@ -200,7 +227,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   useEffect(() => {
     if (!player) return;
 
-    const subscription = player.addListener('sourceLoad', payload => {
+    const eventedPlayer = player as VideoPlayerWithListeners;
+    const subscription = eventedPlayer.addListener('sourceLoad', payload => {
       const bestTrack = payload.availableVideoTracks
         .filter(
           track =>
@@ -236,7 +264,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   useEffect(() => {
     if (!player) return;
 
-    const subscription = player.addListener('statusChange', status => {
+    const eventedPlayer = player as VideoPlayerWithListeners;
+    const subscription = eventedPlayer.addListener('statusChange', status => {
       setIsBuffering(status.status === 'loading');
     });
 
@@ -252,7 +281,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
   useEffect(() => {
     if (!player || !onEnd) return;
 
-    const endSubscription = player.addListener('playToEnd', () => {
+    const eventedPlayer = player as VideoPlayerWithListeners;
+    const endSubscription = eventedPlayer.addListener('playToEnd', () => {
       onEnd();
     });
 
@@ -286,7 +316,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     if (!player || !onTimeUpdate) return;
 
     player.timeUpdateEventInterval = 1;
-    const subscription = player.addListener('timeUpdate', payload => {
+    const eventedPlayer = player as VideoPlayerWithListeners;
+    const subscription = eventedPlayer.addListener('timeUpdate', payload => {
       onTimeUpdate(payload.currentTime);
     });
 

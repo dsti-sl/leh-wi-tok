@@ -1,6 +1,17 @@
-import { ExpoConfig, ConfigContext } from 'expo/config';
+import type { ExpoConfig } from '@expo/config-types';
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
+type AppExpoConfig = ExpoConfig & {
+  experiments?: {
+    turboModules?: boolean;
+    typedRoutes?: boolean;
+  };
+};
+
+type AppConfigContext = {
+  config: AppExpoConfig;
+};
+
+export default ({ config }: AppConfigContext): AppExpoConfig => ({
   ...config,
   name: 'leh-wi-tok',
   slug: 'leh-wi-tok',
