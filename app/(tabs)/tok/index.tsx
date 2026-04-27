@@ -576,6 +576,27 @@ const TOK_WEBVIEW_BOOTSTRAP = `
       );
     }
 
+    function autoRejectCookieConsent() {
+      var buttons = findElementsInRoot(
+        document,
+        'button, [role="button"]'
+      );
+
+      for (var i = 0; i < buttons.length; i++) {
+        var btn = buttons[i];
+        var label = (btn.innerText || btn.textContent || '')
+          .trim()
+          .toLowerCase();
+
+        if (label === 'reject all' || label === 'reject') {
+          btn.click();
+          return true;
+        }
+      }
+
+      return false;
+    }
+
     window.__TOK_BRIDGE__ = {
       hideChrome: hideChrome,
       pauseIllustration: pauseIllustration,
@@ -599,6 +620,7 @@ const TOK_WEBVIEW_BOOTSTRAP = `
     hideChrome();
     hideFullscreenControls(document);
     keepCloseControlsReachable(document);
+    autoRejectCookieConsent();
     bindViewerCloseHandler();
 
     const observer = new MutationObserver(function() {
@@ -608,6 +630,7 @@ const TOK_WEBVIEW_BOOTSTRAP = `
       hideChrome();
       hideFullscreenControls(document);
       keepCloseControlsReachable(document);
+      autoRejectCookieConsent();
     });
 
     observer.observe(document.documentElement, {
