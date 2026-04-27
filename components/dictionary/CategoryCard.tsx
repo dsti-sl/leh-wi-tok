@@ -1,11 +1,18 @@
 import React from 'react';
 
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  ImageSourcePropType,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 
 interface CategoryCardProps {
-  imageSource: string;
+  imageSource: ImageSourcePropType;
   categoryName: string;
   wordCount: number;
   onPress: () => void;
@@ -17,15 +24,13 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   wordCount,
   onPress,
 }) => {
+  const resolvedImageSource =
+    typeof imageSource === 'string' ? { uri: imageSource } : imageSource;
+
   return (
     <TouchableOpacity style={styles.cardContainer} onPress={onPress}>
       <View style={styles.imageContainer}>
-        <Image
-          source={
-            typeof imageSource === 'string' ? { uri: imageSource } : imageSource
-          }
-          style={styles.image}
-        />
+        <Image source={resolvedImageSource} style={styles.image} />
       </View>
       <View style={styles.contentContainer}>
         <Text style={styles.categoryName}>{categoryName}</Text>

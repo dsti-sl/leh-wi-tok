@@ -13,14 +13,14 @@ import {
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { fetchAndInsertTranslations } from '@/data/dictionary';
-import { fetchDictionaryData } from '@/db/retrivedata';
+import {
+  checkAndUpdateTranslations,
+  fetchDictionaryData,
+  LocalDictionaryEntry,
+} from '@/data/dictionary';
 import useSearch from '@/hooks/useSearch';
 
-interface DictionaryEntry {
-  word: string;
-  categories: string[];
-}
+type DictionaryEntry = Pick<LocalDictionaryEntry, 'word' | 'categories'>;
 
 interface GroupedWordsSection {
   title: string;
@@ -29,28 +29,45 @@ interface GroupedWordsSection {
 
 const index = () => {
   const router = useRouter();
-  const { categoryName, query: searchParamQuery = '' } = useLocalSearchParams<{
-    categoryName: string;
-    query?: string;
-  }>();
+  const { categoryName: rawCategoryName, query: rawSearchParamQuery = '' } =
+    useLocalSearchParams<{
+      categoryName: string;
+      query?: string;
+    }>();
+  const categoryName = Array.isArray(rawCategoryName)
+    ? (rawCategoryName[0] ?? '')
+    : rawCategoryName;
+  const searchParamQuery = Array.isArray(rawSearchParamQuery)
+    ? (rawSearchParamQuery[0] ?? '')
+    : rawSearchParamQuery;
 
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
-  const {
-    query,
-    setQuery,
-    filteredData: globalFilteredData,
-  } = useSearch({
+  const { query, setQuery, filteredData } = useSearch({
     data: dictionaryData,
     searchKey: 'word',
   });
 
+  const categoryEntries = useMemo(
+    () =>
+      dictionaryData.filter(entry => entry.categories.includes(categoryName)),
+    [categoryName, dictionaryData],
+  );
+
+  const categorySearchResults = useMemo(
+    () =>
+      query
+        ? filteredData.filter(entry => entry.categories.includes(categoryName))
+        : [],
+    [categoryName, filteredData, query],
+  );
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data: DictionaryEntry[] = await fetchDictionaryData();
+        const data = await fetchDictionaryData();
         setDictionaryData(data);
         if (searchParamQuery !== query) {
           setQuery(searchParamQuery);
@@ -68,11 +85,8 @@ const index = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      // Call your fetchAndInsertTranslations function
-      await fetchAndInsertTranslations();
-
-      // Refresh the local data
-      const data: DictionaryEntry[] = await fetchDictionaryData();
+      await checkAndUpdateTranslations({ force: true });
+      const data = await fetchDictionaryData();
       setDictionaryData(data);
     } catch (error) {
       console.error('Error refreshing dictionary data:', error);
@@ -85,11 +99,7 @@ const index = () => {
       return [];
     }
 
-    const wordsForCurrentCategory = dictionaryData.filter(entry =>
-      entry.categories.includes(categoryName),
-    );
-
-    const groupedData = wordsForCurrentCategory.reduce(
+    const groupedData = categoryEntries.reduce(
       (acc: Record<string, DictionaryEntry[]>, item) => {
         const firstLetter = item.word[0]?.toUpperCase();
         if (firstLetter) {
@@ -108,7 +118,7 @@ const index = () => {
         data:
           groupedData[key]?.sort((a, b) => a.word.localeCompare(b.word)) || [],
       }));
-  }, [dictionaryData, categoryName, query, loading]);
+  }, [categoryEntries, loading, query]);
 
   if (loading) {
     return (
@@ -122,7 +132,7 @@ const index = () => {
     <SafeAreaView style={styles.container}>
       {query ? (
         <FlatList
-          data={globalFilteredData}
+          data={categorySearchResults}
           keyExtractor={(item: DictionaryEntry) => item.word}
           contentContainerStyle={styles.searchResultsContainer}
           refreshing={refreshing}

@@ -19,7 +19,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 
 import EditProfileModal from '@/components/account/EditProfileModal';
 import { Colors } from '@/constants/Colors';
-import { fetchAndInsertTranslations } from '@/data/dictionary';
+import { checkAndUpdateTranslations } from '@/data/dictionary';
 import useAccount from '@/hooks/useAccount';
 import useGuestMode from '@/hooks/useGuestMode';
 import {
@@ -130,11 +130,7 @@ const Account = () => {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      const { syncedCount } = await fetchAndInsertTranslations();
-      Alert.alert(
-        'Dictionary synced',
-        `Successfully synced ${syncedCount} dictionary record${syncedCount === 1 ? '' : 's'}.`,
-      );
+      await checkAndUpdateTranslations({ force: true });
     } catch (error) {
       console.error('Error syncing dictionary:', error);
       Alert.alert('Sync failed', 'Unable to sync dictionary right now.');

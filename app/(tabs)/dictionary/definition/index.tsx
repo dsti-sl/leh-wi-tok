@@ -26,11 +26,17 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const index = () => {
   const router = useRouter();
-  const { word: definitionWord, query: urlSearchQuery = '' } =
+  const { word: rawDefinitionWord, query: rawUrlSearchQuery = '' } =
     useLocalSearchParams<{
       word: string;
       query?: string;
     }>();
+  const definitionWord = Array.isArray(rawDefinitionWord)
+    ? (rawDefinitionWord[0] ?? '')
+    : rawDefinitionWord;
+  const urlSearchQuery = Array.isArray(rawUrlSearchQuery)
+    ? (rawUrlSearchQuery[0] ?? '')
+    : rawUrlSearchQuery;
 
   const [allDictionaryData, setAllDictionaryData] = useState<DictionaryEntry[]>(
     [],
@@ -52,9 +58,6 @@ const index = () => {
       try {
         const data = await fetchDictionaryData();
         setAllDictionaryData(data);
-        console.log(
-          `[index.tsx] Loaded ${data.length} dictionary entries from local DB.`,
-        );
       } catch (error) {
         Alert.alert('Error', 'Failed to load all dictionary data.');
         console.error('Failed to load all dictionary data:', error);
@@ -64,7 +67,7 @@ const index = () => {
   }, []);
 
   useEffect(() => {
-    if (setUseSearchQuery && urlSearchQuery !== undefined) {
+    if (urlSearchQuery !== undefined) {
       setUseSearchQuery(urlSearchQuery);
     }
 
@@ -92,7 +95,7 @@ const index = () => {
   }, [
     urlSearchQuery,
     definitionWord,
-    allDictionaryData.length,
+    allDictionaryData,
     setUseSearchQuery,
     wordData,
     router,
@@ -126,7 +129,6 @@ const index = () => {
     type: 'illustration' | 'image',
   ) => {
     if (!uri) {
-      console.warn(`[renderImage] No URI provided for ${type}.`);
       return null;
     }
 
@@ -149,7 +151,6 @@ const index = () => {
 
     // If it's a string, check for valid URI
     if (typeof uri === 'string') {
-      console.log(`[renderImage] Attempting to render image for ${type}:`, uri);
       if (
         !uri.startsWith('file://') &&
         !uri.startsWith('content://') &&

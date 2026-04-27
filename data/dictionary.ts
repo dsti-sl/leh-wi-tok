@@ -1,12 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { getDatabase } from '@/db/schema';
-import { getBaseUrl } from '@/utils';
+import { getBaseUrl, getToken } from '@/utils';
 import { fileDownloads } from '@/utils/filedownloads';
 
-const TRANSLATION_PAGE_SIZE = 50;
+const TRANSLATION_PAGE_SIZE = 100;
 const TRANSLATION_REQUEST_TIMEOUT_MS = 15000;
 const ASSET_DOWNLOAD_CONCURRENCY = 4;
+const DICTIONARY_SYNC_LOCK_KEY = 'dictionarySyncInProgress';
+const LAST_DICTIONARY_UPDATE_KEY = 'lastDictionaryUpdate';
+const DICTIONARY_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const TRANSLATION_SELECT_FIELDS =
+  'id,phrase,description,gesture(id,name),illustration(id,name),tags(category,title)';
 
 interface ApiTranslationItem {
   id: string;
@@ -36,6 +41,15 @@ type DownloadableAsset = {
   name: string;
 };
 
+type StoredDictionaryRow = {
+  word: string;
+  definition: string;
+  illustration: string | null;
+  image: string | null;
+  partOfSpeech: string | null;
+  categories: string | null;
+};
+
 export interface LocalDictionaryEntry {
   word: string;
   definition: string;
@@ -49,58 +63,51 @@ export interface DictionarySyncResult {
   syncedCount: number;
 }
 
-/**
- * To check if a word already exists in the database.
- * @param word The word to check
- * @returns True if the word exists, false otherwise
- */
-const doesWordExist = async (word: string): Promise<boolean> => {
-  try {
-    const db = await getDatabase();
-    const result = db.getAllSync<{ count: number }>(
-      'SELECT COUNT(*) as count FROM dictionary WHERE word = ?',
-      [word],
-    );
-    return (result[0]?.count ?? 0) > 0;
-  } catch (error) {
-    console.error(`Error checking if word "${word}" exists:`, error);
-    return false;
-  }
+let inFlightDictionarySync: Promise<DictionarySyncResult> | null = null;
+
+const setDictionarySyncLock = async (isSyncing: boolean): Promise<void> => {
+  await AsyncStorage.setItem(
+    DICTIONARY_SYNC_LOCK_KEY,
+    JSON.stringify({
+      startedAt: isSyncing ? Date.now() : null,
+      syncing: isSyncing,
+    }),
+  );
 };
 
-/**
- * Updates an existing word in the database.
- * @param word
- * @param data
- */
-const updateWord = async (
-  word: string,
-  data: {
-    definition: string;
-    illustration?: string | null;
-    image?: string | null;
-    partOfSpeech?: string;
-    categories?: string[];
-  },
-): Promise<void> => {
-  try {
-    const db = await getDatabase();
+const getDictionarySyncLockState = async (): Promise<{
+  startedAt: number | null;
+  syncing: boolean;
+}> => {
+  const rawValue = await AsyncStorage.getItem(DICTIONARY_SYNC_LOCK_KEY);
 
-    await db.runAsync(
-      `UPDATE dictionary
-       SET definition = ?, illustration = ?, image = ?, partOfSpeech = ?, categories = ?
-       WHERE word = ?`,
-      [
-        data.definition ?? null,
-        data.illustration ?? null,
-        data.image ?? null,
-        data.partOfSpeech ?? null,
-        JSON.stringify(data.categories ?? []),
-        word,
-      ],
-    );
-  } catch (error) {
-    console.error('Error updating word:', error);
+  if (!rawValue) {
+    return { startedAt: null, syncing: false };
+  }
+
+  if (rawValue === 'true') {
+    return { startedAt: null, syncing: true };
+  }
+
+  if (rawValue === 'false') {
+    return { startedAt: null, syncing: false };
+  }
+
+  try {
+    const parsedValue = JSON.parse(rawValue) as {
+      startedAt?: number | null;
+      syncing?: boolean;
+    };
+
+    return {
+      startedAt:
+        typeof parsedValue.startedAt === 'number'
+          ? parsedValue.startedAt
+          : null,
+      syncing: parsedValue.syncing === true,
+    };
+  } catch {
+    return { startedAt: null, syncing: false };
   }
 };
 
@@ -112,10 +119,13 @@ const createRequestTimeoutSignal = (timeoutMs: number): AbortSignal => {
 
 const getTranslationEndpoint = (baseUrl: string, page: number): string => {
   const baseUrlClean = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const searchParams = new URLSearchParams({
+    select: TRANSLATION_SELECT_FIELDS,
+    page: page.toString(),
+    'page-size': TRANSLATION_PAGE_SIZE.toString(),
+  });
 
-  return `${baseUrlClean}/translation?select=id,phrase,description,
-    gesture(id,name,path,contentType),illustration(id,name,path,contentType),
-    tags(category,title)&page=${page}&page-size=${TRANSLATION_PAGE_SIZE}`;
+  return `${baseUrlClean}/translation?${searchParams.toString()}`;
 };
 
 const fetchTranslationPage = async (
@@ -238,6 +248,14 @@ export const insertDictionaryData = async (
 
   try {
     const db = await getDatabase();
+    const existingRows = db.getAllSync<StoredDictionaryRow>(
+      'SELECT word, definition, illustration, image, partOfSpeech, categories FROM dictionary',
+    );
+    const existingEntriesByWord = new Map(
+      existingRows
+        .filter(row => typeof row.word === 'string' && row.word.length > 0)
+        .map(row => [row.word, row] as const),
+    );
 
     await db.withTransactionAsync(async () => {
       for (const item of data) {
@@ -249,18 +267,45 @@ export const insertDictionaryData = async (
           continue;
         }
 
-        const wordExists = await doesWordExist(item.word);
+        const normalizedCategories = JSON.stringify(item.categories ?? []);
+        const existingEntry = existingEntriesByWord.get(item.word);
 
-        if (wordExists) {
-          await updateWord(item.word, {
+        if (
+          existingEntry &&
+          existingEntry.definition === item.definition &&
+          (existingEntry.illustration ?? null) ===
+            (item.illustration ?? null) &&
+          (existingEntry.image ?? null) === (item.image ?? null) &&
+          (existingEntry.partOfSpeech ?? null) ===
+            (item.partOfSpeech ?? null) &&
+          (existingEntry.categories ?? '[]') === normalizedCategories
+        ) {
+          continue;
+        }
+
+        if (existingEntry) {
+          await db.runAsync(
+            `UPDATE dictionary
+             SET definition = ?, illustration = ?, image = ?, partOfSpeech = ?, categories = ?
+             WHERE word = ?`,
+            [
+              item.definition ?? null,
+              item.illustration ?? null,
+              item.image ?? null,
+              item.partOfSpeech ?? null,
+              normalizedCategories,
+              item.word,
+            ],
+          );
+          existingEntriesByWord.set(item.word, {
+            word: item.word,
             definition: item.definition,
-            illustration: item.illustration,
-            image: item.image,
-            partOfSpeech: item.partOfSpeech ?? '',
-            categories: item.categories,
+            illustration: item.illustration ?? null,
+            image: item.image ?? null,
+            partOfSpeech: item.partOfSpeech ?? null,
+            categories: normalizedCategories,
           });
         } else {
-          // Insert the new word
           await db.runAsync(
             `INSERT INTO dictionary (word, definition, illustration, image, partOfSpeech, categories)
              VALUES (?, ?, ?, ?, ?, ?)`,
@@ -270,9 +315,17 @@ export const insertDictionaryData = async (
               item.illustration,
               item.image,
               item.partOfSpeech || null,
-              JSON.stringify(item.categories || []), // categories need to be stringified for SQLite
+              normalizedCategories, // categories need to be stringified for SQLite
             ],
           );
+          existingEntriesByWord.set(item.word, {
+            word: item.word,
+            definition: item.definition,
+            illustration: item.illustration ?? null,
+            image: item.image ?? null,
+            partOfSpeech: item.partOfSpeech ?? null,
+            categories: normalizedCategories,
+          });
         }
       }
     });
@@ -287,81 +340,137 @@ export const insertDictionaryData = async (
  */
 export const fetchAndInsertTranslations =
   async (): Promise<DictionarySyncResult> => {
+    if (inFlightDictionarySync) {
+      return inFlightDictionarySync;
+    }
+
     const baseUrl = getBaseUrl();
     if (!baseUrl) {
       throw new Error('BASE_URL is not available');
     }
 
-    try {
-      const downloadCache = new Map<string, Promise<string>>();
-      const getCachedAssetPath = async (
-        asset?: DownloadableAsset,
-      ): Promise<string | null> => {
-        if (!asset?.id || !asset.name) {
-          return null;
-        }
+    inFlightDictionarySync = (async () => {
+      await setDictionarySyncLock(true);
 
-        const cachedDownload =
-          downloadCache.get(asset.id) ??
-          fileDownloads(asset.id, asset.name).then(path => path || '');
+      try {
+        const token = await getToken();
+        const downloadCache = new Map<string, Promise<string>>();
+        const getCachedAssetPath = async (
+          asset?: DownloadableAsset,
+        ): Promise<string | null> => {
+          if (!asset?.id || !asset.name) {
+            return null;
+          }
 
-        downloadCache.set(asset.id, cachedDownload);
+          const cachedDownload =
+            downloadCache.get(asset.id) ??
+            fileDownloads(asset.id, asset.name, { baseUrl, token }).then(
+              path => path || '',
+            );
 
-        const localPath = await cachedDownload;
-        return localPath || null;
-      };
+          downloadCache.set(asset.id, cachedDownload);
 
-      const translations = dedupeTranslationsByPhrase(
-        await fetchAllTranslations(baseUrl),
-      );
+          const localPath = await cachedDownload;
+          return localPath || null;
+        };
 
-      const transformedTranslations = await runWithConcurrency(
-        translations,
-        ASSET_DOWNLOAD_CONCURRENCY,
-        async item => {
-          const tags = item.tags || [];
-          const partOfSpeechTag = tags.find(
-            tag => tag.category === 'part-of-speech',
-          );
-          const categoryTags = tags
-            .filter(tag => tag.category === 'categories')
-            .map(tag => tag.title);
+        const translations = dedupeTranslationsByPhrase(
+          await fetchAllTranslations(baseUrl),
+        );
 
-          return {
-            word: item.phrase,
-            definition: item.description || 'No description available',
-            illustration: await getCachedAssetPath(item.illustration),
-            image: await getCachedAssetPath(item.gesture),
-            partOfSpeech: partOfSpeechTag?.title || null,
-            categories: categoryTags,
-          } satisfies LocalDictionaryEntry;
-        },
-      );
+        const transformedTranslations = await runWithConcurrency(
+          translations,
+          ASSET_DOWNLOAD_CONCURRENCY,
+          async item => {
+            const tags = item.tags || [];
+            const partOfSpeechTag = tags.find(
+              tag => tag.category === 'part-of-speech',
+            );
+            const categoryTags = tags
+              .filter(
+                tag =>
+                  tag.category === 'categories' && tag.title.trim().length > 0,
+              )
+              .map(tag => tag.title.trim());
 
-      await insertDictionaryData(transformedTranslations);
-      return { syncedCount: transformedTranslations.length };
-    } catch (error) {
-      console.error('Error fetching translation data:', error);
-      throw error;
-    }
+            return {
+              word: item.phrase,
+              definition: item.description || 'No description available',
+              illustration: await getCachedAssetPath(item.illustration),
+              image: await getCachedAssetPath(item.gesture),
+              partOfSpeech: partOfSpeechTag?.title || null,
+              categories: Array.from(new Set(categoryTags)),
+            } satisfies LocalDictionaryEntry;
+          },
+        );
+
+        await insertDictionaryData(transformedTranslations);
+
+        const syncTime = Date.now().toString();
+        await AsyncStorage.multiSet([
+          [LAST_DICTIONARY_UPDATE_KEY, syncTime],
+          [
+            DICTIONARY_SYNC_LOCK_KEY,
+            JSON.stringify({ startedAt: null, syncing: false }),
+          ],
+        ]);
+
+        return { syncedCount: transformedTranslations.length };
+      } catch (error) {
+        await setDictionarySyncLock(false);
+        console.error('Error fetching translation data:', error);
+        throw error;
+      } finally {
+        inFlightDictionarySync = null;
+      }
+    })();
+
+    return inFlightDictionarySync;
   };
 
 /**
  * Checks if the Dictionary need to be updated and updates it if necessary.
  */
-export const checkAndUpdateTranslations = async (): Promise<void> => {
+export const checkAndUpdateTranslations = async (options?: {
+  force?: boolean;
+}): Promise<void> => {
   try {
-    const lastUpdateKey = 'lastDictionaryUpdate';
     const currentTime = new Date().getTime();
-    const lastUpdate = await AsyncStorage.getItem(lastUpdateKey);
+    const [lastUpdate, syncLockState] = await Promise.all([
+      AsyncStorage.getItem(LAST_DICTIONARY_UPDATE_KEY),
+      getDictionarySyncLockState(),
+    ]);
+
+    if (inFlightDictionarySync) {
+      await inFlightDictionarySync;
+      return;
+    }
+
+    if (syncLockState.syncing) {
+      const syncStartedAt = syncLockState.startedAt ?? 0;
+      const syncLockIsFresh =
+        syncStartedAt > 0 &&
+        currentTime - syncStartedAt < TRANSLATION_REQUEST_TIMEOUT_MS * 2;
+
+      if (syncLockIsFresh) {
+        return;
+      }
+
+      await setDictionarySyncLock(false);
+    }
+
+    if (options?.force) {
+      await fetchAndInsertTranslations();
+      return;
+    }
 
     // Check for updates if last update was more than 24 hours ago or never
     if (
       !lastUpdate ||
-      currentTime - parseInt(lastUpdate) > 24 * 60 * 60 * 1000
+      Number.isNaN(parseInt(lastUpdate, 10)) ||
+      currentTime - parseInt(lastUpdate, 10) > DICTIONARY_SYNC_INTERVAL_MS
     ) {
       await fetchAndInsertTranslations();
-      await AsyncStorage.setItem(lastUpdateKey, currentTime.toString());
     }
   } catch (error) {
     console.error('Error checking for dictionary updates:', error);

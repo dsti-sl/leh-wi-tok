@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   FlatList,
+  ImageSourcePropType,
+  ListRenderItem,
   Platform,
   RefreshControl,
   StyleSheet,
@@ -15,23 +17,59 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import CategoryCard from '@/components/dictionary/CategoryCard';
 import { Colors } from '@/constants/Colors';
 import {
   checkAndUpdateTranslations,
   fetchDictionaryData,
+  LocalDictionaryEntry,
 } from '@/data/dictionary';
 import useSearch from '@/hooks/useSearch';
 
-interface DictionaryEntry {
-  word: string;
-  definition: string;
-  illustration: string | null;
-  image: string | null;
-  partOfSpeech: string | null;
-  categories: string[];
+type DictionaryEntry = LocalDictionaryEntry;
+
+interface DictionaryCategory {
+  categoryName: string;
+  wordCount: number;
+  imageSource: ImageSourcePropType;
 }
 
-const index = () => {
+const FALLBACK_CATEGORY_IMAGE = require('@/assets/images/adaptive-icon.png');
+
+const buildCategories = (entries: DictionaryEntry[]): DictionaryCategory[] => {
+  const categoryMap = new Map<
+    string,
+    { wordCount: number; imageSource: ImageSourcePropType | null }
+  >();
+
+  entries.forEach(entry => {
+    entry.categories.forEach(category => {
+      const existingCategory = categoryMap.get(category);
+      const nextImageSource =
+        existingCategory?.imageSource ??
+        (entry.image
+          ? { uri: entry.image }
+          : entry.illustration
+            ? { uri: entry.illustration }
+            : null);
+
+      categoryMap.set(category, {
+        wordCount: (existingCategory?.wordCount ?? 0) + 1,
+        imageSource: nextImageSource,
+      });
+    });
+  });
+
+  return Array.from(categoryMap.entries())
+    .map(([categoryName, value]) => ({
+      categoryName,
+      wordCount: value.wordCount,
+      imageSource: value.imageSource ?? FALLBACK_CATEGORY_IMAGE,
+    }))
+    .sort((a, b) => a.categoryName.localeCompare(b.categoryName));
+};
+
+const DictionaryScreen = () => {
   const router = useRouter();
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +83,9 @@ const index = () => {
         }
 
         const data = await fetchDictionaryData();
-        const sortedData = data.sort((a, b) => a.word.localeCompare(b.word));
+        const sortedData = [...data].sort((a, b) =>
+          a.word.localeCompare(b.word),
+        );
         setDictionaryData(sortedData);
       } catch (error) {
         console.error('Error refreshing dictionary data:', error);
@@ -56,8 +96,12 @@ const index = () => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData({ withRemoteSync: true });
-    setRefreshing(false);
+    try {
+      await checkAndUpdateTranslations({ force: true });
+      await loadData();
+    } finally {
+      setRefreshing(false);
+    }
   }, [loadData]);
 
   useEffect(() => {
@@ -81,9 +125,43 @@ const index = () => {
     searchKey: 'word',
   });
 
-  const displayedData = useMemo(
-    () => (query ? filteredData : dictionaryData),
-    [dictionaryData, filteredData, query],
+  const categories = useMemo(
+    () => buildCategories(dictionaryData),
+    [dictionaryData],
+  );
+  const showSearchResults = query.trim().length > 0;
+  const showCategoryList = !showSearchResults && categories.length > 0;
+  const defaultWordList = useMemo(() => dictionaryData, [dictionaryData]);
+
+  const renderWordResult: ListRenderItem<DictionaryEntry> = ({ item }) => (
+    <TouchableOpacity
+      onPress={() =>
+        router.push({
+          pathname: '/(tabs)/dictionary/definition',
+          params: { word: item.word },
+        })
+      }
+      style={styles.searchResultItem}
+    >
+      <Text style={styles.searchResultText}>{item.word}</Text>
+      <Text numberOfLines={2} style={styles.searchResultDefinition}>
+        {item.definition}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderCategory: ListRenderItem<DictionaryCategory> = ({ item }) => (
+    <CategoryCard
+      imageSource={item.imageSource}
+      categoryName={item.categoryName}
+      wordCount={item.wordCount}
+      onPress={() =>
+        router.push({
+          pathname: '/(tabs)/dictionary/category',
+          params: { categoryName: item.categoryName },
+        })
+      }
+    />
   );
 
   if (loading) {
@@ -128,38 +206,49 @@ const index = () => {
           ) : null}
         </View>
 
-        <FlatList
-          data={displayedData}
-          keyExtractor={item => item.word}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: '/(tabs)/dictionary/definition',
-                  params: { word: item.word },
-                })
-              }
-              style={styles.searchResultItem}
-            >
-              <Text style={styles.searchResultText}>{item.word}</Text>
-              <Text numberOfLines={2} style={styles.searchResultDefinition}>
-                {item.definition}
-              </Text>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No words found.</Text>
-          }
-        />
+        {showSearchResults ? (
+          <FlatList
+            data={filteredData}
+            keyExtractor={item => item.word}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            renderItem={renderWordResult}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No words found.</Text>
+            }
+          />
+        ) : showCategoryList ? (
+          <FlatList
+            data={categories}
+            keyExtractor={item => item.categoryName}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            renderItem={renderCategory}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No categories available.</Text>
+            }
+          />
+        ) : (
+          <FlatList
+            data={defaultWordList}
+            keyExtractor={item => item.word}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            renderItem={renderWordResult}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No words available.</Text>
+            }
+          />
+        )}
       </View>
     </View>
   );
 };
 
-export default index;
+export default DictionaryScreen;
 
 const styles = StyleSheet.create({
   outerContainer: {
