@@ -104,6 +104,8 @@ const QUALITY_LABELS: Record<string, string> = {
   auto: 'Auto',
 };
 
+const QUALITY_ORDER = ['1080p', '720p', '480p', '360p', '240p', '144p'];
+
 const NETWORK_QUALITY_MAP: Record<string, string> = {
   '2g': '144p',
   edge: '144p',
@@ -370,10 +372,12 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
           setUsingFallback(false);
 
           if (info.hasQualities && info.qualities?.length > 0) {
+            setSelectedQuality('auto');
             const recommended = getRecommendedQuality();
             const url = getStreamUrl(info, recommended);
             setCurrentStreamUrl(url);
           } else {
+            setSelectedQuality('original');
             setCurrentStreamUrl(info.originalUrl);
           }
           return;
@@ -423,6 +427,27 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     const type = connectionType.toLowerCase();
     return NETWORK_QUALITY_MAP[type] || '240p';
   }, [connectionType]);
+
+  const buildStreamUrl = useCallback(
+    (quality?: string): string => {
+      const baseUrl = getBaseUrl();
+      if (!videoId) {
+        return uri;
+      }
+
+      const params = new URLSearchParams({ id: videoId });
+      if (quality && quality !== 'original') {
+        params.set('quality', quality);
+      }
+
+      if (token) {
+        params.set('token', token);
+      }
+
+      return `${baseUrl}/video/stream?${params.toString()}`;
+    },
+    [videoId, token, uri],
+  );
 
   const getStreamUrl = useCallback(
     (info: VideoInfo, quality: string): string => {
@@ -515,23 +540,26 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
 
   const handleQualityChange = useCallback(
     async (quality: string) => {
-      if (!videoInfo || !enableAdaptiveStreaming) return;
-
       setSelectedQuality(quality);
       setShowQualityMenu(false);
 
-      if (usingFallback) {
+      if (!enableAdaptiveStreaming) {
         return;
       }
 
       // Don't access player.currentTime here as it may be stale
       let newUrl: string;
 
-      if (quality === 'auto') {
+      if (quality === 'auto' && videoInfo && !usingFallback) {
         const recommended = getRecommendedQuality();
         newUrl = getStreamUrl(videoInfo, recommended);
-      } else {
+      } else if (videoInfo && !usingFallback) {
         newUrl = getStreamUrl(videoInfo, quality);
+      } else {
+        newUrl =
+          quality === 'auto'
+            ? buildStreamUrl(getRecommendedQuality())
+            : buildStreamUrl(quality);
       }
 
       // Simply update the URL - useVideoPlayer will handle recreation
@@ -543,12 +571,12 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
       getStreamUrl,
       usingFallback,
       enableAdaptiveStreaming,
-      selectedQuality,
+      buildStreamUrl,
     ],
   );
 
   const getQualityLabel = useCallback((): string => {
-    if (!enableAdaptiveStreaming || usingFallback) {
+    if (!enableAdaptiveStreaming) {
       return 'Original';
     }
     if (selectedQuality === 'auto') {
@@ -563,22 +591,12 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
     enableAdaptiveStreaming,
   ]);
 
-  const sortedQualities = useMemo(() => {
-    if (!videoInfo?.qualities) return [];
-
-    return [...videoInfo.qualities].sort((a, b) => {
-      const qualityOrder = ['1080p', '720p', '480p', '360p', '240p', '144p'];
-      const aIndex = qualityOrder.indexOf(a.quality);
-      const bIndex = qualityOrder.indexOf(b.quality);
-
-      if (aIndex !== -1 && bIndex !== -1) {
-        return aIndex - bIndex;
-      }
-
-      if (aIndex !== -1) return -1;
-      if (bIndex !== -1) return 1;
-
-      return b.quality.localeCompare(a.quality);
+  const qualityOptions = useMemo(() => {
+    return QUALITY_ORDER.map(quality => {
+      return {
+        quality,
+        stream: videoInfo?.qualities?.find(q => q.quality === quality),
+      };
     });
   }, [videoInfo?.qualities]);
 
@@ -767,53 +785,48 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
         )}
       </View>
 
-      {enableAdaptiveStreaming &&
-        !usingFallback &&
-        videoInfo?.hasQualities &&
-        showControls && (
-          <View style={styles.qualityPanel}>
-            <TouchableOpacity
-              style={styles.qualityButtonInline}
-              onPress={handleQualityButtonPress}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.qualityButtonText}>{getQualityLabel()}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-      {enableAdaptiveStreaming &&
-        !usingFallback &&
-        videoInfo?.hasQualities &&
-        showQualityMenu && (
-          <Modal
-            visible={showQualityMenu}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setShowQualityMenu(false)}
+      {enableAdaptiveStreaming && showControls && (
+        <View style={styles.qualityPanel}>
+          <TouchableOpacity
+            style={styles.qualityButtonInline}
+            onPress={handleQualityButtonPress}
+            activeOpacity={0.7}
           >
-            <View style={styles.qualityModalRoot}>
-              <Pressable
-                style={styles.qualityBackdrop}
-                onPress={() => setShowQualityMenu(false)}
-              />
-              <View style={styles.qualitySheet}>
-                <View style={styles.qualitySheetHeader}>
-                  <Text style={styles.qualitySheetTitle}>Video Quality</Text>
-                  <TouchableOpacity
-                    onPress={() => setShowQualityMenu(false)}
-                    style={styles.qualityCloseButton}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="close" size={20} color="#FFF" />
-                  </TouchableOpacity>
-                </View>
+            <Text style={styles.qualityButtonText}>{getQualityLabel()}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-                <ScrollView
-                  style={styles.qualityMenuScroll}
-                  contentContainerStyle={styles.qualityMenuContent}
-                  showsVerticalScrollIndicator={true}
+      {enableAdaptiveStreaming && showQualityMenu && (
+        <Modal
+          visible={showQualityMenu}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowQualityMenu(false)}
+        >
+          <View style={styles.qualityModalRoot}>
+            <Pressable
+              style={styles.qualityBackdrop}
+              onPress={() => setShowQualityMenu(false)}
+            />
+            <View style={styles.qualitySheet}>
+              <View style={styles.qualitySheetHeader}>
+                <Text style={styles.qualitySheetTitle}>Video Quality</Text>
+                <TouchableOpacity
+                  onPress={() => setShowQualityMenu(false)}
+                  style={styles.qualityCloseButton}
+                  activeOpacity={0.7}
                 >
+                  <Ionicons name="close" size={20} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                style={styles.qualityMenuScroll}
+                contentContainerStyle={styles.qualityMenuContent}
+                showsVerticalScrollIndicator={true}
+              >
+                {videoInfo?.hasQualities && !usingFallback && (
                   <TouchableOpacity
                     style={[
                       styles.qualityOption,
@@ -826,43 +839,52 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
                       Recommended for {connectionType.toUpperCase()}
                     </Text>
                   </TouchableOpacity>
+                )}
 
-                  {sortedQualities.map((q: VideoQuality) => (
-                    <TouchableOpacity
-                      key={q.quality}
-                      style={[
-                        styles.qualityOption,
-                        selectedQuality === q.quality && styles.selectedOption,
-                      ]}
-                      onPress={() => handleQualityChange(q.quality)}
-                    >
-                      <Text style={styles.qualityText}>
-                        {QUALITY_LABELS[q.quality] || q.quality}
-                      </Text>
-                      <Text style={styles.qualitySubtext}>
-                        {q.resolution} • {(q.size / 1024 / 1024).toFixed(1)}MB
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-
+                {qualityOptions.map(option => (
                   <TouchableOpacity
+                    key={option.quality}
                     style={[
                       styles.qualityOption,
-                      selectedQuality === 'original' && styles.selectedOption,
+                      selectedQuality === option.quality &&
+                        styles.selectedOption,
                     ]}
-                    onPress={() => handleQualityChange('original')}
+                    onPress={() => handleQualityChange(option.quality)}
+                    activeOpacity={0.7}
                   >
-                    <Text style={styles.qualityText}>Original</Text>
+                    <Text style={styles.qualityText}>
+                      {QUALITY_LABELS[option.quality] || option.quality}
+                    </Text>
                     <Text style={styles.qualitySubtext}>
-                      Best quality •{' '}
-                      {(videoInfo.originalSize / 1024 / 1024).toFixed(1)}MB
+                      {option.stream
+                        ? `${option.stream.resolution} • ${(
+                            option.stream.size /
+                            1024 /
+                            1024
+                          ).toFixed(1)}MB`
+                        : 'Will stream best available for this video'}
                     </Text>
                   </TouchableOpacity>
-                </ScrollView>
-              </View>
+                ))}
+
+                <TouchableOpacity
+                  style={[
+                    styles.qualityOption,
+                    selectedQuality === 'original' && styles.selectedOption,
+                  ]}
+                  onPress={() => handleQualityChange('original')}
+                >
+                  <Text style={styles.qualityText}>Original</Text>
+                  <Text style={styles.qualitySubtext}>
+                    Best quality •{' '}
+                    {(videoInfo.originalSize / 1024 / 1024).toFixed(1)}MB
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
-          </Modal>
-        )}
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
