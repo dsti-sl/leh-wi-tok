@@ -840,8 +840,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
                         {QUALITY_LABELS[q.quality] || q.quality}
                       </Text>
                       <Text style={styles.qualitySubtext}>
-                        {q.resolution} • {q.bitrate} •{' '}
-                        {(q.size / 1024 / 1024).toFixed(1)}MB
+                        {q.resolution} • {(q.size / 1024 / 1024).toFixed(1)}MB
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -995,7 +994,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
       },
-      android: { elevation: 4},
+      android: { elevation: 4 },
     }),
   },
   qualitySheetHeader: {
