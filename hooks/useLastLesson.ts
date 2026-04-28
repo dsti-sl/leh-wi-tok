@@ -111,7 +111,7 @@ const useLastLesson = () => {
 
   const setIntroVideo = () => {
     const baseUrl = getBaseUrl();
-    const fileId = '65254ae9-6d04-46d1-ab16-7975a877bb6a';
+    const fileId = 'ee461ce5-a7f8-48a3-b407-f2ac66960b16';
     const downloadUrl = `${baseUrl}/file/download?id=${fileId}`;
 
     setLastLesson({
