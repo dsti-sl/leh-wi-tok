@@ -1,0 +1,370 @@
+[
+  {
+    "word": "A",
+    "definition": "The first letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/A.gif",
+    "image": "https://example.com/images/A.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "B",
+    "definition": "The second letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/B.gif",
+    "image": "https://example.com/images/B.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "C",
+    "definition": "The third letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/C.gif",
+    "image": "https://example.com/images/C.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "D",
+    "definition": "The fourth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/D.gif",
+    "image": "https://example.com/images/D.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "E",
+    "definition": "The fifth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/E.gif",
+    "image": "https://example.com/images/E.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "F",
+    "definition": "The sixth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/F.gif",
+    "image": "https://example.com/images/F.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "G",
+    "definition": "The seventh letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/G.gif",
+    "image": "https://example.com/images/G.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "H",
+    "definition": "The eighth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/H.gif",
+    "image": "https://example.com/images/H.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "I",
+    "definition": "The ninth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/I.gif",
+    "image": "https://example.com/images/I.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "J",
+    "definition": "The tenth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/J.gif",
+    "image": "https://example.com/images/J.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "K",
+    "definition": "The eleventh letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/K.gif",
+    "image": "https://example.com/images/K.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "L",
+    "definition": "The twelfth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/L.gif",
+    "image": "https://example.com/images/L.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "M",
+    "definition": "The thirteenth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/M.gif",
+    "image": "https://example.com/images/M.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "N",
+    "definition": "The fourteenth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/N.gif",
+    "image": "https://example.com/images/N.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "O",
+    "definition": "The fifteenth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/O.gif",
+    "image": "https://example.com/images/O.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "P",
+    "definition": "The sixteenth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/P.gif",
+    "image": "https://example.com/images/P.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "Q",
+    "definition": "The seventeenth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/Q.gif",
+    "image": "https://example.com/images/Q.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "R",
+    "definition": "The eighteenth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/R.gif",
+    "image": "https://example.com/images/R.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "S",
+    "definition": "The nineteenth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/S.gif",
+    "image": "https://example.com/images/S.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "T",
+    "definition": "The twentieth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/T.gif",
+    "image": "https://example.com/images/T.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "U",
+    "definition": "The twenty-first letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/U.gif",
+    "image": "https://example.com/images/U.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "V",
+    "definition": "The twenty-second letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/V.gif",
+    "image": "https://example.com/images/V.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "W",
+    "definition": "The twenty-third letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/W.gif",
+    "image": "https://example.com/images/W.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "X",
+    "definition": "The twenty-fourth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/X.gif",
+    "image": "https://example.com/images/X.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "Y",
+    "definition": "The twenty-fifth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/Y.gif",
+    "image": "https://example.com/images/Y.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "Z",
+    "definition": "The twenty-sixth letter of the English alphabet.",
+    "illustration": "https://example.com/illustrations/Z.gif",
+    "image": "https://example.com/images/Z.png",
+    "partOfSpeech": "noun",
+    "categories": ["Alphabets"]
+  },
+  {
+    "word": "alphabet",
+    "definition": "A set of letters or symbols in a fixed order, used to represent the basic sounds of a language.",
+    "illustration": "https://example.com/illustrations/alphabet.gif",
+    "image": "https://example.com/images/alphabet.png",
+    "partOfSpeech": "noun",
+    "categories": ["School"]
+  },
+  {
+    "word": "apple",
+    "definition": "A round fruit of a tree of the rose family, typically with thin green or red skin and crisp flesh.",
+    "illustration": "https://example.com/illustrations/apple.gif",
+    "image": "https://example.com/images/apple.png",
+    "partOfSpeech": "noun",
+    "categories": ["Kitchen", "Household"]
+  },
+  {
+    "word": "bag",
+    "definition": "A container made of flexible material with an opening at the top, used for carrying things.",
+    "illustration": "https://example.com/illustrations/bag.gif",
+    "image": "https://example.com/images/bag.png",
+    "partOfSpeech": "noun",
+    "categories": ["Household", "School"]
+  },
+  {
+    "word": "ball",
+    "definition": "A spherical object used in various games and sports.",
+    "illustration": "https://example.com/illustrations/ball.gif",
+    "image": "https://example.com/images/ball.png",
+    "partOfSpeech": "noun",
+    "categories": ["School", "Community"]
+  },
+  {
+    "word": "bible",
+    "definition": "The Christian scriptures, consisting of the Old and New Testaments.",
+    "illustration": "https://example.com/illustrations/bible.gif",
+    "image": "https://example.com/images/bible.png",
+    "partOfSpeech": "noun",
+    "categories": ["Church", "Household"]
+  },
+  {
+    "word": "book",
+    "definition": "A set of written, printed, or blank pages fastened together into a volume.",
+    "illustration": "https://example.com/illustrations/book.gif",
+    "image": "https://example.com/images/book.png",
+    "partOfSpeech": "noun",
+    "categories": ["School", "Church"]
+  },
+  {
+    "word": "broom",
+    "definition": "A long-handled brush used for sweeping floors.",
+    "illustration": "https://example.com/illustrations/broom.gif",
+    "image": "https://example.com/images/broom.png",
+    "partOfSpeech": "noun",
+    "categories": ["Household", "Community"]
+  },
+  {
+    "word": "chair",
+    "definition": "A separate seat for one person, typically with a back and four legs.",
+    "illustration": "https://example.com/illustrations/chair.gif",
+    "image": "https://example.com/images/chair.png",
+    "partOfSpeech": "noun",
+    "categories": ["Household", "School"]
+  },
+  {
+    "word": "church",
+    "definition": "A building used for public Christian worship.",
+    "illustration": "https://example.com/illustrations/church.gif",
+    "image": "https://example.com/images/church.png",
+    "partOfSpeech": "noun",
+    "categories": ["Church", "Community"]
+  },
+  {
+    "word": "community",
+    "definition": "A group of people living in the same place or having a particular characteristic in common.",
+    "illustration": "https://example.com/illustrations/community.mp4",
+    "image": "https://example.com/images/community.png",
+    "partOfSpeech": "noun",
+    "categories": ["Community", "Church"]
+  },
+  {
+    "word": "dance",
+    "definition": "To move rhythmically to music, typically following a set sequence of steps.",
+    "illustration": "https://example.com/illustrations/dance.mp4",
+    "image": "https://example.com/images/dance.png",
+    "partOfSpeech": "verb",
+    "categories": ["Community", "Church"]
+  },
+  {
+    "word": "door",
+    "definition": "A hinged, sliding, or revolving barrier at the entrance to a building, room, or vehicle.",
+    "illustration": "https://example.com/illustrations/door.gif",
+    "image": "https://example.com/images/door.png",
+    "partOfSpeech": "noun",
+    "categories": ["Household", "Community"]
+  },
+  {
+    "word": "family",
+    "definition": "A group consisting of two parents and their children living together as a unit.",
+    "illustration": "https://example.com/illustrations/family.gif",
+    "image": "https://example.com/images/family.png",
+    "partOfSpeech": "noun",
+    "categories": ["Household", "Community"]
+  },
+  {
+    "word": "job",
+    "definition": "A paid position of regular employment.",
+    "illustration": "https://example.com/illustrations/job.mp4",
+    "image": "https://example.com/images/job.png",
+    "partOfSpeech": "noun",
+    "categories": ["Job", "Community"]
+  },
+  {
+    "word": "kitchen",
+    "definition": "A room or area where food is prepared and cooked.",
+    "illustration": "https://example.com/illustrations/kitchen.gif",
+    "image": "https://example.com/images/kitchen.png",
+    "partOfSpeech": "noun",
+    "categories": ["Household", "Kitchen"]
+  },
+  {
+    "word": "lamp",
+    "definition": "A device for giving light, especially one with a bulb or flame.",
+    "illustration": "https://example.com/illustrations/lamp.gif",
+    "image": "https://example.com/images/lamp.png",
+    "partOfSpeech": "noun",
+    "categories": ["Household", "School"]
+  },
+  {
+    "word": "prayer",
+    "definition": "A solemn request for help or expression of thanks addressed to God or another deity.",
+    "illustration": "https://example.com/illustrations/prayer.gif",
+    "image": "https://example.com/images/prayer.png",
+    "partOfSpeech": "noun",
+    "categories": ["Church", "Community"]
+  },
+  {
+    "word": "run",
+    "definition": "To move swiftly on foot so that both feet leave the ground during each stride.",
+    "illustration": "https://example.com/illustrations/run.mp4",
+    "image": "https://example.com/images/run.png",
+    "partOfSpeech": "verb",
+    "categories": ["Community", "Job"]
+  },
+  {
+    "word": "spoon",
+    "definition": "An implement consisting of a small, shallow bowl on a handle, used for eating, stirring, or serving food.",
+    "illustration": "https://example.com/illustrations/spoon.gif",
+    "image": "https://example.com/images/spoon.png",
+    "partOfSpeech": "noun",
+    "categories": ["Kitchen", "Household"]
+  },
+  {
+    "word": "teacher",
+    "definition": "A person who helps students acquire knowledge, competence, or virtue.",
+    "illustration": "https://example.com/illustrations/teacher.gif",
+    "image": "https://example.com/images/teacher.png",
+    "partOfSpeech": "noun",
+    "categories": ["School", "Job"]
+  }
+]

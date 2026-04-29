@@ -1,0 +1,33 @@
+{
+  "grades": [
+    "Class 1",
+    "Class 2",
+    "Class 3",
+    "Class 4",
+    "Class 5",
+    "Class 6",
+    "JSS 1",
+    "JSS 2",
+    "JSS 3",
+    "SSS 1",
+    "SSS 2",
+    "SSS 3"
+  ],
+  "locations": [
+    "Bo",
+    "Bonthe",
+    "Bombali",
+    "Falaba",
+    "Kailahun",
+    "Karene",
+    "Kenema",
+    "Koinadugu",
+    "Kono",
+    "Moyamba",
+    "Pujehun",
+    "PortLoko",
+    "Tonkolili",
+    "WesternUrban",
+    "WesternRural"
+  ]
+}

@@ -1,5 +1,6 @@
 node_modules/
 .expo/
+.vscode/
 dist/
 npm-debug.*
 *.jks
@@ -21,4 +22,17 @@ expo-env.d.ts
 
 # Others
 tmp/
+temp/
 .env
+.env.*
+!.env.example
+
+tsconfig.tsbuildinfo
+
+
+# EAS IGNORES
+android
+ios
+
+build
+build**.apk

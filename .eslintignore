@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+web-build/
+android/
+ios/
+dist/
+build/
+build**/
+coverage/
+.temp/
+temp/
+.tmp/
+.DS_Store
+*.log

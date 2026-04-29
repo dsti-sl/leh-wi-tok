@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# expo caches & outputs
+.expo/
+web-build/
+
+# native projects (managed elsewhere)
+android/
+ios/
+
+# builds & artifacts
+build/
+build**/
+dist/
+coverage/
+
+# temp & editor
+.temp/
+.tmp/
+temp/
+.DS_Store
+*.log

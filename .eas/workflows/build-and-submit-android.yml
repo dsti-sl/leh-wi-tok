@@ -1,0 +1,62 @@
+name: Build and Submit Android to Play Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_profile:
+        type: choice
+        options:
+          - production
+          - preview
+        required: false
+        default: 'production'
+        description: 'Build profile to use'
+      changelog:
+        type: string
+        required: false
+        description: 'Changelog for this release'
+
+jobs:
+  build_android:
+    name: 🤖 Build Android App
+    type: build
+    params:
+      platform: android
+      profile: ${{ inputs.build_profile || 'production' }}
+      message: 'Android build for Play Store submission'
+
+  submit_android:
+    name: 📦 Submit to Google Play Store
+    needs: [build_android]
+    type: submit
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: production
+
+  confirmation:
+    name: 📋 Android Build & Submit Summary
+    needs: [submit_android]
+    type: doc
+    params:
+      md: |
+        # ✅ Android Build & Submission Complete
+
+        ## Build Details
+        | Property | Value |
+        |----------|-------|
+        | Build ID | `${{ needs.build_android.outputs.build_id }}` |
+        | Version | ${{ needs.build_android.outputs.app_version }} |
+        | Build Number | ${{ needs.build_android.outputs.app_build_version }} |
+        | Package | ${{ needs.build_android.outputs.app_identifier }} |
+        | Distribution | ${{ needs.build_android.outputs.distribution }} |
+        | Profile | ${{ inputs.build_profile || 'production' }} |
+
+        ## Changelog
+        ${{ inputs.changelog || 'No changelog provided' }}
+
+        ## Next Steps
+        1. Go to [Google Play Console](https://play.google.com/console)
+        2. Navigate to your app → **Release** → **Testing** → **Internal testing**
+        3. Review the uploaded build
+        4. Add testers or promote to another track
+        5. When ready, promote to Production
