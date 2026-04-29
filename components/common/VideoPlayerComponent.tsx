@@ -876,8 +876,13 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = ({
                 >
                   <Text style={styles.qualityText}>Original</Text>
                   <Text style={styles.qualitySubtext}>
-                    Best quality •{' '}
-                    {(videoInfo.originalSize / 1024 / 1024).toFixed(1)}MB
+                    {videoInfo
+                      ? `Best quality • ${(
+                          videoInfo.originalSize /
+                          1024 /
+                          1024
+                        ).toFixed(1)}MB`
+                      : 'Best available quality'}
                   </Text>
                 </TouchableOpacity>
               </ScrollView>
