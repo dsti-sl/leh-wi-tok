@@ -23,7 +23,7 @@ export const LessonHeader = memo(
     onBackPress: () => void;
     topInset?: number;
   }) => (
-    <View style={[styles.headerContainer]}>
+    <View style={[styles.headerContainer, { paddingTop: topInset }]}>
       <TouchableOpacity
         onPress={onBackPress}
         style={styles.backButton}
@@ -115,6 +115,7 @@ ErrorView.displayName = 'ErrorView';
 
 const styles = StyleSheet.create<{
   headerContainer: ViewStyle;
+  backButton: ViewStyle;
   lessonInfo: ViewStyle;
   lessonHeader: ViewStyle;
   title: TextStyle;
