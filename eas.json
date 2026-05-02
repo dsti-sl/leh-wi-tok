@@ -32,7 +32,8 @@
     "production": {
       "ios": {
         "ascApiKeyIssuerId": "$ASC_API_KEY_ISSUER_ID",
-        "ascApiKeyId": "$ASC_API_KEY_ID"
+        "ascApiKeyId": "$ASC_API_KEY_ID",
+        "ascApiKey": "$ASC_API_KEY"
       }
     }
   }
