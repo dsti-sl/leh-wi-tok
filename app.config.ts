@@ -15,7 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     backgroundColor: '#0F4C5C',
   },
   ios: {
-    supportsTablet: false,
+    supportsTablet: true,
     infoPlist: {
       NSPhotoLibraryUsageDescription:
         'Leh Wi Tok needs access to your photo library so you can select and upload a profile picture. The photo you choose will be displayed on your account profile.',
