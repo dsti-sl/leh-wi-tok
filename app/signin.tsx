@@ -29,11 +29,7 @@ import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import useAuth from '@/hooks/useAuth';
 import { enterGuestMode } from '@/utils';
-import {
-  getContentMaxWidth,
-  getHeroImageSize,
-  getHorizontalPadding,
-} from '@/utils/layout';
+import { getHeroImageSize, getHorizontalPadding } from '@/utils/layout';
 
 const SignInScreen = () => {
   const [assetsReady, setAssetsReady] = useState(false);
@@ -42,7 +38,6 @@ const SignInScreen = () => {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const horizontalPadding = getHorizontalPadding(width);
-  const contentMaxWidth = getContentMaxWidth(width);
   const artworkSize = getHeroImageSize(width);
 
   const logoSource = useMemo(
@@ -109,7 +104,7 @@ const SignInScreen = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
+          <View style={styles.content}>
             <View style={styles.header}>
               {assetsReady && (
                 <Image

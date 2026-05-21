@@ -20,7 +20,7 @@ export default function Layout() {
   const maxTabBarWidth = Math.min(width - horizontalInset * 2, 760);
   const tabBarHeight = (isTablet ? 82 : 72) + safeBottomInset;
   const iconContainerSize = isTablet ? 64 : 56;
-  const floatingIconOffset = isTablet ? -10 : -8;
+  const floatingIconOffset = isTablet ? 0 : -8;
 
   // Hide tab bar on child routes
   const shouldHideTabBar = segments.some(

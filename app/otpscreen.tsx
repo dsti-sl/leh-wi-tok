@@ -28,7 +28,6 @@ import { Colors } from '@/constants/Colors';
 import { hydrateCurrentAccountProfile } from '@/lib/accountProfile';
 import { getBaseUrl, setToken } from '@/utils';
 import {
-  getContentMaxWidth,
   getHeroImageSize,
   getHorizontalPadding,
   getOtpCellSize,
@@ -55,11 +54,6 @@ const OtpScreen = () => {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const horizontalPadding = getHorizontalPadding(width);
-  const contentMaxWidth = getContentMaxWidth(width, {
-    compact: 440,
-    tablet: 620,
-    largeTablet: 720,
-  });
   const logoSize = getHeroImageSize(width);
   const otpCellSize = getOtpCellSize(width);
 
@@ -202,7 +196,7 @@ const OtpScreen = () => {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
+          <View style={styles.content}>
             <Image
               source={require('../assets/images/Auth_logo.png')}
               style={[styles.logo, { width: logoSize, height: logoSize }]}
