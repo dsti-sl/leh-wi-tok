@@ -27,5 +27,10 @@
       "node": "22.10.0",
       "environment": "production"
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {}
+    }
   }
 }
