@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
-  FlatList,
+  Image,
   Platform,
-  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -31,17 +30,21 @@ interface DictionaryEntry {
   categories: string[];
 }
 
+interface CategorySummary {
+  name: string;
+  imageSource: string;
+}
+
 const index = () => {
   const router = useRouter();
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(
     async (options?: { withRemoteSync?: boolean }) => {
       try {
         if (options?.withRemoteSync) {
-          await checkAndUpdateTranslations();
+          await checkAndUpdateTranslations({ force: true });
         }
 
         const data = await fetchDictionaryData();
@@ -53,12 +56,6 @@ const index = () => {
     },
     [],
   );
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadData({ withRemoteSync: true });
-    setRefreshing(false);
-  }, [loadData]);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -76,15 +73,32 @@ const index = () => {
     }, [loadData]),
   );
 
-  const { query, setQuery, filteredData } = useSearch({
+  const { query, setQuery } = useSearch({
     data: dictionaryData,
     searchKey: 'word',
   });
 
-  const displayedData = useMemo(
-    () => (query ? filteredData : dictionaryData),
-    [dictionaryData, filteredData, query],
-  );
+  const categories = useMemo<CategorySummary[]>(() => {
+    const categoryMap = new Map<string, string>();
+
+    dictionaryData.forEach(entry => {
+      entry.categories.forEach(category => {
+        const normalizedCategory = category?.trim();
+        if (!normalizedCategory) return;
+
+        const mediaSource = entry.image || entry.illustration;
+        if (!mediaSource) return;
+
+        if (!categoryMap.has(normalizedCategory)) {
+          categoryMap.set(normalizedCategory, mediaSource);
+        }
+      });
+    });
+
+    return Array.from(categoryMap.entries())
+      .map(([name, imageSource]) => ({ name, imageSource }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [dictionaryData]);
 
   if (loading) {
     return (
@@ -128,32 +142,32 @@ const index = () => {
           ) : null}
         </View>
 
-        <FlatList
-          data={displayedData}
-          keyExtractor={item => item.word}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: '/(tabs)/dictionary/definition',
-                  params: { word: item.word },
-                })
-              }
-              style={styles.searchResultItem}
-            >
-              <Text style={styles.searchResultText}>{item.word}</Text>
-              <Text numberOfLines={2} style={styles.searchResultDefinition}>
-                {item.definition}
-              </Text>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No words found.</Text>
-          }
-        />
+        {!query?.length && categories.length > 0 ? (
+          <View style={styles.categoriesSection}>
+            <Text style={styles.categoriesTitle}>Categories</Text>
+            <View style={styles.categoriesListContent}>
+              {categories.map(item => (
+                <TouchableOpacity
+                  key={item.name}
+                  style={styles.categoryChip}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(tabs)/dictionary/category',
+                      params: { categoryName: item.name },
+                    })
+                  }
+                >
+                  <Image
+                    source={{ uri: item.imageSource }}
+                    style={styles.categoryImage}
+                    resizeMode="cover"
+                  />
+                  <Text style={styles.categoryName}>{item.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -200,6 +214,37 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 6,
     marginLeft: 6,
+  },
+  categoriesSection: {
+    marginBottom: 12,
+  },
+  categoriesTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 8,
+  },
+  categoriesListContent: {
+    paddingBottom: 8,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  categoryImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#e2e8f0',
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
   },
   searchResultItem: {
     padding: 10,

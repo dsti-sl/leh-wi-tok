@@ -54,10 +54,11 @@ export interface DictionarySyncResult {
  * @param word The word to check
  * @returns True if the word exists, false otherwise
  */
+/*
 const doesWordExist = async (word: string): Promise<boolean> => {
   try {
     const db = await getDatabase();
-    const result = db.getAllSync<{ count: number }>(
+    const result = db.getAllSync<{ count: number }>
       'SELECT COUNT(*) as count FROM dictionary WHERE word = ?',
       [word],
     );
@@ -67,12 +68,14 @@ const doesWordExist = async (word: string): Promise<boolean> => {
     return false;
   }
 };
+*/
 
 /**
  * Updates an existing word in the database.
  * @param word
  * @param data
  */
+/*
 const updateWord = async (
   word: string,
   data: {
@@ -103,6 +106,7 @@ const updateWord = async (
     console.error('Error updating word:', error);
   }
 };
+*/
 
 const createRequestTimeoutSignal = (timeoutMs: number): AbortSignal => {
   const controller = new AbortController();
@@ -238,42 +242,36 @@ export const insertDictionaryData = async (
 
   try {
     const db = await getDatabase();
+    const validEntries = data.filter(item => {
+      if (!item.word || !item.definition) {
+        console.warn('Skipping invalid entry (missing word/definition):', item);
+        return false;
+      }
+
+      return true;
+    });
+
+    if (validEntries.length === 0) {
+      return;
+    }
 
     await db.withTransactionAsync(async () => {
-      for (const item of data) {
-        if (!item.word || !item.definition) {
-          console.warn(
-            'Skipping invalid entry (missing word/definition):',
-            item,
-          );
-          continue;
-        }
+      // Keep local DB fully aligned with latest server snapshot across devices.
+      await db.runAsync('DELETE FROM dictionary');
 
-        const wordExists = await doesWordExist(item.word);
-
-        if (wordExists) {
-          await updateWord(item.word, {
-            definition: item.definition,
-            illustration: item.illustration,
-            image: item.image,
-            partOfSpeech: item.partOfSpeech ?? '',
-            categories: item.categories,
-          });
-        } else {
-          // Insert the new word
-          await db.runAsync(
-            `INSERT INTO dictionary (word, definition, illustration, image, partOfSpeech, categories)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-              item.word,
-              item.definition,
-              item.illustration,
-              item.image,
-              item.partOfSpeech || null,
-              JSON.stringify(item.categories || []), // categories need to be stringified for SQLite
-            ],
-          );
-        }
+      for (const item of validEntries) {
+        await db.runAsync(
+          `INSERT INTO dictionary (word, definition, illustration, image, partOfSpeech, categories)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            item.word,
+            item.definition,
+            item.illustration,
+            item.image,
+            item.partOfSpeech || null,
+            JSON.stringify(item.categories || []),
+          ],
+        );
       }
     });
   } catch (error) {
@@ -349,14 +347,18 @@ export const fetchAndInsertTranslations =
 /**
  * Checks if the Dictionary need to be updated and updates it if necessary.
  */
-export const checkAndUpdateTranslations = async (): Promise<void> => {
+export const checkAndUpdateTranslations = async (options?: {
+  force?: boolean;
+}): Promise<void> => {
   try {
     const lastUpdateKey = 'lastDictionaryUpdate';
     const currentTime = new Date().getTime();
     const lastUpdate = await AsyncStorage.getItem(lastUpdateKey);
+    const shouldForceSync = options?.force === true;
 
     // Check for updates if last update was more than 24 hours ago or never
     if (
+      shouldForceSync ||
       !lastUpdate ||
       currentTime - parseInt(lastUpdate) > 24 * 60 * 60 * 1000
     ) {
