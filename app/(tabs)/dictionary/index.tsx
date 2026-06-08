@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
+  FlatList,
   Image,
   Platform,
   StyleSheet,
@@ -19,6 +20,7 @@ import {
   checkAndUpdateTranslations,
   fetchDictionaryData,
 } from '@/data/dictionary';
+import { searchDictionaryByWord } from '@/db/retrivedata';
 import useSearch from '@/hooks/useSearch';
 
 interface DictionaryEntry {
@@ -39,6 +41,7 @@ const index = () => {
   const router = useRouter();
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchResults, setSearchResults] = useState<DictionaryEntry[]>([]);
 
   const loadData = useCallback(
     async (options?: { withRemoteSync?: boolean }) => {
@@ -78,6 +81,19 @@ const index = () => {
     searchKey: 'word',
   });
 
+  // Use SQLite search for word results
+  useEffect(() => {
+    if (query && query.trim()) {
+      const performSearch = async () => {
+        const results = await searchDictionaryByWord(query);
+        setSearchResults(results);
+      };
+      performSearch();
+    } else {
+      setSearchResults([]);
+    }
+  }, [query]);
+
   const categories = useMemo<CategorySummary[]>(() => {
     const categoryMap = new Map<string, string>();
 
@@ -99,6 +115,17 @@ const index = () => {
       .map(([name, imageSource]) => ({ name, imageSource }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [dictionaryData]);
+
+  // Filter categories by search query
+  const filteredCategories = useMemo<CategorySummary[]>(() => {
+    if (!query?.trim()) {
+      return categories;
+    }
+    const lowerQuery = query.toLowerCase();
+    return categories.filter(cat =>
+      cat.name.toLowerCase().includes(lowerQuery),
+    );
+  }, [categories, query]);
 
   if (loading) {
     return (
@@ -142,11 +169,40 @@ const index = () => {
           ) : null}
         </View>
 
-        {!query?.length && categories.length > 0 ? (
+        {query?.trim() ? (
+          <FlatList
+            data={searchResults}
+            keyExtractor={(item: DictionaryEntry) => item.word}
+            contentContainerStyle={styles.searchResultsContainer}
+            renderItem={({ item }: { item: DictionaryEntry }) => (
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: '/(tabs)/dictionary/definition',
+                    params: { word: item.word },
+                  })
+                }
+                style={styles.searchResultItem}
+              >
+                <Text style={styles.searchResultText}>{item.word}</Text>
+                <Text style={styles.searchResultCategories}>
+                  {item.categories.join(', ')}
+                </Text>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>
+                No words found matching your search.
+              </Text>
+            }
+          />
+        ) : filteredCategories.length > 0 ? (
           <View style={styles.categoriesSection}>
-            <Text style={styles.categoriesTitle}>Categories</Text>
+            <Text style={styles.categoriesTitle}>
+              Categories ({filteredCategories.length})
+            </Text>
             <View style={styles.categoriesListContent}>
-              {categories.map(item => (
+              {filteredCategories.map(item => (
                 <TouchableOpacity
                   key={item.name}
                   style={styles.categoryChip}
@@ -167,7 +223,11 @@ const index = () => {
               ))}
             </View>
           </View>
-        ) : null}
+        ) : (
+          <Text style={styles.emptyText}>
+            No categories found matching your search.
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -261,6 +321,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748b',
     lineHeight: 20,
+  },
+  searchResultCategories: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 4,
+  },
+  searchResultsContainer: {
+    paddingBottom: 20,
   },
   emptyText: {
     fontSize: 16,

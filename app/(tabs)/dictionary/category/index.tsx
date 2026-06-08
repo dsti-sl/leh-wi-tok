@@ -7,18 +7,15 @@ import {
   SectionList,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { Ionicons } from '@expo/vector-icons';
-
 import { Colors } from '@/constants/Colors';
 import { fetchAndInsertTranslations } from '@/data/dictionary';
-import { fetchDictionaryData } from '@/db/retrivedata';
+import { fetchCategoryData, searchCategoryData } from '@/db/retrivedata';
 import useSearch from '@/hooks/useSearch';
 
 interface DictionaryEntry {
@@ -39,35 +36,45 @@ const index = () => {
   }>();
 
   const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
+  const [searchResults, setSearchResults] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
-  const {
-    query,
-    setQuery,
-    filteredData: globalFilteredData,
-  } = useSearch({
+  const { query, setQuery } = useSearch({
     data: dictionaryData,
     searchKey: 'word',
   });
 
+  // Use SQLite search for optimized results when query is active
+  useEffect(() => {
+    if (query && query.trim()) {
+      const performSearch = async () => {
+        const results = await searchCategoryData(categoryName, query);
+        setSearchResults(results);
+      };
+      performSearch();
+    } else {
+      setSearchResults([]);
+    }
+  }, [query, categoryName]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data: DictionaryEntry[] = await fetchDictionaryData();
+        const data: DictionaryEntry[] = await fetchCategoryData(categoryName);
         setDictionaryData(data);
         if (searchParamQuery !== query) {
           setQuery(searchParamQuery);
         }
       } catch (error) {
-        console.error('Error fetching dictionary data:', error);
+        console.error('Error fetching category data:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [searchParamQuery, setQuery]);
+  }, [categoryName, searchParamQuery, setQuery]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -75,20 +82,19 @@ const index = () => {
       // Call your fetchAndInsertTranslations function
       await fetchAndInsertTranslations();
 
-      // Refresh the local data
-      const data: DictionaryEntry[] = await fetchDictionaryData();
+      // Refresh the category-specific data
+      const data: DictionaryEntry[] = await fetchCategoryData(categoryName);
       setDictionaryData(data);
     } catch (error) {
-      console.error('Error refreshing dictionary data:', error);
+      console.error('Error refreshing category data:', error);
     } finally {
       setRefreshing(false);
     }
   };
+  // Data is already filtered by category from fetchCategoryData
   const categoryFilteredData = useMemo(() => {
-    return dictionaryData.filter(entry =>
-      entry.categories.includes(categoryName),
-    );
-  }, [dictionaryData, categoryName]);
+    return dictionaryData;
+  }, [dictionaryData]);
 
   const categoryGroupedWords: GroupedWordsSection[] = useMemo(() => {
     if (loading || query) {
@@ -116,7 +122,7 @@ const index = () => {
         data:
           groupedData[key]?.sort((a, b) => a.word.localeCompare(b.word)) || [],
       }));
-  }, [categoryFilteredData, query, loading]);
+  }, [dictionaryData, query, loading]);
 
   if (loading) {
     return (
@@ -126,40 +132,11 @@ const index = () => {
     );
   }
 
-  const categorySearchResults = useMemo(() => {
-    if (!query) return [];
-    return globalFilteredData.filter(item =>
-      item.categories.includes(categoryName),
-    );
-  }, [query, globalFilteredData, categoryName]);
-
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.searchBarContainer}>
-        <Ionicons
-          name="search"
-          size={20}
-          color={Colors.secondary}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchBarInput}
-          placeholder="Search in this category..."
-          value={query}
-          onChangeText={setQuery}
-        />
-        {query?.length ? (
-          <TouchableOpacity
-            onPress={() => setQuery('')}
-            style={styles.clearButton}
-          >
-            <Ionicons name="close" size={20} color={Colors.secondary} />
-          </TouchableOpacity>
-        ) : null}
-      </View>
       {query ? (
         <FlatList
-          data={categorySearchResults}
+          data={searchResults}
           keyExtractor={(item: DictionaryEntry) => item.word}
           contentContainerStyle={styles.searchResultsContainer}
           refreshing={refreshing}
@@ -232,9 +209,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 50,
     borderWidth: 1,
+    paddingHorizontal: 20,
     borderColor: Colors.primary,
     borderRadius: 8,
-    paddingHorizontal: 10,
     marginBottom: 16,
   },
   searchIcon: {

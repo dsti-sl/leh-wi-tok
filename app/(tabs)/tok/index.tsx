@@ -16,30 +16,6 @@ import { Colors } from '@/constants/Colors';
 
 const TOK_WEBVIEW_BOOTSTRAP = `
   (function() {
-    try {
-      var originalMatchMedia = window.matchMedia;
-      window.matchMedia = function(query) {
-        var safeQuery = String(query || '').toLowerCase();
-
-        if (safeQuery.indexOf('prefers-color-scheme') !== -1) {
-          return {
-            matches: safeQuery.indexOf('light') !== -1,
-            media: query,
-            onchange: null,
-            addListener: function() {},
-            removeListener: function() {},
-            addEventListener: function() {},
-            removeEventListener: function() {},
-            dispatchEvent: function() {
-              return false;
-            },
-          };
-        }
-
-        return originalMatchMedia.call(window, query);
-      };
-    } catch (error) {}
-
     function postToNative(type, payload) {
       if (
         window.ReactNativeWebView &&
@@ -75,10 +51,7 @@ const TOK_WEBVIEW_BOOTSTRAP = `
       var style = document.createElement('style');
       style.id = 'tok-bridge-style';
       style.textContent = [
-        'meta[name="color-scheme"] { content: "light" !important; }',
-        ':root { color-scheme: light !important; }',
         'html, body { background: #ffffff !important; }',
-        '* { color-scheme: light !important; }',
         'video { background: #ffffff !important; }',
         'video::-webkit-media-controls-fullscreen-button { display: none !important; }',
         '[aria-label*="fullscreen" i], [aria-label*="full screen" i],',
@@ -89,15 +62,6 @@ const TOK_WEBVIEW_BOOTSTRAP = `
       ].join('\\n');
 
       document.head.appendChild(style);
-
-      var meta = document.querySelector('meta[name="color-scheme"]');
-      if (!meta) {
-        meta = document.createElement('meta');
-        meta.setAttribute('name', 'color-scheme');
-        document.head.appendChild(meta);
-      }
-      meta.setAttribute('content', 'light');
-
       return style;
     }
 
@@ -182,23 +146,9 @@ const TOK_WEBVIEW_BOOTSTRAP = `
       }
 
       targets.forEach(function(element) {
-        if (!element || !element.style) return;
-
-        element.style.setProperty('color-scheme', 'light', 'important');
-        element.style.setProperty('background', '#ffffff', 'important');
-        element.style.setProperty('background-color', '#ffffff', 'important');
+        element.style.background = '#ffffff';
+        element.style.backgroundColor = '#ffffff';
       });
-
-      if (root === document) {
-        if (document.documentElement) {
-          document.documentElement.setAttribute('data-theme', 'light');
-          document.documentElement.setAttribute('theme', 'light');
-        }
-        if (document.body) {
-          document.body.setAttribute('data-theme', 'light');
-          document.body.setAttribute('theme', 'light');
-        }
-      }
 
       const allElements = root.querySelectorAll ? root.querySelectorAll('*') : [];
 
@@ -210,11 +160,8 @@ const TOK_WEBVIEW_BOOTSTRAP = `
           element.tagName === 'MAIN' ||
           (element.className && String(element.className).toLowerCase().includes('content'))
         ) {
-          if (element.style) {
-            element.style.setProperty('color-scheme', 'light', 'important');
-            element.style.setProperty('background', '#ffffff', 'important');
-            element.style.setProperty('background-color', '#ffffff', 'important');
-          }
+          element.style.background = '#ffffff';
+          element.style.backgroundColor = '#ffffff';
         }
 
         if (element.shadowRoot) {
@@ -689,8 +636,6 @@ const TOK_WEBVIEW_BOOTSTRAP = `
     observer.observe(document.documentElement, {
       childList: true,
       subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style', 'data-theme', 'theme'],
     });
   })();
   true;
@@ -764,8 +709,8 @@ export default function TokScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
     >
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#ffffff"
+        barStyle="light-content"
+        backgroundColor={Colors.primary}
         translucent={false}
       />
 
@@ -797,7 +742,6 @@ export default function TokScreen() {
           injectedJavaScript={TOK_WEBVIEW_BOOTSTRAP}
           javaScriptEnabled={true}
           domStorageEnabled={true}
-          forceDarkOn={false}
           allowsFullscreenVideo={false}
           allowsInlineMediaPlayback={true}
           keyboardDisplayRequiresUserAction={false}
@@ -831,7 +775,7 @@ export default function TokScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
   },
   headerSection: {
     position: 'relative',
@@ -939,6 +883,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: 'hidden',
     backgroundColor: '#ffffff',
+    shadowColor: '#0f172a',
     shadowOffset: {
       width: 0,
       height: 8,
