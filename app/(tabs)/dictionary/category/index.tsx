@@ -7,12 +7,16 @@ import {
   SectionList,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import { Ionicons } from '@expo/vector-icons';
+
+import { Colors } from '@/constants/Colors';
 import { fetchAndInsertTranslations } from '@/data/dictionary';
 import { fetchDictionaryData } from '@/db/retrivedata';
 import useSearch from '@/hooks/useSearch';
@@ -80,14 +84,18 @@ const index = () => {
       setRefreshing(false);
     }
   };
+  const categoryFilteredData = useMemo(() => {
+    return dictionaryData.filter(entry =>
+      entry.categories.includes(categoryName),
+    );
+  }, [dictionaryData, categoryName]);
+
   const categoryGroupedWords: GroupedWordsSection[] = useMemo(() => {
     if (loading || query) {
       return [];
     }
 
-    const wordsForCurrentCategory = dictionaryData.filter(entry =>
-      entry.categories.includes(categoryName),
-    );
+    const wordsForCurrentCategory = categoryFilteredData;
 
     const groupedData = wordsForCurrentCategory.reduce(
       (acc: Record<string, DictionaryEntry[]>, item) => {
@@ -108,7 +116,7 @@ const index = () => {
         data:
           groupedData[key]?.sort((a, b) => a.word.localeCompare(b.word)) || [],
       }));
-  }, [dictionaryData, categoryName, query, loading]);
+  }, [categoryFilteredData, query, loading]);
 
   if (loading) {
     return (
@@ -118,11 +126,40 @@ const index = () => {
     );
   }
 
+  const categorySearchResults = useMemo(() => {
+    if (!query) return [];
+    return globalFilteredData.filter(item =>
+      item.categories.includes(categoryName),
+    );
+  }, [query, globalFilteredData, categoryName]);
+
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.searchBarContainer}>
+        <Ionicons
+          name="search"
+          size={20}
+          color={Colors.secondary}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          style={styles.searchBarInput}
+          placeholder="Search in this category..."
+          value={query}
+          onChangeText={setQuery}
+        />
+        {query?.length ? (
+          <TouchableOpacity
+            onPress={() => setQuery('')}
+            style={styles.clearButton}
+          >
+            <Ionicons name="close" size={20} color={Colors.secondary} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
       {query ? (
         <FlatList
-          data={globalFilteredData}
+          data={categorySearchResults}
           keyExtractor={(item: DictionaryEntry) => item.word}
           contentContainerStyle={styles.searchResultsContainer}
           refreshing={refreshing}
@@ -142,7 +179,7 @@ const index = () => {
           )}
           ListEmptyComponent={
             <Text style={styles.emptyText}>
-              No words found matching search.
+              No words found matching search in this category.
             </Text>
           }
         />
@@ -189,6 +226,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 16,
     paddingTop: 20,
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 50,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchBarInput: {
+    flex: 1,
+    fontSize: 16,
+  },
+  clearButton: {
+    padding: 6,
+    marginLeft: 6,
   },
   searchResultsContainer: {
     paddingTop: Platform.OS === 'ios' ? 0 : 10,
