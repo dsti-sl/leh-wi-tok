@@ -127,20 +127,29 @@ const Account = () => {
     }, [refreshAccount]),
   );
 
-  const handleSync = async () => {
-    setIsSyncing(true);
-    try {
-      const { syncedCount } = await fetchAndInsertTranslations();
-      Alert.alert(
-        'Dictionary synced',
-        `Successfully synced ${syncedCount} dictionary record${syncedCount === 1 ? '' : 's'}.`,
-      );
-    } catch (error) {
-      console.error('Error syncing dictionary:', error);
-      Alert.alert('Sync failed', 'Unable to sync dictionary right now.');
-    } finally {
-      setIsSyncing(false);
+  const handleSync = () => {
+    if (isSyncing) {
+      return;
     }
+
+    setIsSyncing(true);
+
+    void fetchAndInsertTranslations()
+      .then(({ syncedCount, changedCount }) => {
+        Alert.alert(
+          'Dictionary synced',
+          changedCount === 0
+            ? 'Dictionary is already up to date.'
+            : `Successfully synced ${syncedCount} changed dictionary record${syncedCount === 1 ? '' : 's'}.`,
+        );
+      })
+      .catch(error => {
+        console.error('Error syncing dictionary:', error);
+        Alert.alert('Sync failed', 'Unable to sync dictionary right now.');
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   const handleOpenEdit = () => {

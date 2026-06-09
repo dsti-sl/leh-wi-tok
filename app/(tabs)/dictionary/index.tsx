@@ -16,12 +16,12 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
+import { checkAndUpdateTranslations } from '@/data/dictionary';
 import {
-  checkAndUpdateTranslations,
-  fetchDictionaryData,
-} from '@/data/dictionary';
-import { searchDictionaryByWord } from '@/db/retrivedata';
-import useSearch from '@/hooks/useSearch';
+  DictionaryCategorySummary,
+  searchDictionaryByWord,
+  fetchDictionaryCategories,
+} from '@/db/retrivedata';
 
 interface DictionaryEntry {
   word: string;
@@ -34,25 +34,30 @@ interface DictionaryEntry {
 
 interface CategorySummary {
   name: string;
-  imageSource: string;
+  imageSource: string | null;
 }
 
 const index = () => {
   const router = useRouter();
-  const [dictionaryData, setDictionaryData] = useState<DictionaryEntry[]>([]);
+  const [categories, setCategories] = useState<CategorySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchResults, setSearchResults] = useState<DictionaryEntry[]>([]);
+  const [query, setQuery] = useState('');
 
   const loadData = useCallback(
     async (options?: { withRemoteSync?: boolean }) => {
       try {
         if (options?.withRemoteSync) {
-          await checkAndUpdateTranslations({ force: true });
+          await checkAndUpdateTranslations();
         }
 
-        const data = await fetchDictionaryData();
-        const sortedData = data.sort((a, b) => a.word.localeCompare(b.word));
-        setDictionaryData(sortedData);
+        const categoryData = await fetchDictionaryCategories();
+        setCategories(
+          categoryData.map((item: DictionaryCategorySummary) => ({
+            name: item.name,
+            imageSource: item.imageSource,
+          })),
+        );
       } catch (error) {
         console.error('Error refreshing dictionary data:', error);
       }
@@ -76,12 +81,6 @@ const index = () => {
     }, [loadData]),
   );
 
-  const { query, setQuery } = useSearch({
-    data: dictionaryData,
-    searchKey: 'word',
-  });
-
-  // Use SQLite search for word results
   useEffect(() => {
     if (query && query.trim()) {
       const performSearch = async () => {
@@ -94,29 +93,6 @@ const index = () => {
     }
   }, [query]);
 
-  const categories = useMemo<CategorySummary[]>(() => {
-    const categoryMap = new Map<string, string>();
-
-    dictionaryData.forEach(entry => {
-      entry.categories.forEach(category => {
-        const normalizedCategory = category?.trim();
-        if (!normalizedCategory) return;
-
-        const mediaSource = entry.image || entry.illustration;
-        if (!mediaSource) return;
-
-        if (!categoryMap.has(normalizedCategory)) {
-          categoryMap.set(normalizedCategory, mediaSource);
-        }
-      });
-    });
-
-    return Array.from(categoryMap.entries())
-      .map(([name, imageSource]) => ({ name, imageSource }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [dictionaryData]);
-
-  // Filter categories by search query
   const filteredCategories = useMemo<CategorySummary[]>(() => {
     if (!query?.trim()) {
       return categories;
@@ -135,7 +111,7 @@ const index = () => {
     );
   }
 
-  if (!dictionaryData.length) {
+  if (!categories.length) {
     return (
       <View style={styles.container}>
         <Text style={styles.emptyText}>No data available.</Text>
@@ -197,32 +173,42 @@ const index = () => {
             }
           />
         ) : filteredCategories.length > 0 ? (
-          <View style={styles.categoriesSection}>
-            <Text style={styles.categoriesTitle}>
-              Categories ({filteredCategories.length})
-            </Text>
-            <View style={styles.categoriesListContent}>
-              {filteredCategories.map(item => (
-                <TouchableOpacity
-                  key={item.name}
-                  style={styles.categoryChip}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/(tabs)/dictionary/category',
-                      params: { categoryName: item.name },
-                    })
-                  }
-                >
+          <FlatList
+            data={filteredCategories}
+            keyExtractor={item => item.name}
+            contentContainerStyle={styles.categoriesListContent}
+            ListHeaderComponent={
+              <Text style={styles.categoriesTitle}>
+                Categories ({filteredCategories.length})
+              </Text>
+            }
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.categoryChip}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(tabs)/dictionary/category',
+                    params: { categoryName: item.name },
+                  })
+                }
+              >
+                {item.imageSource ? (
                   <Image
                     source={{ uri: item.imageSource }}
                     style={styles.categoryImage}
                     resizeMode="cover"
                   />
-                  <Text style={styles.categoryName}>{item.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+                ) : (
+                  <View style={styles.categoryImagePlaceholder}>
+                    <Text style={styles.categoryImagePlaceholderText}>
+                      {item.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+                <Text style={styles.categoryName}>{item.name}</Text>
+              </TouchableOpacity>
+            )}
+          />
         ) : (
           <Text style={styles.emptyText}>
             No categories found matching your search.
@@ -275,9 +261,6 @@ const styles = StyleSheet.create({
     padding: 6,
     marginLeft: 6,
   },
-  categoriesSection: {
-    marginBottom: 12,
-  },
   categoriesTitle: {
     fontSize: 16,
     fontWeight: '700',
@@ -285,7 +268,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   categoriesListContent: {
-    paddingBottom: 8,
+    flexGrow: 1,
+    paddingBottom: 32,
   },
   categoryChip: {
     flexDirection: 'row',
@@ -300,6 +284,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginRight: 12,
     backgroundColor: '#e2e8f0',
+  },
+  categoryImagePlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryImagePlaceholderText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#475569',
   },
   categoryName: {
     fontSize: 16,
