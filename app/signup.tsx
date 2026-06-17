@@ -28,18 +28,13 @@ import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import useSignup from '@/hooks/useSignup';
 import { enterGuestMode, setGuestMode } from '@/utils';
-import {
-  getContentMaxWidth,
-  getHeroImageSize,
-  getHorizontalPadding,
-} from '@/utils/layout';
+import { getHeroImageSize, getHorizontalPadding } from '@/utils/layout';
 
 const SignUpScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const horizontalPadding = getHorizontalPadding(width);
-  const contentMaxWidth = getContentMaxWidth(width);
   const artworkSize = getHeroImageSize(width);
   const {
     fullName,
@@ -79,7 +74,7 @@ const SignUpScreen = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
+          <View style={styles.content}>
             <View style={styles.header}>
               <Image
                 source={require('../assets/images/Auth_logo.png')}

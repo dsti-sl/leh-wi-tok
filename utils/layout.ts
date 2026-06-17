@@ -17,29 +17,6 @@ export function getHorizontalPadding(width: number): number {
   return 20;
 }
 
-export function getContentMaxWidth(
-  width: number,
-  options?: {
-    compact?: number;
-    tablet?: number;
-    largeTablet?: number;
-  },
-): number {
-  const compact = options?.compact ?? 480;
-  const tablet = options?.tablet ?? 640;
-  const largeTablet = options?.largeTablet ?? 760;
-
-  if (width >= LARGE_TABLET_BREAKPOINT) {
-    return largeTablet;
-  }
-
-  if (width >= TABLET_BREAKPOINT) {
-    return tablet;
-  }
-
-  return compact;
-}
-
 export function getHeroImageSize(width: number): number {
   if (width >= LARGE_TABLET_BREAKPOINT) {
     return 220;
