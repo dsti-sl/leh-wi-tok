@@ -19,7 +19,10 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 
 import EditProfileModal from '@/components/account/EditProfileModal';
 import { Colors } from '@/constants/Colors';
-import { fetchAndInsertTranslations } from '@/data/dictionary';
+import {
+  DictionarySyncProgress,
+  fetchAndInsertTranslations,
+} from '@/data/dictionary';
 import useAccount from '@/hooks/useAccount';
 import useGuestMode from '@/hooks/useGuestMode';
 import {
@@ -44,6 +47,8 @@ const Account = () => {
   } = useAccount();
   const { isGuest, promptCreateAccount } = useGuestMode();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] =
+    useState<DictionarySyncProgress | null>(null);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -127,29 +132,47 @@ const Account = () => {
     }, [refreshAccount]),
   );
 
-  const handleSync = () => {
+  const syncPercent = syncProgress?.percent ?? 0;
+  const syncProgressLabel =
+    syncProgress?.totalCount && syncProgress.totalCount > 0
+      ? `Fetched ${syncProgress.fetchedCount.toLocaleString()} of ${syncProgress.totalCount.toLocaleString()} records`
+      : isSyncing
+        ? 'Preparing paginated sync...'
+        : '';
+
+  const handleSync = async () => {
     if (isSyncing) {
       return;
     }
 
     setIsSyncing(true);
+    setSyncProgress({
+      fetchedCount: 0,
+      savedCount: 0,
+      totalCount: null,
+      page: 0,
+      pageSize: 100,
+      percent: 0,
+    });
 
-    void fetchAndInsertTranslations()
-      .then(({ syncedCount, changedCount }) => {
-        Alert.alert(
-          'Dictionary synced',
-          changedCount === 0
-            ? 'Dictionary is already up to date.'
-            : `Successfully synced ${syncedCount} changed dictionary record${syncedCount === 1 ? '' : 's'}.`,
-        );
-      })
-      .catch(error => {
-        console.error('Error syncing dictionary:', error);
-        Alert.alert('Sync failed', 'Unable to sync dictionary right now.');
-      })
-      .finally(() => {
-        setIsSyncing(false);
+    try {
+      const { syncedCount, changedCount } = await fetchAndInsertTranslations({
+        onProgress: setSyncProgress,
       });
+
+      Alert.alert(
+        'Dictionary synced',
+        changedCount === 0
+          ? 'Dictionary is already up to date.'
+          : `Successfully synced ${syncedCount} changed dictionary record${syncedCount === 1 ? '' : 's'}.`,
+      );
+    } catch (error) {
+      console.error('Error syncing dictionary:', error);
+      Alert.alert('Sync failed', 'Unable to sync dictionary right now.');
+    } finally {
+      setIsSyncing(false);
+      setSyncProgress(null);
+    }
   };
 
   const handleOpenEdit = () => {
@@ -252,7 +275,9 @@ const Account = () => {
   const settingsItems = [
     {
       key: 'sync-dictionary',
-      label: isSyncing ? 'Syncing dictionary...' : 'Sync dictionary',
+      label: isSyncing
+        ? `Syncing dictionary ${syncPercent}%`
+        : 'Sync dictionary',
       icon: 'refresh-cw',
       onPress: handleSync,
       disabled: isSyncing,
@@ -302,6 +327,24 @@ const Account = () => {
       }
     >
       <View style={styles.banner}>
+        {isSyncing ? (
+          <View style={styles.syncPanel}>
+            <View style={styles.syncHeader}>
+              <View style={styles.syncTitleRow}>
+                <Feather name="download-cloud" size={16} color="#ffffff" />
+                <Text style={styles.syncTitle}>Dictionary sync</Text>
+              </View>
+              <Text style={styles.syncPercent}>{syncPercent}%</Text>
+            </View>
+            <View style={styles.syncProgressTrack}>
+              <View
+                style={[styles.syncProgressFill, { width: `${syncPercent}%` }]}
+              />
+            </View>
+            <Text style={styles.syncProgressText}>{syncProgressLabel}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.profileRow}>
           <View style={styles.avatarWrap}>
             <View style={styles.avatar}>
@@ -603,6 +646,51 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontSize: 18,
     fontWeight: '700',
+  },
+  syncHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  syncPanel: {
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    borderColor: 'rgba(255, 255, 255, 0.22)',
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 10,
+    marginBottom: 18,
+    padding: 14,
+  },
+  syncPercent: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  syncProgressFill: {
+    backgroundColor: Colors.secondary,
+    borderRadius: 999,
+    height: '100%',
+  },
+  syncProgressText: {
+    color: '#dbeafe',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  syncProgressTrack: {
+    backgroundColor: 'rgba(255, 255, 255, 0.28)',
+    borderRadius: 999,
+    height: 8,
+    overflow: 'hidden',
+  },
+  syncTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  syncTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   settingsRow: {
     alignItems: 'center',

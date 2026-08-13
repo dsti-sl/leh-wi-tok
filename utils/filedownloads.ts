@@ -2,6 +2,13 @@ import * as FileSystem from 'expo-file-system/legacy';
 
 import { getBaseUrl, getToken } from '.';
 
+const getSafeAssetFilename = (fileId: string, filename: string): string => {
+  const safeId = fileId.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+  return `${safeId}_${safeName}`;
+};
+
 /**
  * @param fileId gets the unique file ID
  * @param filename maintains the original filename
@@ -20,7 +27,7 @@ export async function fileDownloads(
 
     const downloadUrl = `${baseUrlClean}/file/download?id=${fileId}`;
     const assetsDir = FileSystem.documentDirectory + 'assets/';
-    const uniqueFilename = `${Date.now()}_${filename}`;
+    const uniqueFilename = getSafeAssetFilename(fileId, filename);
     const localPath = assetsDir + uniqueFilename;
 
     const dirInfo = await FileSystem.getInfoAsync(assetsDir);
@@ -33,7 +40,9 @@ export async function fileDownloads(
       existingFileInfo.size &&
       existingFileInfo.size > 100 // Minimal size check to avoid empty/error files
     ) {
-      return `file://${localPath}`;
+      return localPath.startsWith('file://')
+        ? localPath
+        : `file://${localPath}`;
     }
 
     const token = await getToken();

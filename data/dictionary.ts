@@ -53,12 +53,22 @@ export interface DictionarySyncResult {
   changedCount: number;
 }
 
+export interface DictionarySyncProgress {
+  fetchedCount: number;
+  savedCount: number;
+  totalCount: number | null;
+  page: number;
+  pageSize: number;
+  percent: number;
+}
+
 type PersistDictionaryOptions = {
   replaceExisting?: boolean;
 };
 
 type DictionarySyncOptions = {
   full?: boolean;
+  onProgress?: (progress: DictionarySyncProgress) => void;
 };
 
 /**
@@ -132,13 +142,19 @@ const getTranslationEndpoint = (
   options: { updatedAfter?: string | null } = {},
 ): string => {
   const baseUrlClean = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  const updatedAfterFilter = options.updatedAfter
-    ? `&updatedAt=gt.${encodeURIComponent(options.updatedAfter)}`
-    : '';
+  const params = new URLSearchParams({
+    select:
+      'id,phrase,description,gesture(id,name,path,contentType),illustration(id,name,path,contentType),tags(category,title),updatedAt',
+    page: String(page),
+    'page-size': String(TRANSLATION_PAGE_SIZE),
+    order: 'updatedAt',
+  });
 
-  return `${baseUrlClean}/translation?select=id,phrase,description,
-    gesture(id,name,path,contentType),illustration(id,name,path,contentType),
-    tags(category,title),updatedAt&page=${page}&page-size=${TRANSLATION_PAGE_SIZE}&order=updatedAt${updatedAfterFilter}`;
+  if (options.updatedAfter) {
+    params.set('updatedAt', `gt.${options.updatedAfter}`);
+  }
+
+  return `${baseUrlClean}/translation?${params.toString()}`;
 };
 
 const fetchTranslationPage = async (
@@ -349,21 +365,47 @@ export const fetchAndInsertTranslations = async (
     let page = 1;
     let syncedCount = 0;
     let changedCount = 0;
+    let fetchedCount = 0;
     let expectedTotal: number | null = null;
     let newestUpdatedAt = updatedAfter;
     let pendingWrites: LocalDictionaryEntry[] = [];
     let shouldReplaceExisting = options.full === true;
     let hasMorePages = true;
+    const emitProgress = (
+      progressPage: number,
+      progressPageSize = TRANSLATION_PAGE_SIZE,
+    ) => {
+      const percent =
+        expectedTotal && expectedTotal > 0
+          ? Math.min(100, Math.round((fetchedCount / expectedTotal) * 100))
+          : fetchedCount > 0
+            ? 100
+            : 0;
+
+      options.onProgress?.({
+        fetchedCount,
+        savedCount: syncedCount + pendingWrites.length,
+        totalCount: expectedTotal,
+        page: progressPage,
+        pageSize: progressPageSize,
+        percent,
+      });
+    };
+
+    emitProgress(0);
 
     while (hasMorePages) {
       const payload = await fetchTranslationPage(baseUrl, page, {
         updatedAfter,
       });
       const pageItems = payload.data;
+      fetchedCount += pageItems.length;
 
       if (expectedTotal === null && typeof payload.meta?.count === 'number') {
         expectedTotal = payload.meta.count;
       }
+
+      emitProgress(page, payload.meta?.pageSize ?? TRANSLATION_PAGE_SIZE);
 
       const transformedPage = await runWithConcurrency(
         pageItems,
@@ -386,6 +428,7 @@ export const fetchAndInsertTranslations = async (
           shouldReplaceExisting = false;
           syncedCount += pendingWrites.length;
           pendingWrites = [];
+          emitProgress(page, payload.meta?.pageSize ?? TRANSLATION_PAGE_SIZE);
         }
       }
 
@@ -399,7 +442,7 @@ export const fetchAndInsertTranslations = async (
       }
 
       const reachedKnownTotal =
-        expectedTotal !== null && page * TRANSLATION_PAGE_SIZE >= expectedTotal;
+        expectedTotal !== null && fetchedCount >= expectedTotal;
       const reachedLastPage = pageItems.length < TRANSLATION_PAGE_SIZE;
 
       hasMorePages = !(reachedKnownTotal || reachedLastPage);
@@ -411,6 +454,8 @@ export const fetchAndInsertTranslations = async (
         replaceExisting: shouldReplaceExisting,
       });
       syncedCount += pendingWrites.length;
+      pendingWrites = [];
+      emitProgress(page - 1);
     }
 
     if (newestUpdatedAt) {
