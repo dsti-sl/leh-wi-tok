@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   listContentContainer: {
     flexGrow: 1,
-    paddingTop: Platform.OS === 'ios' ? 0 : 10,
+    paddingTop: Platform.OS === 'ios' ? 0 : 5,
     paddingBottom: 32,
   },
   centeredContainer: {
