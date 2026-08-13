@@ -17,10 +17,10 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import {
-  LocalDictionaryEntry as DictionaryEntry,
-  fetchDictionaryData,
-} from '@/data/dictionary';
-import useSearch from '@/hooks/useSearch';
+  DictionaryEntry,
+  fetchDictionaryEntryByWord,
+  searchDictionaryByWord,
+} from '@/db/retrivedata';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -32,94 +32,74 @@ const index = () => {
       query?: string;
     }>();
 
-  const [allDictionaryData, setAllDictionaryData] = useState<DictionaryEntry[]>(
-    [],
-  );
   const [wordData, setWordData] = useState<DictionaryEntry | null>(null);
+  const [searchResults, setSearchResults] = useState<DictionaryEntry[]>([]);
   const [isLoadingDefinition, setIsLoadingDefinition] = useState<boolean>(true);
   const [imageStatus, setImageStatus] = useState({
     illustration: { loading: false, error: false },
     image: { loading: false, error: false },
   });
 
-  const { filteredData, setQuery: setUseSearchQuery } = useSearch({
-    data: allDictionaryData,
-    searchKey: 'word',
-  });
-
   useEffect(() => {
-    const loadAllDictionaryData = async () => {
+    const loadSearchResults = async () => {
+      if (!urlSearchQuery) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsLoadingDefinition(true);
       try {
-        const data = await fetchDictionaryData();
-        setAllDictionaryData(data);
-        console.log(
-          `[index.tsx] Loaded ${data.length} dictionary entries from local DB.`,
-        );
+        const results = await searchDictionaryByWord(urlSearchQuery);
+        setSearchResults(results);
       } catch (error) {
-        Alert.alert('Error', 'Failed to load all dictionary data.');
-        console.error('Failed to load all dictionary data:', error);
+        Alert.alert('Error', 'Failed to search dictionary data.');
+        console.error('Failed to search dictionary data:', error);
+      } finally {
+        setIsLoadingDefinition(false);
       }
     };
-    loadAllDictionaryData();
-  }, []);
+
+    loadSearchResults();
+  }, [urlSearchQuery]);
 
   useEffect(() => {
-    if (setUseSearchQuery && urlSearchQuery !== undefined) {
-      setUseSearchQuery(urlSearchQuery);
-    }
+    const loadCurrentWord = async () => {
+      if (urlSearchQuery) {
+        return;
+      }
 
-    if (urlSearchQuery) {
-      setWordData(null);
-      setIsLoadingDefinition(false);
-    } else {
-      if (definitionWord && allDictionaryData.length > 0) {
-        if (
-          !wordData ||
-          wordData.word.toLowerCase() !== definitionWord.toLowerCase()
-        ) {
-          loadWordDefinition(definitionWord, allDictionaryData);
-        } else {
-          setIsLoadingDefinition(false);
-        }
-      } else if (!definitionWord) {
+      if (!definitionWord) {
         setWordData(null);
         setIsLoadingDefinition(false);
-        if (allDictionaryData.length > 0 && !router.canGoBack()) {
+        if (!router.canGoBack()) {
           Alert.alert('Error', 'No word provided to display definition.');
         }
+        return;
       }
-    }
-  }, [
-    urlSearchQuery,
-    definitionWord,
-    allDictionaryData.length,
-    setUseSearchQuery,
-    wordData,
-    router,
-  ]);
 
-  const loadWordDefinition = async (word: string, data: DictionaryEntry[]) => {
-    setIsLoadingDefinition(true);
-    try {
-      const entry = data.find(e => e.word.toLowerCase() === word.toLowerCase());
-      if (!entry) {
+      setIsLoadingDefinition(true);
+      try {
+        const entry = await fetchDictionaryEntryByWord(definitionWord);
+        if (!entry) {
+          throw new Error(`Definition for "${definitionWord}" not found.`);
+        }
+        setWordData(entry);
+      } catch (error) {
         setWordData(null);
-        throw new Error(`Definition for "${word}" not found.`);
+        Alert.alert(
+          'Error',
+          error instanceof Error
+            ? error.message
+            : 'Failed to load word definition.',
+        );
+        console.error('Error loading word definition:', error);
+      } finally {
+        setIsLoadingDefinition(false);
       }
-      setWordData(entry);
-    } catch (error) {
-      setWordData(null);
-      Alert.alert(
-        'Error',
-        error instanceof Error
-          ? error.message
-          : 'Failed to load word definition.',
-      );
-      console.error('Error loading word definition:', error);
-    } finally {
-      setIsLoadingDefinition(false);
-    }
-  };
+    };
+
+    loadCurrentWord();
+  }, [definitionWord, router, urlSearchQuery]);
 
   const renderImage = (
     uri: string | number | null,
@@ -227,7 +207,7 @@ const index = () => {
     return (
       <View style={styles.container}>
         <FlatList
-          data={filteredData}
+          data={searchResults}
           keyExtractor={item => item.word}
           contentContainerStyle={styles.searchResultsContainer}
           renderItem={({ item }) => (

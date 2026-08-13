@@ -37,6 +37,18 @@ export const initializeDatabase = async (): Promise<boolean> => {
         partOfSpeech TEXT,
         categories TEXT -- JSON string for categories
       );
+
+      CREATE TABLE IF NOT EXISTS dictionary_categories (
+        word TEXT NOT NULL COLLATE NOCASE,
+        category TEXT NOT NULL COLLATE NOCASE,
+        PRIMARY KEY (word, category)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_dictionary_word_nocase
+        ON dictionary(word COLLATE NOCASE);
+
+      CREATE INDEX IF NOT EXISTS idx_dictionary_categories_category_word
+        ON dictionary_categories(category COLLATE NOCASE, word COLLATE NOCASE);
     `);
 
     isInitialized = true;

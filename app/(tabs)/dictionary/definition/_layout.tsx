@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.secondary,
     borderRadius: 5,
-    paddingHorizontal: 5,
+    paddingHorizontal: 10,
     fontSize: 16,
     color: Colors.primary,
   },
