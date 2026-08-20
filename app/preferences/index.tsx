@@ -22,11 +22,7 @@ import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import { Record } from '@/lib/types';
 import { getBaseUrl, getToken } from '@/utils';
-import {
-  getContentMaxWidth,
-  getHeroImageSize,
-  getHorizontalPadding,
-} from '@/utils/layout';
+import { getHeroImageSize, getHorizontalPadding } from '@/utils/layout';
 
 const welcomeScreen = () => {
   const router = useRouter();
@@ -35,11 +31,6 @@ const welcomeScreen = () => {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const horizontalPadding = getHorizontalPadding(width);
-  const contentMaxWidth = getContentMaxWidth(width, {
-    compact: 440,
-    tablet: 620,
-    largeTablet: 720,
-  });
   const heroSize = getHeroImageSize(width) + 40;
 
   const EXPO_PUBLIC_BASE_URL = getBaseUrl();
@@ -88,7 +79,7 @@ const welcomeScreen = () => {
           },
         ]}
       >
-        <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
+        <View style={styles.content}>
           <Image
             source={require('../../assets/images/Preferences_logo.png')}
             style={[styles.logo, { width: heroSize, height: heroSize * 0.96 }]}

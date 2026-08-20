@@ -23,11 +23,7 @@ import {
 
 import { Colors } from '@/constants/Colors';
 import { getGuestMode, getStoredUserId } from '@/utils';
-import {
-  getContentMaxWidth,
-  getHorizontalPadding,
-  getHeroImageSize,
-} from '@/utils/layout';
+import { getHorizontalPadding, getHeroImageSize } from '@/utils/layout';
 import { completeOnboarding, shouldShowOnboarding } from '@/utils/onboarding';
 //import { fetchAndInsertTranslations } from '@/data/dictionary';
 
@@ -40,11 +36,6 @@ const Onboarding = () => {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const horizontalPadding = getHorizontalPadding(width);
-  const contentMaxWidth = getContentMaxWidth(width, {
-    compact: 440,
-    tablet: 700,
-    largeTablet: 860,
-  });
   const heroImageSize = Math.min(width * 0.82, getHeroImageSize(width) * 1.8);
 
   {
@@ -160,7 +151,7 @@ const Onboarding = () => {
     item: { image: string; title: string; description: string };
   }): React.JSX.Element => (
     <View style={[styles.slide, { width }]}>
-      <View style={[styles.slideInner, { maxWidth: contentMaxWidth }]}>
+      <View style={styles.slideInner}>
         <Image
           source={getImageSource(item.image)}
           style={[
@@ -208,7 +199,6 @@ const Onboarding = () => {
           {
             paddingHorizontal: horizontalPadding,
             paddingBottom: Math.max(insets.bottom, 16),
-            maxWidth: contentMaxWidth,
           },
         ]}
       >

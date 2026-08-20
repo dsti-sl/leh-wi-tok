@@ -21,7 +21,7 @@ import {
 import C_Button from '@/components/common/Button';
 import { Colors } from '@/constants/Colors';
 import { getBaseUrl, getToken } from '@/utils';
-import { getContentMaxWidth, getHorizontalPadding } from '@/utils/layout';
+import { getHorizontalPadding } from '@/utils/layout';
 
 const roles = [
   { id: 'student', label: 'Student' },
@@ -42,11 +42,6 @@ const RoleSelection = () => {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const horizontalPadding = getHorizontalPadding(width);
-  const contentMaxWidth = getContentMaxWidth(width, {
-    compact: 460,
-    tablet: 700,
-    largeTablet: 820,
-  });
 
   const handleRoleSelect = (role: string) => {
     setSelectedRole(role);
@@ -118,7 +113,7 @@ const RoleSelection = () => {
           },
         ]}
       >
-        <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
+        <View style={styles.content}>
           <Text style={styles.headerText}>Get started</Text>
           <Text style={styles.subText}>
             We want you to get the best out of Le Wi Tok.
