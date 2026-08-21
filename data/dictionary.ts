@@ -7,20 +7,31 @@ import { fileDownloads } from '@/utils/filedownloads';
 const TRANSLATION_PAGE_SIZE = 100;
 const TRANSLATION_REQUEST_TIMEOUT_MS = 15000;
 const ASSET_DOWNLOAD_CONCURRENCY = 4;
-const DB_WRITE_BATCH_SIZE = 250;
+const DB_WRITE_BATCH_SIZE = 150;
 const LAST_DICTIONARY_SERVER_SYNC_KEY = 'lastDictionaryServerSync';
+
+// Global sync lock to prevent concurrent sync operations
+let activeSyncPromise: Promise<DictionarySyncResult> | null = null;
+let activeSyncAbortController: AbortController | null = null;
 
 interface ApiTranslationItem {
   id: string;
   phrase: string;
   description: string;
   updatedAt?: string;
-  gesture?: { id: string; name: string; path: string; contentType: string }; // Assuming these have IDs now
+  gesture?: {
+    id: string;
+    name: string;
+    path: string;
+    contentType: string;
+    updatedAt?: string;
+  }; // Assuming these have IDs now
   illustration?: {
     id: string;
     name: string;
     path: string;
     contentType: string;
+    updatedAt?: string;
   };
   tags?: { category: string; title: string }[];
 }
@@ -37,6 +48,8 @@ interface ApiTranslationResponse {
 type DownloadableAsset = {
   id: string;
   name: string;
+  contentType?: string;
+  updatedAt?: string;
 };
 
 export interface LocalDictionaryEntry {
@@ -51,6 +64,7 @@ export interface LocalDictionaryEntry {
 export interface DictionarySyncResult {
   syncedCount: number;
   changedCount: number;
+  wasDeduplicated?: boolean;
 }
 
 export interface DictionarySyncProgress {
@@ -144,7 +158,7 @@ const getTranslationEndpoint = (
   const baseUrlClean = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const params = new URLSearchParams({
     select:
-      'id,phrase,description,gesture(id,name,path,contentType),illustration(id,name,path,contentType),tags(category,title),updatedAt',
+      'id,phrase,description,gesture(id,name,path,contentType,updatedAt),illustration(id,name,path,contentType,updatedAt),tags(category,title),updatedAt',
     page: String(page),
     'page-size': String(TRANSLATION_PAGE_SIZE),
     order: 'updatedAt',
@@ -253,6 +267,7 @@ const transformTranslation = async (
  * Downloads and stores illustrations and images locally,
  * then saves their file paths in the database.
  * @param data Array of dictionary entries (LocalDictionaryEntry) to insert or update
+ * @throws Error if database write fails - caller MUST handle this to prevent data loss
  */
 export const insertDictionaryData = async (
   data: LocalDictionaryEntry[],
@@ -324,16 +339,22 @@ export const insertDictionaryData = async (
       await insertCategoryStatement.finalizeAsync();
     }
   } catch (error) {
-    console.error('Error inserting or updating dictionary data:', error);
+    console.error('[DictionaryDB] CRITICAL: Database write failed:', error);
+    // Re-throw to prevent silent data loss
+    // Caller must handle this to avoid marking failed writes as successful
+    throw new Error(
+      `Failed to persist ${data.length} dictionary entries: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
   }
 };
 
 /**
- * Fetches dictionary data from the API and processes it.
- * This function will now handle downloading images and converting them to local URIs.
+ * Internal implementation of dictionary sync.
+ * DO NOT call directly - use fetchAndInsertTranslations instead.
  */
-export const fetchAndInsertTranslations = async (
+const _fetchAndInsertTranslationsUnsafe = async (
   options: DictionarySyncOptions = {},
+  abortSignal?: AbortSignal,
 ): Promise<DictionarySyncResult> => {
   const baseUrl = getBaseUrl();
   if (!baseUrl) {
@@ -349,9 +370,15 @@ export const fetchAndInsertTranslations = async (
         return null;
       }
 
+      const downloadOptions: Parameters<typeof fileDownloads>[2] = {};
+      if (asset.contentType) downloadOptions.contentType = asset.contentType;
+      if (asset.updatedAt) downloadOptions.version = asset.updatedAt;
+
       const cachedDownload =
         downloadCache.get(asset.id) ??
-        fileDownloads(asset.id, asset.name).then(path => path || '');
+        fileDownloads(asset.id, asset.name, downloadOptions).then(
+          path => path || '',
+        );
 
       downloadCache.set(asset.id, cachedDownload);
 
@@ -395,6 +422,11 @@ export const fetchAndInsertTranslations = async (
     emitProgress(0);
 
     while (hasMorePages) {
+      // Check if sync was aborted
+      if (abortSignal?.aborted) {
+        throw new Error('Dictionary sync was aborted');
+      }
+
       const payload = await fetchTranslationPage(baseUrl, page, {
         updatedAfter,
       });
@@ -422,13 +454,22 @@ export const fetchAndInsertTranslations = async (
         pendingWrites.push(item);
 
         if (pendingWrites.length >= DB_WRITE_BATCH_SIZE) {
-          await insertDictionaryData(pendingWrites, {
-            replaceExisting: shouldReplaceExisting,
-          });
-          shouldReplaceExisting = false;
-          syncedCount += pendingWrites.length;
-          pendingWrites = [];
-          emitProgress(page, payload.meta?.pageSize ?? TRANSLATION_PAGE_SIZE);
+          const batchSize = pendingWrites.length;
+          try {
+            await insertDictionaryData(pendingWrites, {
+              replaceExisting: shouldReplaceExisting,
+            });
+            shouldReplaceExisting = false;
+            syncedCount += batchSize;
+            pendingWrites = [];
+            emitProgress(page, payload.meta?.pageSize ?? TRANSLATION_PAGE_SIZE);
+          } catch (error) {
+            // Database write failed - abort sync to prevent data loss
+            console.error(
+              `[DictionarySync] Failed to write batch of ${batchSize} records. Aborting sync.`,
+            );
+            throw error;
+          }
         }
       }
 
@@ -450,14 +491,24 @@ export const fetchAndInsertTranslations = async (
     }
 
     if (pendingWrites.length > 0) {
-      await insertDictionaryData(pendingWrites, {
-        replaceExisting: shouldReplaceExisting,
-      });
-      syncedCount += pendingWrites.length;
-      pendingWrites = [];
-      emitProgress(page - 1);
+      const finalBatchSize = pendingWrites.length;
+      try {
+        await insertDictionaryData(pendingWrites, {
+          replaceExisting: shouldReplaceExisting,
+        });
+        syncedCount += finalBatchSize;
+        pendingWrites = [];
+        emitProgress(page - 1);
+      } catch (error) {
+        console.error(
+          `[DictionarySync] Failed to write final batch of ${finalBatchSize} records. Aborting sync.`,
+        );
+        throw error;
+      }
     }
 
+    // CRITICAL: Only update sync timestamp if ALL writes succeeded
+    // If we update timestamp after failed writes, those records are lost forever
     if (newestUpdatedAt) {
       await AsyncStorage.setItem(
         LAST_DICTIONARY_SERVER_SYNC_KEY,
@@ -470,6 +521,59 @@ export const fetchAndInsertTranslations = async (
     console.error('Error fetching translation data:', error);
     throw error;
   }
+};
+
+/**
+ * Fetches dictionary data from the API and processes it with global sync locking.
+ * This function ensures only one sync can run at a time across the entire application.
+ *
+ * @param options Sync options including full sync flag and progress callback
+ * @returns Sync result with count of synced and changed records
+ *
+ * @throws Error if BASE_URL is not available or network/database errors occur
+ *
+ * Behavior:
+ * - If no sync is running: starts a new sync immediately
+ * - If a sync is already running: returns the existing sync promise (deduplicates requests)
+ * - Uses application-level mutex to prevent database corruption from concurrent writes
+ */
+export const fetchAndInsertTranslations = async (
+  options: DictionarySyncOptions = {},
+): Promise<DictionarySyncResult> => {
+  // If a sync is already in progress, return the existing promise
+  // This deduplicates concurrent requests from multiple components
+  if (activeSyncPromise) {
+    console.log(
+      '[DictionarySync] Sync already in progress, returning existing promise',
+    );
+    const result = await activeSyncPromise;
+    return { ...result, wasDeduplicated: true };
+  }
+
+  // Create abort controller for this sync operation
+  activeSyncAbortController = new AbortController();
+
+  // Start new sync and store the promise globally
+  activeSyncPromise = (async () => {
+    try {
+      console.log('[DictionarySync] Starting new sync operation');
+      const result = await _fetchAndInsertTranslationsUnsafe(
+        options,
+        activeSyncAbortController?.signal,
+      );
+      console.log(
+        `[DictionarySync] Sync completed: ${result.syncedCount} records synced`,
+      );
+      return result;
+    } finally {
+      // Always clear the lock, even if sync fails
+      activeSyncPromise = null;
+      activeSyncAbortController = null;
+      console.log('[DictionarySync] Sync lock released');
+    }
+  })();
+
+  return activeSyncPromise;
 };
 
 /**

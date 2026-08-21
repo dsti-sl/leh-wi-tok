@@ -105,6 +105,20 @@ const ensureDictionaryCategoryIndex = async (): Promise<void> => {
   }
 };
 
+export const hasDictionaryRecords = async (): Promise<boolean> => {
+  try {
+    const db = await getDatabase();
+    const result = await db.getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) AS count FROM dictionary',
+    );
+
+    return (result?.count ?? 0) > 0;
+  } catch (error) {
+    console.error('Error checking dictionary records:', error);
+    return false;
+  }
+};
+
 /**
  * Fetches all dictionary entries from the database.
  * @returns Array of dictionary entries

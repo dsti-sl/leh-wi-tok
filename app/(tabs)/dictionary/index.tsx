@@ -22,6 +22,7 @@ import {
   DictionaryCategorySummary,
   searchDictionaryByWord,
   fetchDictionaryCategories,
+  hasDictionaryRecords,
 } from '@/db/retrivedata';
 
 interface DictionaryEntry {
@@ -63,8 +64,11 @@ const index = () => {
           })),
         );
 
-        // If remote sync is requested, do it in the background
-        if (options?.withRemoteSync) {
+        const shouldRemoteSync =
+          options?.withRemoteSync && !(await hasDictionaryRecords());
+
+        // Only seed from the network when the local dictionary table is empty.
+        if (shouldRemoteSync) {
           setSyncing(true);
           setSyncProgress({ percent: 0, savedCount: 0, totalCount: null });
 
@@ -75,18 +79,6 @@ const index = () => {
                   percent: progress.percent,
                   savedCount: progress.savedCount,
                   totalCount: progress.totalCount,
-                });
-
-                // Refresh categories as new data comes in
-                fetchDictionaryCategories().then(updatedCategories => {
-                  setCategories(
-                    updatedCategories.map(
-                      (item: DictionaryCategorySummary) => ({
-                        name: item.name,
-                        imageSource: item.imageSource,
-                      }),
-                    ),
-                  );
                 });
               },
             });
