@@ -119,7 +119,6 @@ const index = () => {
             style={[
               type === 'illustration' ? styles.illustration : styles.image,
               imageStatus[type].loading && styles.imageLoading,
-              { width: '100%', height: undefined, aspectRatio: 1 },
             ]}
             resizeMode="cover"
           />
@@ -152,9 +151,8 @@ const index = () => {
             style={[
               type === 'illustration' ? styles.illustration : styles.image,
               imageStatus[type].loading && styles.imageLoading,
-              { width: '100%', height: undefined, aspectRatio: 1 },
             ]}
-            resizeMode="cover"
+            resizeMode="contain"
             onLoadStart={() =>
               setImageStatus(s => ({
                 ...s,
@@ -285,23 +283,19 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 0 : 10,
   },
   contentContainer: {
-    padding: 16,
-    paddingBottom: 32,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   mediaContainer: {
     width: SCREEN_WIDTH - 32,
     alignItems: 'center',
-    marginVertical: 16,
     backgroundColor: '#fff',
     borderRadius: 12,
     overflow: 'hidden',
-    padding: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    minHeight: 100,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#DCE5E7',
   },
   illustration: {
     width: '100%',
@@ -327,18 +321,15 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   definitionContainer: {
-    backgroundColor: '#fff',
-    padding: 16,
+    backgroundColor: '#F5F8F9',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginVertical: 8,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 1,
   },
   partOfSpeech: {
     fontSize: 16,
-    color: '#666',
+    color: '#0F4C5C',
     fontStyle: 'italic',
     marginBottom: 8,
   },
