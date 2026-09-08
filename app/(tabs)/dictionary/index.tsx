@@ -15,12 +15,14 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { Ionicons } from '@expo/vector-icons';
 
+import ProgressBar from '@/components/common/ProgressBar';
 import { Colors } from '@/constants/Colors';
-import { checkAndUpdateTranslations } from '@/data/dictionary';
+import { fetchAndInsertTranslations } from '@/data/dictionary';
 import {
   DictionaryCategorySummary,
   searchDictionaryByWord,
   fetchDictionaryCategories,
+  hasDictionaryRecords,
 } from '@/db/retrivedata';
 
 interface DictionaryEntry {
@@ -43,14 +45,17 @@ const index = () => {
   const [loading, setLoading] = useState(true);
   const [searchResults, setSearchResults] = useState<DictionaryEntry[]>([]);
   const [query, setQuery] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState({
+    percent: 0,
+    savedCount: 0,
+    totalCount: null as number | null,
+  });
 
   const loadData = useCallback(
     async (options?: { withRemoteSync?: boolean }) => {
       try {
-        if (options?.withRemoteSync) {
-          await checkAndUpdateTranslations();
-        }
-
+        // Always load from database first to show existing data
         const categoryData = await fetchDictionaryCategories();
         setCategories(
           categoryData.map((item: DictionaryCategorySummary) => ({
@@ -58,8 +63,41 @@ const index = () => {
             imageSource: item.imageSource,
           })),
         );
+
+        const shouldRemoteSync =
+          options?.withRemoteSync && !(await hasDictionaryRecords());
+
+        // Only seed from the network when the local dictionary table is empty.
+        if (shouldRemoteSync) {
+          setSyncing(true);
+          setSyncProgress({ percent: 0, savedCount: 0, totalCount: null });
+
+          try {
+            await fetchAndInsertTranslations({
+              onProgress: progress => {
+                setSyncProgress({
+                  percent: progress.percent,
+                  savedCount: progress.savedCount,
+                  totalCount: progress.totalCount,
+                });
+              },
+            });
+          } catch (syncError) {
+            console.error('Error syncing dictionary data:', syncError);
+          } finally {
+            setSyncing(false);
+            // Final refresh after sync completes
+            const finalCategoryData = await fetchDictionaryCategories();
+            setCategories(
+              finalCategoryData.map((item: DictionaryCategorySummary) => ({
+                name: item.name,
+                imageSource: item.imageSource,
+              })),
+            );
+          }
+        }
       } catch (error) {
-        console.error('Error refreshing dictionary data:', error);
+        console.error('Error loading dictionary data:', error);
       }
     },
     [],
@@ -103,25 +141,38 @@ const index = () => {
     );
   }, [categories, query]);
 
-  if (loading) {
-    return (
-      <View style={styles.viewContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
-
-  if (!categories.length) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.emptyText}>No data available.</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.outerContainer}>
       <View style={styles.viewContainer}>
+        {syncing && (
+          <View style={styles.syncBanner}>
+            <View style={styles.syncBannerHeader}>
+              <Ionicons
+                name="cloud-download-outline"
+                size={20}
+                color={Colors.primary}
+              />
+              <Text style={styles.syncBannerText}>
+                Downloading dictionary updates...
+              </Text>
+            </View>
+            <View style={styles.syncProgressContainer}>
+              <ProgressBar
+                progress={syncProgress.percent}
+                width={100}
+                height={6}
+                progressColor={Colors.primary}
+              />
+              <Text style={styles.syncProgressText}>
+                {syncProgress.totalCount
+                  ? `${syncProgress.savedCount} / ${syncProgress.totalCount}`
+                  : `${syncProgress.savedCount} items`}{' '}
+                ({syncProgress.percent}%)
+              </Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.searchBarContainer}>
           <Ionicons
             name="search"
@@ -145,7 +196,13 @@ const index = () => {
           ) : null}
         </View>
 
-        {query?.trim() ? (
+        {loading && categories.length === 0 ? (
+          <View style={styles.initialLoadingContainer}>
+            <Text style={styles.loadingText}>Loading dictionary...</Text>
+          </View>
+        ) : !categories.length ? (
+          <Text style={styles.emptyText}>No data available.</Text>
+        ) : query?.trim() ? (
           <FlatList
             data={searchResults}
             keyExtractor={(item: DictionaryEntry) => item.word}
@@ -238,6 +295,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     paddingBottom: 40,
+  },
+  syncBanner: {
+    backgroundColor: '#f0f9ff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  syncBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  syncBannerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e40af',
+    marginLeft: 8,
+  },
+  syncProgressContainer: {
+    gap: 6,
+  },
+  syncProgressText: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  initialLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchBarContainer: {
     flexDirection: 'row',

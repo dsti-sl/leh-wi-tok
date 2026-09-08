@@ -78,10 +78,9 @@ const _layout = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      {Platform.OS === 'ios' ? (
+      <StatusBar style="light" backgroundColor={Colors.primary} />
+      {Platform.OS === 'ios' && (
         <View style={{ height: insets.top, backgroundColor: Colors.primary }} />
-      ) : (
-        <StatusBar style="light" backgroundColor={Colors.primary} />
       )}
 
       <Stack>
