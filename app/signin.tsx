@@ -90,7 +90,7 @@ const SignInScreen = () => {
       <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={[
@@ -102,6 +102,9 @@ const SignInScreen = () => {
             },
           ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>

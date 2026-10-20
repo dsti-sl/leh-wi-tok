@@ -234,8 +234,11 @@ const ProfileDetailsScreen = () => {
       >
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
-          scrollEnabled={true}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
+          showsVerticalScrollIndicator={false}
         >
           <View style={styles.profileImageContainer}>
             <ProfileImagePicker
