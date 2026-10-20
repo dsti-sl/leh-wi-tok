@@ -228,6 +228,10 @@ const IndexScreen: React.FC = () => {
       ) : (
         <>
           <LessonsBanner />
+          <Text style={styles.contentNotice}>
+            Lessons include ASL and selected Sierra Leone Sign Language content.
+            Signs may vary by language, community and context.
+          </Text>
           <CurrentLevelProgressCard accumulatedData={overallData} />
           {lastLessonResume && progressSummary && (
             <TouchableOpacity
@@ -271,6 +275,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  contentNotice: {
+    width: '90%',
+    color: '#64748B',
+    fontSize: 12,
+    lineHeight: 17,
   },
   resumeCard: {
     width: '90%',
