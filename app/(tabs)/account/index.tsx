@@ -135,7 +135,7 @@ const Account = () => {
   const syncPercent = syncProgress?.percent ?? 0;
   const syncProgressLabel =
     syncProgress?.totalCount && syncProgress.totalCount > 0
-      ? `Fetched ${syncProgress.fetchedCount.toLocaleString()} of ${syncProgress.totalCount.toLocaleString()} records`
+      ? `Saved ${syncProgress.savedCount.toLocaleString()} of ${syncProgress.totalCount.toLocaleString()} records`
       : isSyncing
         ? 'Preparing paginated sync...'
         : '';
