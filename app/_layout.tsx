@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { StatusBar } from 'react-native';
 
@@ -9,12 +9,14 @@ import 'react-native-reanimated';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import SignLanguageDisclaimer from '@/components/common/SignLanguageDisclaimer';
 import { initializeDatabase } from '@/db/schema';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [showContentNotice, setShowContentNotice] = useState(true);
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -85,6 +87,10 @@ export default function RootLayout() {
         <Stack.Screen name="signup" options={{ headerShown: false }} />
         <Stack.Screen name="preferences" options={{ headerShown: false }} />
       </Stack>
+      <SignLanguageDisclaimer
+        visible={showContentNotice}
+        onClose={() => setShowContentNotice(false)}
+      />
     </SafeAreaProvider>
   );
 }

@@ -402,16 +402,17 @@ const _fetchAndInsertTranslationsUnsafe = async (
       progressPage: number,
       progressPageSize = TRANSLATION_PAGE_SIZE,
     ) => {
+      const savedCount = syncedCount + pendingWrites.length;
       const percent =
         expectedTotal && expectedTotal > 0
-          ? Math.min(100, Math.round((fetchedCount / expectedTotal) * 100))
-          : fetchedCount > 0
+          ? Math.min(100, Math.round((savedCount / expectedTotal) * 100))
+          : savedCount > 0
             ? 100
             : 0;
 
       options.onProgress?.({
         fetchedCount,
-        savedCount: syncedCount + pendingWrites.length,
+        savedCount,
         totalCount: expectedTotal,
         page: progressPage,
         pageSize: progressPageSize,

@@ -182,7 +182,7 @@ const OtpScreen = () => {
     <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
       <StatusBar style="dark" translucent backgroundColor="#FFFFFF" />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardContainer}
       >
         <ScrollView
@@ -195,6 +195,9 @@ const OtpScreen = () => {
             },
           ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
         >
           <View style={styles.content}>
             <Image

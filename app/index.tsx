@@ -193,6 +193,14 @@ const Onboarding = () => {
         keyExtractor={(_, index) => index.toString()}
       />
 
+      <Text
+        style={[styles.contentNotice, { paddingHorizontal: horizontalPadding }]}
+      >
+        Leh We Tok contains ASL learning content alongside selected Sierra Leone
+        Sign Language content. Signs may vary by language, community and
+        context.
+      </Text>
+
       <View
         style={[
           styles.buttonContainer,
@@ -273,6 +281,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     alignSelf: 'center',
+  },
+  contentNotice: {
+    paddingBottom: 12,
+    color: '#64748B',
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
   },
   skipButton: {
     paddingLeft: 35,

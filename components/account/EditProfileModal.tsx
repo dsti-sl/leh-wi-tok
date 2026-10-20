@@ -238,9 +238,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
       >
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 0 }}
-          scrollEnabled={true}
+          contentContainerStyle={{ paddingBottom: 24 }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.headerRow}>

@@ -13,6 +13,7 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CurrentLevelProgressCard from '@/components/lessons/CurrentLevelProgressCard';
 import { LessonsBanner } from '@/components/lessons/LessonsBanner';
@@ -79,6 +80,7 @@ const fetchLessonCountForLevel = async (
 };
 
 const IndexScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const { progressSummary } = useLessons();
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -205,7 +207,11 @@ const IndexScreen: React.FC = () => {
 
   return (
     <ScrollView
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[
+        styles.container,
+        { paddingBottom: 32 + insets.bottom },
+      ]}
+      showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -222,6 +228,10 @@ const IndexScreen: React.FC = () => {
       ) : (
         <>
           <LessonsBanner />
+          <Text style={styles.contentNotice}>
+            Lessons include ASL and selected Sierra Leone Sign Language content.
+            Signs may vary by language, community and context.
+          </Text>
           <CurrentLevelProgressCard accumulatedData={overallData} />
           {lastLessonResume && progressSummary && (
             <TouchableOpacity
@@ -256,7 +266,7 @@ export default IndexScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
     gap: 20,
@@ -265,6 +275,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  contentNotice: {
+    width: '90%',
+    color: '#64748B',
+    fontSize: 12,
+    lineHeight: 17,
   },
   resumeCard: {
     width: '90%',
