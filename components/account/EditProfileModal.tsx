@@ -235,9 +235,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
+        style={styles.keyboardAvoidingView}
       >
         <ScrollView
+          style={styles.formScrollView}
           contentContainerStyle={{ paddingBottom: 24 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={
@@ -335,6 +336,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 export default EditProfileModal;
 
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flexShrink: 1,
+  },
+  formScrollView: {
+    flexShrink: 1,
+  },
   modalContainer: {
     width: '90%',
     maxHeight: '90%',
