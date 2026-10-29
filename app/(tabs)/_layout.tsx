@@ -19,7 +19,7 @@ export default function Layout() {
   const horizontalInset = width >= 768 ? 24 : 12;
   const maxTabBarWidth = Math.min(width - horizontalInset * 2, 760);
   const tabBarHeight = (isTablet ? 82 : 72) + safeBottomInset;
-  const iconContainerSize = isTablet ? 64 : 56;
+  const iconContainerSize = isTablet ? 50 : 44;
   const floatingIconOffset = isTablet ? 0 : -8;
 
   // Hide tab bar on child routes
@@ -110,6 +110,7 @@ export default function Layout() {
                   tabStyle={{
                     ...styles.circularIconContainer,
                     top: floatingIconOffset,
+                    marginBottom: 4,
                     width: iconContainerSize,
                     height: iconContainerSize,
                     borderRadius: iconContainerSize / 2,
